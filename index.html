@@ -178,18 +178,75 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 .code-card .hash { font: 500 13px/1.5 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
 .limits { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; color: var(--muted); max-width: 46em; }
 .limits strong { color: var(--fg); }
+.held-h { font: 700 20px/1.2 var(--display); margin: 28px 0 6px; }
+.proof.held li { grid-template-columns: minmax(0, 1fr) auto; }
+@media (max-width: 560px) { .proof.held li { grid-template-columns: minmax(0, 1fr); } .proof.held a { grid-column: 1; } }
 .faq { display: flex; flex-direction: column; gap: 0; }
 .faq details { border-top: 1px solid var(--line); padding-block: 16px; }
 .faq summary { cursor: pointer; font-weight: 600; font-size: 18px; list-style-position: outside; }
 .faq summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
 .faq p { color: var(--muted); margin: 10px 0 0; max-width: 46em; }
 @media (max-width: 560px) { .proof li { grid-template-columns: 26px minmax(0, 1fr); } .proof a, .proof .tag { grid-column: 2; } }
+
+/* ---- modern layer ---- */
+html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+body { overflow-x: clip; }
+.glow { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(600px 420px at 85% 8%, rgba(63,224,208,.13), transparent 70%),
+    radial-gradient(520px 380px at 8% 38%, rgba(156,144,255,.11), transparent 70%),
+    radial-gradient(700px 500px at 60% 100%, rgba(63,224,208,.07), transparent 70%); }
+.wrap { padding-top: 0; }
+.top { position: sticky; top: 0; z-index: 10; margin-inline: calc(50% - 50vw); padding: 14px max(16px, calc(50vw - 520px));
+  background: rgba(10,15,30,.72); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgba(36,48,79,.7); flex-wrap: nowrap; }
+.brand { text-decoration: none; color: var(--fg); }
+.brand svg { width: 34px; height: 34px; }
+.topnav { display: flex; gap: 4px; }
+.topnav a { color: var(--muted); text-decoration: none; font-size: 15px; padding: 8px 12px; border-radius: 10px; }
+.topnav a:hover { color: var(--fg); background: rgba(255,255,255,.05); }
+.top-right { display: flex; align-items: center; gap: 10px; }
+.status-pill i { background: var(--cyan); box-shadow: 0 0 0 0 rgba(63,224,208,.6); }
+.btn.small { min-height: 38px; padding: 0 16px; font-size: 15px; border-radius: 10px; }
+.btn { transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease; }
+.btn.primary { box-shadow: 0 6px 24px -8px rgba(63,224,208,.7); }
+.btn.primary:hover { transform: translateY(-1px); box-shadow: 0 10px 30px -8px rgba(63,224,208,.85); }
+.btn.ghost { background: rgba(18,26,48,.6); backdrop-filter: blur(8px); }
+.hero { padding-top: 24px; }
+.hero h1 em { background: linear-gradient(100deg, var(--cyan) 10%, #8FF3EA 45%, var(--violet) 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-art svg { filter: drop-shadow(0 0 40px rgba(63,224,208,.18)); }
+.step, .venue, .code-card { background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.55)); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-color: rgba(60,78,122,.55); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.step:hover, .venue:hover { transform: translateY(-3px); border-color: rgba(63,224,208,.45); box-shadow: 0 16px 40px -20px rgba(63,224,208,.45); }
+.warn { background: linear-gradient(180deg, rgba(245,185,66,.06), rgba(245,185,66,.02)); }
+.bar { box-shadow: 0 0 30px -6px rgba(63,224,208,.35); }
+
+/* live stats */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: -40px; }
+.stat { display: flex; flex-direction: column; gap: 6px; padding: 20px; border-radius: 16px; min-width: 0;
+  background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.5)); border: 1px solid rgba(60,78,122,.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.stat .k { font: 500 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); }
+.stat .v { font: 800 clamp(26px, 3vw, 34px)/1.05 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat .s { color: var(--muted); font-size: 13px; }
+.stats-note { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; color: var(--muted); font: 500 12px/1.4 var(--mono); }
+.stats-note i { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); flex: none; }
+
+@media (max-width: 860px) { .topnav { display: none; } .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: -24px; } }
+@media (max-width: 420px) { .status-pill { display: none; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .status-pill i, .stats-note i { animation: pulse 2.4s ease-out infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(63,224,208,.55); } 80%, 100% { box-shadow: 0 0 0 8px rgba(63,224,208,0); } }
+  .js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+  .js .reveal.in { opacity: 1; transform: none; }
+}
 </style>
-</head><body>
+</head><body id="top">
+<div class="glow" aria-hidden="true"></div>
 
 <div class="wrap">
   <header class="top">
-    <div class="brand"><svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="98" fill="#0A0F1E"/>
+    <a class="brand" href="#top" aria-label="FALQBIT home"><svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="98" fill="#0A0F1E"/>
 <circle cx="76" cy="12" r="1.2" fill="#2A3556"/>
 <circle cx="84" cy="12" r="1.2" fill="#2A3556"/>
 <circle cx="92" cy="12" r="1.2" fill="#2A3556"/>
@@ -573,8 +630,17 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 <path d="M 52 172 C 40 122 54 76 94 56 C 124 42 160 48 173 68 L 184 80 C 191 89 190 101 181 109 L 176 99 C 171 103 165 105 159 105 C 149 121 136 138 130 172 Z" fill="none" stroke="#3FE0D0" stroke-width="1.6" stroke-linejoin="round" opacity="0.9"/>
 <circle cx="141" cy="78" r="6.5" fill="#8B7CFF"/>
 <circle cx="100" cy="100" r="97" fill="none" stroke="#3FE0D0" stroke-width="2.5"/>
-</svg><span>FALQBIT</span></div>
-    <span class="status-pill"><i aria-hidden="true" style="background: var(--cyan)"></i>Live on MainNet</span>
+</svg><span>FALQBIT</span></a>
+    <nav class="topnav" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#proof">Proof</a>
+      <a href="#supply">Supply</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="top-right">
+      <span class="status-pill"><i aria-hidden="true"></i>Live on MainNet</span>
+      <a class="btn primary small" href="https://app.tinyman.org/swap?asset_in=0&amp;asset_out=3760920399" target="_blank" rel="noopener">Buy</a>
+    </div>
   </header>
 
   <section class="hero" aria-labelledby="h-hero">
@@ -977,7 +1043,15 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 </g></svg></div>
   </section>
 
-  <section class="sec" id="how" aria-labelledby="h-how">
+  <section class="stats reveal" aria-label="Live on-chain numbers">
+    <div class="stat"><span class="k">Price</span><span class="v" id="st-price">…</span><span class="s">ALGO per 1M FALQBIT</span></div>
+    <div class="stat"><span class="k">Pool liquidity</span><span class="v" id="st-pool">…</span><span class="s">ALGO in the Tinyman pool</span></div>
+    <div class="stat"><span class="k">Market value</span><span class="v" id="st-mcap">…</span><span class="s">ALGO, all 10B at pool price</span></div>
+    <div class="stat"><span class="k">Unlocked accounts</span><span class="v" id="st-unlocked">…</span><span class="s">accounts approved by the gate</span></div>
+    <p class="stats-note"><i aria-hidden="true"></i><span id="st-note">Reading Algorand MainNet…</span></p>
+  </section>
+
+  <section class="sec reveal" id="how" aria-labelledby="h-how">
     <div class="sec-head">
       <p class="eyebrow">How it works</p>
       <h2 id="h-how">Everyone starts locked. Only quantum accounts get unlocked.</h2>
@@ -1004,7 +1078,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     </div>
   </section>
 
-  <section class="sec" aria-labelledby="h-rules">
+  <section class="sec reveal" aria-labelledby="h-rules">
     <div class="sec-head">
       <p class="eyebrow">The rules</p>
       <h2 id="h-rules">Code decides. Nobody else can.</h2>
@@ -1019,7 +1093,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
   </section>
 
 
-  <section class="sec" id="proof" aria-labelledby="h-proof">
+  <section class="sec reveal" id="proof" aria-labelledby="h-proof">
     <div class="sec-head">
       <p class="eyebrow">Proof</p>
       <h2 id="h-proof">Every rule, tested on-chain.</h2>
@@ -1037,7 +1111,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     </ul>
   </section>
 
-  <section class="sec" id="code" aria-labelledby="h-code">
+  <section class="sec reveal" id="code" aria-labelledby="h-code">
     <div class="sec-head">
       <p class="eyebrow">Open source</p>
       <h2 id="h-code">Read the rules yourself.</h2>
@@ -1051,7 +1125,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     </div>
   </section>
 
-  <section class="sec" id="limits" aria-labelledby="h-limits">
+  <section class="sec reveal" id="limits" aria-labelledby="h-limits">
     <div class="sec-head">
       <p class="eyebrow">Honest limits</p>
       <h2 id="h-limits">What FALQBIT does not solve.</h2>
@@ -1065,7 +1139,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     </ul>
   </section>
 
-  <section class="sec" id="faq" aria-labelledby="h-faq">
+  <section class="sec reveal" id="faq" aria-labelledby="h-faq">
     <div class="sec-head">
       <p class="eyebrow">FAQ</p>
       <h2 id="h-faq">Questions people ask.</h2>
@@ -1079,7 +1153,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     </div>
   </section>
 
-  <section class="sec" aria-labelledby="h-supply">
+  <section class="sec reveal" id="supply" aria-labelledby="h-supply">
     <div class="sec-head">
       <p class="eyebrow">Supply</p>
       <h2 id="h-supply">Ten billion FALQBIT, split in the open.</h2>
@@ -1097,13 +1171,21 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     <ul class="legend">
       <li><span class="sw" style="background: var(--cyan)"></span><span class="what">Liquidity pool</span><span class="pct">55%</span><span class="amt">5,500,000,000 · Tinyman, paired with ALGO</span></li>
       <li><span class="sw" style="background: var(--violet)"></span><span class="what">Airdrops</span><span class="pct">20%</span><span class="amt">2,000,000,000 · first quantum accounts</span></li>
-      <li><span class="sw" style="background: var(--teal)"></span><span class="what">Staking rewards</span><span class="pct">15%</span><span class="amt">1,500,000,000 · released over 2 years</span></li>
+      <li><span class="sw" style="background: var(--teal)"></span><span class="what">Staking rewards</span><span class="pct">15%</span><span class="amt">1,500,000,000 · paid to holders over 2 years</span></li>
       <li><span class="sw" style="background: var(--slate)"></span><span class="what">Project reserve</span><span class="pct">5%</span><span class="amt">500,000,000 · contests and partners</span></li>
       <li><span class="sw" style="background: var(--pale)"></span><span class="what">Team</span><span class="pct">5%</span><span class="amt">500,000,000 · held in a quantum account</span></li>
     </ul>
+    <h3 class="held-h">Where it is held</h3>
+    <p class="muted" style="margin:0">Every allocation sits in its own Falcon-1024 account or in the pool. Check any balance on the explorer.</p>
+    <ul class="proof held">
+      <li><div class="what">Liquidity pool<span>Tinyman v2 pool, controlled by Tinyman's code</span></div><a href="https://lora.algokit.io/mainnet/account/CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA" target="_blank" rel="noopener">CEQH5W…M7VCIA</a></li>
+      <li><div class="what">Rewards<span>Airdrops and staking rewards (35%)</span></div><a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">V4J46S…CPTC2Q</a></li>
+      <li><div class="what">Team<span>Team allocation (5%)</span></div><a href="https://lora.algokit.io/mainnet/account/XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q" target="_blank" rel="noopener">XMKDQF…GBDT7Q</a></li>
+      <li><div class="what">Project<span>Creator account and project reserve (5%)</span></div><a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></li>
+    </ul>
   </section>
 
-  <section class="sec" aria-labelledby="h-trade">
+  <section class="sec reveal" aria-labelledby="h-trade">
     <div class="sec-head">
       <p class="eyebrow">Where it trades</p>
       <h2 id="h-trade">One pool, found everywhere on Algorand.</h2>
@@ -1117,7 +1199,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     </div>
   </section>
 
-  <section class="sec" aria-labelledby="h-road">
+  <section class="sec reveal" id="road" aria-labelledby="h-road">
     <div class="sec-head">
       <p class="eyebrow">Progress</p>
       <h2 id="h-road">Built in public, tested before launch.</h2>
@@ -1130,7 +1212,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     </ol>
   </section>
 
-  <section class="warn" aria-labelledby="h-warn">
+  <section class="warn reveal" aria-labelledby="h-warn">
     <div>
       <h3 id="h-warn">Beware of fakes</h3>
       <p class="muted">Anyone can copy a name. Only the token ID can't be copied.</p>
@@ -1141,9 +1223,50 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
   <footer>
     <span>FALQBIT · an experiment on Algorand</span>
     <nav aria-label="Links">
-      <a href="https://x.com/hashtag/FALQBIT" target="_blank" rel="noopener">#FALQBIT on X</a>
+      <a href="https://x.com/FalQbit" target="_blank" rel="noopener">@FalQbit on X</a>
+      <a href="https://github.com/FalQbit/falqbit.github.io" target="_blank" rel="noopener">GitHub</a>
       <a href="https://algorand.co/technology/post-quantum" target="_blank" rel="noopener">Algorand post-quantum</a>
     </nav>
   </footer>
 </div>
+<script>
+document.documentElement.classList.add("js");
+(function () {
+  // reveal on scroll
+  var els = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }); }, { rootMargin: "0px 0px -8% 0px" });
+    els.forEach(function (el) { io.observe(el); });
+  } else { els.forEach(function (el) { el.classList.add("in"); }); }
+
+  // live numbers from Algorand MainNet
+  var ALGOD = "https://mainnet-api.algonode.cloud";
+  var POOL = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
+  var TINYMAN = 1002541853, GATE = 3760919863, ASSET = 3760920399, SUPPLY = 10000000000;
+  function $(id) { return document.getElementById(id); }
+  function fmt(n, d) { return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+  function get(p) { return fetch(ALGOD + p).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  function load() {
+    var reserves = get("/v2/accounts/" + POOL + "/applications/" + TINYMAN).then(function (j) {
+      var kv = (j["app-local-state"] || {})["key-value"] || [], r = {};
+      kv.forEach(function (x) { r[atob(x.key)] = x.value.uint; });
+      return { algo: r.asset_2_reserves / 1e6, fq: r.asset_1_reserves / 1e6 };
+    });
+    var unlocked = get("/v2/applications/" + GATE + "/boxes?max=100000").then(function (j) {
+      return (j.boxes || []).filter(function (b) { return atob(b.name).charAt(0) === "a"; }).length;
+    });
+    reserves.then(function (r) {
+      var p = r.algo / r.fq;
+      $("st-price").textContent = fmt(p * 1e6, 3);
+      $("st-pool").textContent = fmt(r.algo, 1);
+      $("st-mcap").textContent = fmt(p * SUPPLY, 0);
+    }).catch(function () { ["st-price", "st-pool", "st-mcap"].forEach(function (id) { $(id).textContent = "–"; }); });
+    unlocked.then(function (n) { $("st-unlocked").textContent = fmt(n, 0); }).catch(function () { $("st-unlocked").textContent = "–"; });
+    Promise.allSettled([reserves, unlocked]).then(function () {
+      $("st-note").textContent = "Live from Algorand MainNet · updated " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    });
+  }
+  load(); setInterval(load, 60000);
+})();
+</script>
 </body></html>
