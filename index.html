@@ -205,8 +205,9 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 .limits { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; color: var(--muted); max-width: 46em; }
 .limits strong { color: var(--fg); }
 .held-h { font: 700 20px/1.2 var(--display); margin: 28px 0 6px; }
-.proof.held li { grid-template-columns: minmax(0, 1fr) auto; }
-@media (max-width: 560px) { .proof.held li { grid-template-columns: minmax(0, 1fr); } .proof.held a { grid-column: 1; } }
+.proof.held li { grid-template-columns: minmax(0, 1fr) auto auto; gap: 16px; }
+.proof.held .bal { font: 600 14px/1.3 var(--mono); color: var(--fg); font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 560px) { .proof.held li { grid-template-columns: minmax(0, 1fr) auto; } .proof.held .what { grid-column: 1 / -1; } }
 .faq { display: flex; flex-direction: column; gap: 0; }
 .faq details { border-top: 1px solid var(--line); padding-block: 16px; }
 .faq summary { cursor: pointer; font-weight: 600; font-size: 18px; list-style-position: outside; }
@@ -1185,12 +1186,12 @@ body { overflow-x: clip; }
       <li><span class="sw" style="background: var(--pale)"></span><span class="what">Team</span><span class="pct">5%</span><span class="amt">500,000,000 · held in a quantum account</span></li>
     </ul>
     <h3 class="held-h">Where it is held</h3>
-    <p class="muted" style="margin:0">Every allocation sits in its own Falcon-1024 account or in the pool. Check any balance on the explorer.</p>
+    <p class="muted" style="margin:0">Every allocation sits in its own Falcon-1024 account or in the pool. Balances below are live from the chain; tap an address to check it on the explorer.</p>
     <ul class="proof held">
-      <li><div class="what">Liquidity pool<span>Tinyman v2 pool, controlled by Tinyman's code</span></div><a href="https://lora.algokit.io/mainnet/account/CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA" target="_blank" rel="noopener">CEQH5W…M7VCIA</a></li>
-      <li><div class="what">Rewards<span>Airdrops and hold-to-earn (35%)</span></div><a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">V4J46S…CPTC2Q</a></li>
-      <li><div class="what">Team<span>Team allocation (5%)</span></div><a href="https://lora.algokit.io/mainnet/account/XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q" target="_blank" rel="noopener">XMKDQF…GBDT7Q</a></li>
-      <li><div class="what">Project<span>Creator account and project reserve (5%)</span></div><a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></li>
+      <li><div class="what">Liquidity pool<span>Tinyman v2 pool, controlled by Tinyman's code. Changes with every trade.</span></div><span class="bal" data-addr="CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA">…</span><a href="https://lora.algokit.io/mainnet/account/CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA" target="_blank" rel="noopener">CEQH5W…M7VCIA</a></li>
+      <li><div class="what">Rewards<span>Welcome drops, campaigns and hold-to-earn (20% + 15%). Every payout leaves from here.</span></div><span class="bal" data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q">…</span><a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">V4J46S…CPTC2Q</a></li>
+      <li><div class="what">Team<span>Team allocation (5%)</span></div><span class="bal" data-addr="XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q">…</span><a href="https://lora.algokit.io/mainnet/account/XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q" target="_blank" rel="noopener">XMKDQF…GBDT7Q</a></li>
+      <li><div class="what">Project<span>Creator account and project reserve (5%)</span></div><span class="bal" data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU">…</span><a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></li>
     </ul>
   </section>
 
@@ -1346,7 +1347,14 @@ document.documentElement.classList.add("js");
       $("st-note").textContent = "Live from Algorand MainNet · updated " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     });
   }
-  load(); setInterval(load, 60000);
+  function loadHeld() {
+    document.querySelectorAll(".held .bal[data-addr]").forEach(function (el) {
+      get("/v2/accounts/" + el.dataset.addr + "/assets/" + ASSET).then(function (j) {
+        el.textContent = fmt(j["asset-holding"].amount / 1e6, 0) + " FALQBIT";
+      }).catch(function () { el.textContent = "–"; });
+    });
+  }
+  load(); loadHeld(); setInterval(function () { load(); loadHeld(); }, 60000);
 })();
 </script>
 </body></html>
