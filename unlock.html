@@ -7,81 +7,32 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
-<style>
-/* Layout: one narrow column; a status panel of checks, then one primary action. Single dark theme (brand). */
-:root {
-  --ground: #0A0F1E; --surface: #121A30; --line: #24304F;
-  --fg: #E8ECF6; --muted: #A9B4D0; --cyan: #3FE0D0; --violet: #9C90FF; --amber: #F5B942; --red: #FF7A7A;
-  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
-  color-scheme: dark;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0; background: var(--ground);
-  background-image: radial-gradient(var(--line) 1.2px, transparent 1.3px); background-size: 22px 22px;
-  color: var(--fg); font: 400 16px/1.6 var(--body);
-}
-.wrap {
-  max-width: 640px; margin: 0 auto;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 32px 64px;
-  display: flex; flex-direction: column; gap: 28px;
-}
-a { color: var(--cyan); }
-.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-.brand { font: 800 20px/1 var(--display); letter-spacing: .02em; text-decoration: none; color: var(--fg); }
-.net { font: 500 12px/1 var(--mono); letter-spacing: .1em; color: var(--amber); border: 1px solid var(--amber); padding: 8px 12px; border-radius: 999px; }
-h1 { font: 800 clamp(34px, 7vw, 48px)/1.02 var(--display); letter-spacing: -.02em; margin: 0; text-wrap: balance; }
-h1 em { font-style: normal; color: var(--cyan); }
-.lede { color: var(--muted); margin: 0; }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 8px 20px; }
-.row { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; padding-block: 14px; border-bottom: 1px solid var(--line); }
-.row:last-child { border-bottom: 0; }
-.dot { width: 12px; height: 12px; border-radius: 50%; margin-top: 6px; background: var(--line); }
-.row[data-s="ok"] .dot { background: var(--cyan); }
-.row[data-s="warn"] .dot { background: var(--amber); }
-.row[data-s="bad"] .dot { background: var(--red); }
-.row[data-s="busy"] .dot { background: var(--violet); }
-.label { font-weight: 600; }
-.detail { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
-.mono { font-family: var(--mono); }
-.actions { display: flex; flex-direction: column; gap: 12px; }
-button {
-  min-height: 52px; border: 0; border-radius: 14px; cursor: pointer;
-  font: 600 17px/1 var(--body); padding: 0 20px;
-}
-button.primary { background: var(--cyan); color: var(--ground); }
-button.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
-button:disabled { opacity: .45; cursor: not-allowed; }
-button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
-.msg { font-size: 15px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
-.msg.err { border-color: var(--red); color: var(--red); }
-.msg.ok { border-color: var(--cyan); }
-.foot { color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 20px; }
-</style>
+<link rel="stylesheet" href="./app.css">
 </head>
 <body>
 <div class="wrap">
   <header class="top">
     <a class="brand" href="./">FALQBIT</a>
-    <span class="net">TESTNET</span>
+    <nav class="nets" aria-label="Network">
+      <a href="?net=mainnet" id="n-mainnet">MAINNET</a>
+      <a href="?net=testnet" id="n-testnet" class="test">TESTNET</a>
+    </nav>
   </header>
 
   <section>
     <h1>Unlock your <em>quantum</em> account.</h1>
-    <p class="lede">Connect a Pera Quantum Account. The gate contract checks that a Falcon-1024 key signs for it, then unlocks the token. Classic accounts stay locked.</p>
+    <p class="lede">Connect a Pera Quantum Account. The gate contract checks that a Falcon-1024 key signs for it, then unlocks FALQBIT. Classic accounts stay locked.</p>
   </section>
 
-  <section class="panel" aria-live="polite">
+  <div id="notlive" class="warnbox" hidden></div>
+
+  <section class="panel" aria-live="polite" id="status">
     <div class="row" id="r-wallet"><span class="dot"></span><div><div class="label">Wallet</div><div class="detail">Not connected</div></div></div>
     <div class="row" id="r-falcon"><span class="dot"></span><div><div class="label">Falcon-1024 key</div><div class="detail">Waiting for a wallet</div></div></div>
     <div class="row" id="r-token"><span class="dot"></span><div><div class="label">Token status</div><div class="detail">Waiting for a wallet</div></div></div>
   </section>
 
-  <div class="actions">
+  <div class="actions" id="actions">
     <button class="primary" id="b-connect" type="button">Connect Pera Wallet</button>
     <button class="primary" id="b-activate" type="button" hidden>Reveal my Falcon key (0 ALGO self-payment)</button>
     <button class="primary" id="b-unlock" type="button" hidden>Unlock</button>
@@ -89,102 +40,52 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--cyan); outline-
   </div>
   <div id="msg" class="msg" hidden></div>
 
-  <p class="foot">
-    TestNet only. Set Pera to TestNet first (Settings → Developer settings → Node settings → TestNet) and fund your account from the TestNet dispenser.
-    Gate app <span class="mono" id="f-app"></span> · token <span class="mono" id="f-asset"></span>.
-  </p>
+  <p class="foot" id="foot"></p>
 </div>
 
 <script type="module">
-import algosdk from "https://esm.sh/algosdk@3.8.0";
-import { PeraWalletConnect } from "https://esm.sh/@perawallet/connect@1.8.0?deps=algosdk@3.8.0";
-import { sha512_256 } from "https://esm.sh/js-sha512@0.9.0";
+import {
+  algosdk, NETWORKS, FEE_PQ, FEE_CALL, HOLDER_DEPOSIT, client, loadConfig, pickNetwork,
+  findFalconKey, signerOf, selector, enc, holderBox, short,
+} from "./falqbit.js";
 
-// ---- TestNet deployment -------------------------------------------------
-const APP_ID = 775344661;
-const APP_ADDR = "FOML5IH6NULSN2EFGZRQJPALBYT45QZVP2RZ47BJIW66GE6JPDRY44P5HQ";
-const ASSET_ID = 775344664;
-const ALGOD = "https://testnet-api.algonode.cloud";
-const INDEXER = "https://testnet-idx.algonode.cloud";
-const LORA = "https://lora.algokit.io/testnet/transaction/";
-const DEPOSIT = 28500;      // box deposit the contract asks for (µALGO)
-const FEE_PQ = 6000;        // a Falcon signature costs about three minimum fees
-const FEE_CALL = 12000;     // the app call also pays for its inner freeze
-const PK_LEN = 1793;
-
-document.getElementById("f-app").textContent = APP_ID;
-document.getElementById("f-asset").textContent = ASSET_ID;
-
-const pera = new PeraWalletConnect({ chainId: 416002 });
-let account = null;     // connected address
-let found = null;       // { pk: Uint8Array, salt: number }
-let boxExists = false;
-
+const cfgAll = await loadConfig();
+const net = pickNetwork() || (cfgAll.mainnet ? "mainnet" : "testnet");
+const cfg = cfgAll[net];
+const c = client(net);
 const $ = (id) => document.getElementById(id);
+$("n-" + net).setAttribute("aria-current", "true");
+
+if (!cfg) {
+  $("notlive").hidden = false;
+  $("notlive").innerHTML = `<strong>FALQBIT is not live on ${NETWORKS[net].label} yet.</strong> Follow the launch on X, or try the full flow on <a href="?net=testnet">TestNet</a>.`;
+  $("status").hidden = true; $("actions").hidden = true;
+} else {
+  $("foot").innerHTML = `${NETWORKS[net].label}. Gate app <a href="${c.n.lora}/application/${cfg.app_id}" target="_blank" rel="noopener" class="mono">${cfg.app_id}</a> · token <a href="${c.n.lora}/asset/${cfg.asset_id}" target="_blank" rel="noopener" class="mono">${cfg.asset_id}</a>.`
+    + (net === "testnet" ? " Set Pera to TestNet first (Settings → Developer mode → TestNet) and fund your account from the TestNet dispenser." : "");
+}
+
+let account = null, found = null;
+
 function setRow(id, state, detail) {
   const r = $(id); r.dataset.s = state; r.querySelector(".detail").textContent = detail;
 }
-function say(text, kind = "") {
-  const m = $("msg"); m.hidden = !text; m.className = "msg " + kind; m.innerHTML = text;
-}
-const short = (a) => a.slice(0, 6) + "…" + a.slice(-6);
-const b64ToBytes = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-
-async function getJSON(url) {
-  const r = await fetch(url);
-  if (r.status === 404) return null;
-  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
-  return r.json();
+function say(html, kind = "") {
+  const m = $("msg"); m.hidden = !html; m.className = "msg " + kind; m.innerHTML = html;
 }
 
-// ---- Falcon key discovery ------------------------------------------------
-// address = SHA512-256("PQA" || "f1" || salt || public_key)
-function pqAddressBytes(pk, salt) {
-  const pre = new Uint8Array(5 + 1 + pk.length);
-  pre.set(new TextEncoder().encode("PQAf1"), 0);
-  pre[5] = salt;
-  pre.set(pk, 6);
-  return new Uint8Array(sha512_256.arrayBuffer(pre));
-}
-function sameBytes(a, b) { return a.length === b.length && a.every((v, i) => v === b[i]); }
-
-async function findFalconKey(addr, signer) {
-  const target = algosdk.decodeAddress(signer).publicKey;
-  let next = "";
-  for (let page = 0; page < 5; page++) {
-    const res = await getJSON(`${INDEXER}/v2/accounts/${addr}/transactions?limit=100${next ? "&next=" + next : ""}`);
-    if (!res) return null;
-    for (const t of res.transactions || []) {
-      const pq = t.signature && t.signature.pqsig;
-      if (!pq || t.sender !== addr) continue;
-      const pk = b64ToBytes(pq["public-key"]);
-      if (pk.length !== PK_LEN) continue;
-      for (let salt = 0; salt < 256; salt++) {
-        if (sameBytes(pqAddressBytes(pk, salt), target)) return { pk, salt };
-      }
-    }
-    if (!res["next-token"]) break;
-    next = res["next-token"];
-  }
-  return null;
-}
-
-// ---- status --------------------------------------------------------------
 async function refresh() {
-  if (!account) return;
-  $("b-connect").hidden = true;
-  $("b-disconnect").hidden = false;
-  $("b-activate").hidden = true;
-  $("b-unlock").hidden = true;
+  if (!account || !cfg) return;
+  $("b-connect").hidden = true; $("b-disconnect").hidden = false;
+  $("b-activate").hidden = true; $("b-unlock").hidden = true;
 
-  const info = await getJSON(`${ALGOD}/v2/accounts/${account}?exclude=all`);
+  const { info, signer } = await signerOf(c, account);
   const algo = info ? Number(info.amount) / 1e6 : 0;
-  const signer = (info && info["auth-addr"]) || account;
   setRow("r-wallet", algo >= 0.2 ? "ok" : "warn",
-    `${short(account)} · ${algo.toFixed(3)} ALGO${algo < 0.2 ? " · fund it from the TestNet dispenser" : ""}`);
+    `${short(account)} · ${algo.toFixed(3)} ALGO${algo < 0.2 ? " · add some ALGO first" : ""}`);
 
   setRow("r-falcon", "busy", "Looking for your Falcon public key on-chain…");
-  found = await findFalconKey(account, signer);
+  found = await findFalconKey(c, account, signer);
   if (!found) {
     setRow("r-falcon", "warn", "No Falcon-signed transaction found yet. If this is a Quantum Account, sign one 0 ALGO payment to yourself to reveal the public key.");
     $("b-activate").hidden = false;
@@ -193,85 +94,57 @@ async function refresh() {
   }
   setRow("r-falcon", "ok", `Found · salt ${found.salt} · signer ${short(signer)}`);
 
-  const box = await getJSON(`${ALGOD}/v2/applications/${APP_ID}/box?name=b64:${btoa(String.fromCharCode(97, ...algosdk.decodeAddress(account).publicKey))}`);
-  boxExists = !!box;
-  const holding = await getJSON(`${ALGOD}/v2/accounts/${account}/assets/${ASSET_ID}`);
+  const holding = await c.algodGet(`/v2/accounts/${account}/assets/${cfg.asset_id}`);
   if (!holding) {
     setRow("r-token", "warn", "Not added yet. Unlock adds it and unlocks it in one step.");
   } else if (holding["asset-holding"]["is-frozen"]) {
     setRow("r-token", "warn", "Added, locked.");
   } else {
-    setRow("r-token", "ok", `Unlocked · balance ${(Number(holding["asset-holding"].amount) / 1e6).toLocaleString()}`);
+    setRow("r-token", "ok", `Unlocked · balance ${(Number(holding["asset-holding"].amount) / 1e6).toLocaleString()} FALQBIT`);
     return;
   }
   $("b-unlock").hidden = false;
   $("b-unlock").textContent = holding ? "Unlock" : "Add and unlock";
 }
 
-// ---- transactions --------------------------------------------------------
-async function params(fee) {
-  const sp = await new algosdk.Algodv2("", ALGOD, "").getTransactionParams().do();
-  return { ...sp, flatFee: true, fee: BigInt(fee) };
-}
-
-async function signAndSend(txns, label) {
-  if (txns.length > 1) algosdk.assignGroupID(txns);
-  say(`Approve the request in Pera to ${label}…`);
-  const signed = await pera.signTransaction([txns.map((txn) => ({ txn }))]);
-  const blob = new Uint8Array(signed.reduce((n, s) => n + s.length, 0));
-  let o = 0; for (const s of signed) { blob.set(s, o); o += s.length; }
-  say("Sending…");
-  const r = await fetch(`${ALGOD}/v2/transactions`, { method: "POST", headers: { "Content-Type": "application/x-binary" }, body: blob });
-  const body = await r.json();
-  if (!r.ok) throw new Error(body.message || JSON.stringify(body));
-  const txid = body.txId;
-  for (let i = 0; i < 20; i++) {
-    await new Promise((res) => setTimeout(res, 1000));
-    const p = await getJSON(`${ALGOD}/v2/transactions/pending/${txid}`);
-    if (p && p["confirmed-round"]) return txid;
-    if (p && p["pool-error"]) throw new Error(p["pool-error"]);
-  }
-  throw new Error("Not confirmed after 20 seconds. Check the transaction on Lora.");
-}
-
 $("b-activate").addEventListener("click", async () => {
   try {
+    say("Approve the request in Pera…");
     const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      sender: account, receiver: account, amount: 0, suggestedParams: await params(FEE_PQ),
+      sender: account, receiver: account, amount: 0, suggestedParams: await c.params(FEE_PQ),
     });
-    const id = await signAndSend([txn], "reveal your Falcon key");
-    say(`Done. <a href="${LORA + id}" target="_blank" rel="noopener">View on Lora</a>. Checking again…`, "ok");
-    setTimeout(refresh, 4000);
+    const { id } = await c.signAndSend([txn]);
+    say(`Done. <a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">View on Lora</a>. Checking again…`, "ok");
+    setTimeout(() => refresh().catch((e) => say(e.message, "err")), 4000);
   } catch (e) { say(e.message || String(e), "err"); }
 });
 
 $("b-unlock").addEventListener("click", async () => {
   try {
     $("b-unlock").disabled = true;
+    say("Approve the request in Pera…");
     const txns = [];
-    const holding = await getJSON(`${ALGOD}/v2/accounts/${account}/assets/${ASSET_ID}`);
+    const holding = await c.algodGet(`/v2/accounts/${account}/assets/${cfg.asset_id}`);
     if (!holding) {
       txns.push(algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        sender: account, receiver: account, amount: 0, assetIndex: ASSET_ID, suggestedParams: await params(FEE_PQ),
+        sender: account, receiver: account, amount: 0, assetIndex: cfg.asset_id, suggestedParams: await c.params(FEE_PQ),
       }));
     }
+    const box = await c.algodGet(`/v2/applications/${cfg.app_id}/box?name=b64:${btoa(String.fromCharCode(...holderBox(account)))}`);
     txns.push(algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      sender: account, receiver: APP_ADDR, amount: boxExists ? 0 : DEPOSIT, suggestedParams: await params(FEE_PQ),
+      sender: account, receiver: cfg.app_address, amount: box ? 0 : HOLDER_DEPOSIT, suggestedParams: await c.params(FEE_PQ),
     }));
-    const boxName = new Uint8Array([97, ...algosdk.decodeAddress(account).publicKey]);
     txns.push(algosdk.makeApplicationNoOpTxnFromObject({
-      sender: account, appIndex: APP_ID, suggestedParams: await params(FEE_CALL),
+      sender: account, appIndex: cfg.app_id, suggestedParams: await c.params(FEE_CALL),
       appArgs: [
-        algosdk.ABIMethod.fromSignature("unlock_falcon(pay,address,byte,byte[])void").getSelector(),
-        algosdk.ABIType.from("address").encode(account),
-        algosdk.ABIType.from("byte").encode(found.salt),
-        algosdk.ABIType.from("byte[]").encode(Array.from(found.pk)),
+        selector("unlock_falcon(pay,address,byte,byte[])void"),
+        enc("address", account), enc("byte", found.salt), enc("byte[]", Array.from(found.pk)),
       ],
-      foreignAssets: [ASSET_ID],
-      boxes: [{ appIndex: 0, name: boxName }],
+      foreignAssets: [cfg.asset_id],
+      boxes: [{ appIndex: 0, name: holderBox(account) }],
     }));
-    const id = await signAndSend(txns, "unlock FALQBIT");
-    say(`Unlocked. <a href="${LORA + id}" target="_blank" rel="noopener">View on Lora</a>`, "ok");
+    const { id } = await c.signAndSend(txns, {}, txns.length - 1);
+    say(`Unlocked. <a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">View on Lora</a>`, "ok");
     await refresh();
   } catch (e) {
     say(e.message || String(e), "err");
@@ -280,20 +153,8 @@ $("b-unlock").addEventListener("click", async () => {
   }
 });
 
-$("b-connect").addEventListener("click", async () => {
-  try {
-    const accounts = await pera.connect();
-    pera.connector?.on("disconnect", disconnect);
-    account = accounts[0];
-    say("");
-    await refresh();
-  } catch (e) {
-    if (e?.data?.type !== "CONNECT_MODAL_CLOSED") say(e.message || String(e), "err");
-  }
-});
-
 function disconnect() {
-  pera.disconnect();
+  c.pera.disconnect();
   account = null; found = null;
   $("b-connect").hidden = false;
   for (const id of ["b-disconnect", "b-activate", "b-unlock"]) $(id).hidden = true;
@@ -302,12 +163,26 @@ function disconnect() {
   setRow("r-token", "", "Waiting for a wallet");
   say("");
 }
+
+$("b-connect").addEventListener("click", async () => {
+  try {
+    const accounts = await c.pera.connect();
+    c.pera.connector?.on("disconnect", disconnect);
+    account = accounts[0];
+    say("");
+    await refresh();
+  } catch (e) {
+    if (e?.data?.type !== "CONNECT_MODAL_CLOSED") say(e.message || String(e), "err");
+  }
+});
 $("b-disconnect").addEventListener("click", disconnect);
 
-pera.reconnectSession().then((accounts) => {
-  pera.connector?.on("disconnect", disconnect);
-  if (accounts.length) { account = accounts[0]; refresh().catch((e) => say(e.message, "err")); }
-}).catch(() => {});
+if (cfg) {
+  c.pera.reconnectSession().then((accounts) => {
+    c.pera.connector?.on("disconnect", disconnect);
+    if (accounts.length) { account = accounts[0]; refresh().catch((e) => say(e.message, "err")); }
+  }).catch(() => {});
+}
 </script>
 </body>
 </html>

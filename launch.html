@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FALQBIT Launch</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./">FALQBIT</a>
+    <nav class="nets" aria-label="Network">
+      <a href="?net=mainnet" id="n-mainnet">MAINNET</a>
+      <a href="?net=testnet" id="n-testnet" class="test">TESTNET</a>
+    </nav>
+  </header>
+
+  <section>
+    <h1>Launch <em>FALQBIT</em>.</h1>
+    <p class="lede">Every step is signed in Pera by the project's Quantum Account. The key never leaves the phone. Rehearse on TestNet first, then repeat on MainNet.</p>
+  </section>
+
+  <div id="mainnet-guard" class="warnbox" hidden>
+    <strong>MainNet creates the real FALQBIT.</strong> The token and the gate contract can never be changed or deleted.
+    <label style="display:flex; gap:10px; align-items:center; margin-top:10px;"><input type="checkbox" id="guard"> I rehearsed on TestNet and I am ready.</label>
+  </div>
+
+  <section class="panel">
+    <div class="row" id="r-wallet"><span class="dot"></span><div><div class="label">Project account</div><div class="detail">Not connected</div></div></div>
+  </section>
+  <div class="actions">
+    <button class="primary" id="b-connect" type="button">Connect Pera Wallet</button>
+    <button class="ghost" id="b-disconnect" type="button" hidden>Disconnect</button>
+  </div>
+
+  <section class="panel" id="steps" aria-live="polite"></section>
+
+  <section class="panel" style="padding-block:16px; display:flex; flex-direction:column; gap:12px;">
+    <h2>First liquidity</h2>
+    <div class="grid2">
+      <label class="field">FALQBIT for the pool <input type="number" id="liq-fq" min="1" step="1"></label>
+      <label class="field">ALGO for the pool <input type="number" id="liq-algo" min="0.1" step="0.1"></label>
+    </div>
+    <p class="detail" id="liq-price"></p>
+  </section>
+
+  <div id="msg" class="msg" hidden></div>
+
+  <section class="panel" style="padding-block:16px; display:flex; flex-direction:column; gap:12px;">
+    <h2>Site config</h2>
+    <p class="detail">When the pool exists, copy this into <span class="mono">falqbit-config.json</span> on GitHub (keep the other network's entry) so the unlock page uses this launch.</p>
+    <pre class="out" id="config">Nothing yet.</pre>
+    <button class="ghost small" id="b-copy" type="button">Copy</button>
+  </section>
+
+  <p class="foot">Gate contract: compiled from <span class="mono">contract/falqbit_gate.py</span> in this site's repository (approval SHA-256 <span class="mono">f14801163a468bc7…</span>).</p>
+</div>
+
+<script type="module">
+import {
+  algosdk, NETWORKS, FEE_PQ, FEE_CALL, HOLDER_DEPOSIT, APP_DEPOSIT, POOL_BOOTSTRAP_ALGO,
+  client, pickNetwork, findFalconKey, signerOf, selector, enc, holderBox, appBox, poolLogicSig, short,
+} from "./falqbit.js";
+
+const APPROVAL = "CyAFAQAgCNTeASYECGFzc2V0X2lkCGFwcHJvdmVyAWEBcDEYQAAHKCNnKTIJZzEbQQBAMRkURDEYRIIHBAGXIl4Ey5etMQRlFIs0BLG8Jg0Ey5VpCwTipQBABBuO/Fk2GgCOBwAfAFYAkwChAPABJwGiADEZFDEYFBBDigECi/9zAkxJMgMSQQAFSIv/TIlMiTYaAUkVJRJEFzEAMgkSRCMoZUQURElxCUQyChJESXEKRDIDEkRJcQdEMgMSRElxAkREKExnIkMxFiIJSTgQIhJENhoBSRUlEkQXMQAjKWVEEkRJcgdEMgMTREsBOAcyChJETDgIgeQyD0QWK0xQgAGAvyJDMQAjKWVEEkQpMgNnIkMxFiIJSTgQIhJENhoBSRUkEkQ2GgJJFSISRDYaA0kjWYECCEsBFRJEVwIASRWBgQ4SRIAFUFFBZjFPAlBMUANLAYj/JERMSwESRIgA+CJDMRYiCUk4ECISRDYaAUkVJBJENhoCSRUlEkQXSRYrTFC9RQFESwGI/vBETHIIREsBEkSIAMEiQzYaAUcCFSQSRCMoZUxJTgJOA0RLAUxwAE4CSEmI/sNOAk4DKkxQSb1FAUEAPkxBAAlJvkRLAxNBAC0iRLxIsTEAIQSyCLIHIrIQI7IBs0EAFLEisi9LArIuSwGyLYEFshAjsgGzIkMjQv/QRgJJREsDSwNwAUgUREL/0yM2GgFHAhUkEkQqTFBJTgK9RQFAABRII4ABACNPAlSABBUffHVMULAiQ4j+OkxFA0EADUm+REsCEkEABCJC/9gjQv/UigMAIyhlRESL/TgHMgoSRCqL/lBJvUUBQAAIi/04CCEED0QyBDEWIghJSwIMQQAeSTgAi/4SQQARSTggMgMTQQAIIhREIghC/98jQv/1iwCL/7+xIyhlRCOyL4v+si6yLYEFshAjsgGziQ==";
+const CLEAR = "C4EBQw==";
+const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+
+const net = pickNetwork() || "testnet";
+const c = client(net);
+const T = NETWORKS[net].tinyman;
+const $ = (id) => document.getElementById(id);
+$("n-" + net).setAttribute("aria-current", "true");
+if (net === "mainnet") $("mainnet-guard").hidden = false;
+
+$("liq-fq").value = 5500000000;
+$("liq-algo").value = net === "mainnet" ? 500 : 1;
+
+let account = null;
+let S = {};          // launch state for this network + account
+const key = () => `falqbit-launch-${net}-${account}`;
+function load() { try { S = JSON.parse(localStorage.getItem(key()) || "{}"); } catch { S = {}; } }
+function save() { try { localStorage.setItem(key(), JSON.stringify(S)); } catch {} render(); }
+
+function say(html, kind = "") { const m = $("msg"); m.hidden = !html; m.className = "msg " + kind; m.innerHTML = html; }
+const lora = (kind, id) => `<a href="${c.n.lora}/${kind}/${id}" target="_blank" rel="noopener">${id}</a>`;
+
+async function falcon() {
+  const { signer } = await signerOf(c, account);
+  const f = await findFalconKey(c, account, signer);
+  if (!f) throw new Error("No Falcon key found for this account yet. Run step 1 first.");
+  return f;
+}
+
+// ---- steps ------------------------------------------------------------------
+const STEPS = [
+  {
+    id: "verify", title: "Confirm this is a Quantum Account",
+    info: () => S.verify ? `Falcon-1024 key found · salt ${S.verify}` : "Signs a 0 ALGO payment to yourself so the Falcon key is visible on-chain, then checks it.",
+    async run() {
+      const { signer } = await signerOf(c, account);
+      let f = await findFalconKey(c, account, signer);
+      if (!f) {
+        const t = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: account, amount: 0, suggestedParams: await c.params(FEE_PQ) });
+        await c.signAndSend([t]);
+        await new Promise((r) => setTimeout(r, 4000));
+        f = await findFalconKey(c, account, signer);
+      }
+      if (!f) throw new Error("This account is not authorised by a Falcon-1024 key. Use a Pera Quantum Account.");
+      S.verify = String(f.salt);
+    },
+  },
+  {
+    id: "app", title: "Create the gate contract",
+    info: () => S.app_id ? `App ${lora("application", S.app_id)}` : "Publishes the immutable gate contract.",
+    async run() {
+      const t = algosdk.makeApplicationCreateTxnFromObject({
+        sender: account, suggestedParams: await c.params(FEE_PQ),
+        onComplete: algosdk.OnApplicationComplete.NoOpOC,
+        approvalProgram: b64(APPROVAL), clearProgram: b64(CLEAR),
+        numGlobalInts: 1, numGlobalByteSlices: 1, numLocalInts: 0, numLocalByteSlices: 0,
+      });
+      const { info } = await c.signAndSend([t]);
+      S.app_id = Number(info["application-index"]);
+      S.app_address = algosdk.getApplicationAddress(S.app_id).toString();
+    },
+  },
+  {
+    id: "fund", title: "Fund the gate contract (0.3 ALGO)",
+    info: () => S.fund ? "Funded" : "Covers the contract's minimum balance.",
+    async run() {
+      const t = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: S.app_address, amount: 300000, suggestedParams: await c.params(FEE_PQ) });
+      await c.signAndSend([t]); S.fund = true;
+    },
+  },
+  {
+    id: "asset", title: "Create FALQBIT",
+    info: () => S.asset_id ? `Asset ${lora("asset", S.asset_id)}` : "10,000,000,000 FALQBIT · 6 decimals · frozen by default · freeze = gate · no clawback · no manager.",
+    async run() {
+      const t = algosdk.makeAssetCreateTxnWithSuggestedParamsFromObject({
+        sender: account, suggestedParams: await c.params(FEE_PQ),
+        total: 10000000000n * 1000000n, decimals: 6, defaultFrozen: true,
+        unitName: "FALQBIT", assetName: "FALQBIT", assetURL: "https://falqbit.github.io",
+        reserve: account, freeze: S.app_address,
+      });
+      const { info } = await c.signAndSend([t]);
+      S.asset_id = Number(info["asset-index"]);
+    },
+  },
+  {
+    id: "bind", title: "Bind FALQBIT to the gate",
+    info: () => S.bind ? "Bound. The contract checked the rules on-chain." : "The contract checks the asset is frozen by default, immutable and has no clawback.",
+    async run() {
+      const t = algosdk.makeApplicationNoOpTxnFromObject({
+        sender: account, appIndex: S.app_id, suggestedParams: await c.params(FEE_PQ),
+        appArgs: [selector("bind_asset(uint64)void"), enc("uint64", S.asset_id)], foreignAssets: [S.asset_id],
+      });
+      await c.signAndSend([t]); S.bind = true;
+    },
+  },
+  {
+    id: "tinyman", title: "Approve Tinyman v2",
+    info: () => S.tinyman ? `Tinyman validator ${T} approved` : `Lets pools controlled by the Tinyman v2 validator (${T}) hold FALQBIT.`,
+    async run() {
+      const pay = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: S.app_address, amount: APP_DEPOSIT, suggestedParams: await c.params(FEE_PQ) });
+      const call = algosdk.makeApplicationNoOpTxnFromObject({
+        sender: account, appIndex: S.app_id, suggestedParams: await c.params(FEE_PQ),
+        appArgs: [selector("approve_app(pay,uint64)void"), enc("uint64", T)],
+        foreignApps: [T], boxes: [{ appIndex: 0, name: appBox(T) }],
+      });
+      await c.signAndSend([pay, call], {}, 1); S.tinyman = true;
+    },
+  },
+  {
+    id: "creator", title: "Register the project account",
+    info: () => S.creator ? "Registered with the gate" : "Unlocks the project account through the gate so it can be relocked if its key ever changes.",
+    async run() {
+      const f = await falcon();
+      const pay = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: S.app_address, amount: HOLDER_DEPOSIT, suggestedParams: await c.params(FEE_PQ) });
+      const call = algosdk.makeApplicationNoOpTxnFromObject({
+        sender: account, appIndex: S.app_id, suggestedParams: await c.params(FEE_CALL),
+        appArgs: [selector("unlock_falcon(pay,address,byte,byte[])void"), enc("address", account), enc("byte", f.salt), enc("byte[]", Array.from(f.pk))],
+        foreignAssets: [S.asset_id], boxes: [{ appIndex: 0, name: holderBox(account) }],
+      });
+      await c.signAndSend([pay, call], {}, 1); S.creator = true;
+    },
+  },
+  {
+    id: "pool", title: "Create the Tinyman pool",
+    info: () => S.pool ? `Pool ${lora("account", S.pool)} · pool token ${lora("asset", S.pool_token)}` : `FALQBIT / ALGO. Funds the pool account with ${(POOL_BOOTSTRAP_ALGO / 1e6).toFixed(3)} ALGO.`,
+    async run() {
+      const lsig = poolLogicSig(net, S.asset_id);
+      const pool = lsig.address().toString();
+      const fund = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: pool, amount: POOL_BOOTSTRAP_ALGO, suggestedParams: await c.params(FEE_PQ) });
+      const boot = algosdk.makeApplicationOptInTxnFromObject({
+        sender: pool, appIndex: T, suggestedParams: await c.params(6000),
+        appArgs: [new TextEncoder().encode("bootstrap")], foreignAssets: [S.asset_id, 0],
+        rekeyTo: algosdk.getApplicationAddress(T),
+      });
+      algosdk.assignGroupID([fund, boot]);
+      const signedBoot = algosdk.signLogicSigTransactionObject(boot, lsig).blob;
+      const { info } = await c.signAndSend([fund, boot], { 1: signedBoot }, 1);
+      const inner = (info["inner-txns"] || []).find((i) => i["asset-index"]);
+      S.pool = pool; S.pool_token = Number(inner["asset-index"]);
+    },
+  },
+  {
+    id: "unlockpool", title: "Unlock the pool",
+    info: () => S.unlockpool ? "Pool unlocked by the gate" : "The gate checks the pool is controlled by the approved Tinyman code.",
+    async run() {
+      const pay = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: S.app_address, amount: HOLDER_DEPOSIT, suggestedParams: await c.params(FEE_PQ) });
+      const call = algosdk.makeApplicationNoOpTxnFromObject({
+        sender: account, appIndex: S.app_id, suggestedParams: await c.params(FEE_CALL),
+        appArgs: [selector("unlock_code(pay,address,uint64)void"), enc("address", S.pool), enc("uint64", T)],
+        accounts: [S.pool], foreignApps: [T], foreignAssets: [S.asset_id],
+        boxes: [{ appIndex: 0, name: holderBox(S.pool) }, { appIndex: 0, name: appBox(T) }],
+      });
+      await c.signAndSend([pay, call], {}, 1); S.unlockpool = true;
+    },
+  },
+  {
+    id: "lp", title: "Accept the pool token",
+    info: () => S.lp ? "Opted in" : "Opt in to the Tinyman pool token (your liquidity receipt).",
+    async run() {
+      const t = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({ sender: account, receiver: account, amount: 0, assetIndex: S.pool_token, suggestedParams: await c.params(FEE_PQ) });
+      await c.signAndSend([t]); S.lp = true;
+    },
+  },
+  {
+    id: "liquidity", title: "Add the first liquidity",
+    info: () => S.liquidity ? `Added ${S.liquidity}` : "Uses the amounts below. This sets the opening price.",
+    async run() {
+      const fq = BigInt(Math.round(Number($("liq-fq").value))) * 1000000n;
+      const al = BigInt(Math.round(Number($("liq-algo").value) * 1e6));
+      if (fq <= 0n || al <= 0n) throw new Error("Set both amounts first.");
+      const t1 = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({ sender: account, receiver: S.pool, amount: fq, assetIndex: S.asset_id, suggestedParams: await c.params(FEE_PQ) });
+      const t2 = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: S.pool, amount: al, suggestedParams: await c.params(FEE_PQ) });
+      const t3 = algosdk.makeApplicationNoOpTxnFromObject({
+        sender: account, appIndex: T, suggestedParams: await c.params(FEE_PQ + 2000),
+        appArgs: [new TextEncoder().encode("add_initial_liquidity")], foreignAssets: [S.pool_token], accounts: [S.pool],
+      });
+      await c.signAndSend([t1, t2, t3], {}, 2);
+      S.liquidity = `${(Number(fq) / 1e6).toLocaleString()} FALQBIT + ${(Number(al) / 1e6).toLocaleString()} ALGO`;
+    },
+  },
+  {
+    id: "renounce", title: "Renounce the approver (optional, later)",
+    optional: true,
+    info: () => S.renounce ? "Renounced. No more applications can ever be approved." : "Do this once every contract that should hold FALQBIT (e.g. staking) is approved. It cannot be undone.",
+    async run() {
+      const t = algosdk.makeApplicationNoOpTxnFromObject({
+        sender: account, appIndex: S.app_id, suggestedParams: await c.params(FEE_PQ),
+        appArgs: [selector("renounce_approver()void")],
+      });
+      await c.signAndSend([t]); S.renounce = true;
+    },
+  },
+];
+
+function render() {
+  const box = $("steps");
+  box.innerHTML = "";
+  const nextIdx = STEPS.findIndex((s) => !s.optional && !S[s.id === "app" ? "app_id" : s.id === "asset" ? "asset_id" : s.id === "pool" ? "pool" : s.id]);
+  STEPS.forEach((s, i) => {
+    const doneKey = s.id === "app" ? "app_id" : s.id === "asset" ? "asset_id" : s.id === "pool" ? "pool" : s.id;
+    const done = !!S[doneKey];
+    const row = document.createElement("div");
+    row.className = "row"; row.dataset.s = done ? "ok" : (i === nextIdx ? "warn" : "");
+    row.innerHTML = `<span class="dot"></span><div><div class="label">${i + 1}. ${s.title}</div><div class="detail">${s.info()}</div></div>`;
+    const btn = document.createElement("button");
+    btn.type = "button"; btn.className = done ? "ghost small" : "primary small";
+    btn.textContent = done ? "Done" : "Sign in Pera";
+    const isNext = s.optional ? nextIdx === -1 && !done : i === nextIdx;
+    btn.disabled = !account || done || !isNext || (net === "mainnet" && !$("guard").checked);
+    btn.addEventListener("click", async () => {
+      btn.disabled = true;
+      try {
+        say(`Step ${i + 1}: approve the request in Pera…`);
+        await s.run(); save();
+        say(`Step ${i + 1} done.`, "ok");
+      } catch (e) { say(`Step ${i + 1} failed: ${e.message || e}`, "err"); render(); }
+    });
+    row.appendChild(btn);
+    box.appendChild(row);
+  });
+  if (S.app_id && S.asset_id && S.pool) {
+    $("config").textContent = JSON.stringify({ [net]: {
+      app_id: S.app_id, app_address: S.app_address, asset_id: S.asset_id, pool: S.pool, pool_token: S.pool_token,
+    } }, null, 2);
+  } else if (account) {
+    $("config").textContent = "Appears once the pool exists.";
+  }
+  const fq = Number($("liq-fq").value), al = Number($("liq-algo").value);
+  $("liq-price").textContent = fq > 0 && al > 0 ? `Opening price ≈ ${(al / fq).toExponential(3)} ALGO per FALQBIT` : "";
+}
+
+$("liq-fq").addEventListener("input", render);
+$("liq-algo").addEventListener("input", render);
+$("guard").addEventListener("change", render);
+$("b-copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("config").textContent); $("b-copy").textContent = "Copied"; }
+  catch { const r = document.createRange(); r.selectNodeContents($("config")); getSelection().removeAllRanges(); getSelection().addRange(r); }
+});
+
+async function connected(addr) {
+  account = addr; load();
+  $("b-connect").hidden = true; $("b-disconnect").hidden = false;
+  const { info } = await signerOf(c, account);
+  const algo = info ? Number(info.amount) / 1e6 : 0;
+  const r = $("r-wallet"); r.dataset.s = "ok";
+  r.querySelector(".detail").textContent = `${short(account)} · ${algo.toFixed(3)} ALGO · ${NETWORKS[net].label}`;
+  render();
+}
+function disconnect() {
+  c.pera.disconnect(); account = null; S = {};
+  $("b-connect").hidden = false; $("b-disconnect").hidden = true;
+  const r = $("r-wallet"); r.dataset.s = ""; r.querySelector(".detail").textContent = "Not connected";
+  render();
+}
+$("b-connect").addEventListener("click", async () => {
+  try {
+    const accs = await c.pera.connect();
+    c.pera.connector?.on("disconnect", disconnect);
+    await connected(accs[0]);
+  } catch (e) { if (e?.data?.type !== "CONNECT_MODAL_CLOSED") say(e.message || String(e), "err"); }
+});
+$("b-disconnect").addEventListener("click", disconnect);
+c.pera.reconnectSession().then((accs) => {
+  c.pera.connector?.on("disconnect", disconnect);
+  if (accs.length) connected(accs[0]).catch((e) => say(e.message, "err"));
+}).catch(() => {});
+render();
+</script>
+</body>
+</html>

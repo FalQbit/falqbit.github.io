@@ -165,6 +165,25 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
   .hero-art .hot { animation: blink 4.8s ease-in-out infinite; }
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.72; } }
 }
+
+/* proof, limits, faq */
+.proof { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.proof li { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding-block: 14px; border-top: 1px solid var(--line); }
+.proof .ok { color: var(--cyan); font-weight: 700; }
+.proof .what { min-width: 0; }
+.proof .what span { display: block; color: var(--muted); font-size: 14px; }
+.proof a, .proof .tag { font: 500 13px/1.3 var(--mono); white-space: nowrap; }
+.proof .tag { color: var(--muted); }
+.code-card { border: 1px solid var(--line); border-radius: 18px; background: var(--surface); padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.code-card .hash { font: 500 13px/1.5 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.limits { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; color: var(--muted); max-width: 46em; }
+.limits strong { color: var(--fg); }
+.faq { display: flex; flex-direction: column; gap: 0; }
+.faq details { border-top: 1px solid var(--line); padding-block: 16px; }
+.faq summary { cursor: pointer; font-weight: 600; font-size: 18px; list-style-position: outside; }
+.faq summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
+.faq p { color: var(--muted); margin: 10px 0 0; max-width: 46em; }
+@media (max-width: 560px) { .proof li { grid-template-columns: 26px minmax(0, 1fr); } .proof a, .proof .tag { grid-column: 2; } }
 </style>
 </head><body>
 
@@ -555,7 +574,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 <circle cx="141" cy="78" r="6.5" fill="#8B7CFF"/>
 <circle cx="100" cy="100" r="97" fill="none" stroke="#3FE0D0" stroke-width="2.5"/>
 </svg><span>FALQBIT</span></div>
-    <span class="status-pill"><i aria-hidden="true"></i>Testing on TestNet</span>
+    <span class="status-pill"><i aria-hidden="true"></i>TestNet: fully tested</span>
   </header>
 
   <section class="hero" aria-labelledby="h-hero">
@@ -564,7 +583,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
       <h1 id="h-hero">The token that only lives in <em>post-quantum</em> accounts.</h1>
       <p class="lede">A quantum computer could one day forge the signatures that guard most crypto wallets. FALQBIT can only be held by accounts signed with Falcon-1024, the NIST-selected scheme built to resist that attack.</p>
       <div class="cta-row">
-        <a class="btn primary" href="./unlock.html">Try the unlock (TestNet)</a>
+        <a class="btn primary" href="./unlock.html?net=testnet">Try the unlock (TestNet)</a>
         <a class="btn ghost" href="#how">How it works</a>
         <a class="btn ghost" href="https://x.com/hashtag/FALQBIT" target="_blank" rel="noopener">Follow #FALQBIT on X</a>
       </div>
@@ -992,8 +1011,70 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     <div class="rules">
       <div class="rule"><h3>No clawback</h3><p>Nobody can take tokens out of your account. Not the contract, not the creator.</p></div>
       <div class="rule"><h3>No admin backdoor</h3><p>The freeze role belongs to a public smart contract, not to a person or a private key.</p></div>
-      <div class="rule"><h3>Keyless accounts allowed</h3><p>Liquidity pools and contracts have no private key to attack, so they can hold FALQBIT too.</p></div>
+      <div class="rule"><h3>Approved code only</h3><p>Pools and contracts can hold FALQBIT only if the code that controls them is on the gate's approved list, starting with Tinyman v2. The approver can only add to the list, and will give up the role for good.</p></div>
+      <div class="rule"><h3>Nothing can be changed</h3><p>The token has no manager and the gate contract cannot be updated or deleted. The rules you read here are the rules forever.</p></div>
       <div class="rule"><h3>Go back to classic, get locked again</h3><p>If an account rekeys away from Falcon, anyone can ask the contract to lock it. Your tokens stay yours and unlock again when you return to Falcon.</p></div>
+    </div>
+  </section>
+
+
+  <section class="sec" id="proof" aria-labelledby="h-proof">
+    <div class="sec-head">
+      <p class="eyebrow">Proof</p>
+      <h2 id="h-proof">Every rule, tested on-chain.</h2>
+      <p class="muted">The full flow ran on Algorand TestNet with the final contract. Each line links to the transaction or object on the Lora explorer.</p>
+    </div>
+    <ul class="proof">
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">First token minted by a Falcon-1024 account<span>Look for the PQSig tag: the transaction was signed post-quantum.</span></div><a href="https://lora.algokit.io/testnet/transaction/PINTCBLCXIHJED2CUW46ADDZ3DCIRFWSYWN2VKEOORFLWXDSCU7A" target="_blank" rel="noopener">PINTCBLCXI…</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Gate contract published<span>Immutable. Freezes and unfreezes by rule, nothing else.</span></div><a href="https://lora.algokit.io/testnet/application/775346075" target="_blank" rel="noopener">775346075</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Test token created frozen by default<span>No manager, no clawback, freeze role = the gate. Checked by the contract itself.</span></div><a href="https://lora.algokit.io/testnet/asset/775346086" target="_blank" rel="noopener">775346086</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Tinyman pool unlocked by the gate<span>The pool is controlled by the approved Tinyman v2 code.</span></div><a href="https://lora.algokit.io/testnet/account/RE6ETC5PPZEUZ3A2CX6APOBRXKF5XYZSZWJ7RAAWCKDV7LWQADDH6QVZIU" target="_blank" rel="noopener">Pool account</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Liquidity added<span>2,000,000 test tokens + 2 ALGO in the pool.</span></div><a href="https://lora.algokit.io/testnet/asset/775346105" target="_blank" rel="noopener">Pool token</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Bought through Tinyman<span>0.1 ALGO swapped for the test token from a Falcon account.</span></div><a href="https://lora.algokit.io/testnet/transaction/ESGLD6DI4FPKS5QMG4HVJCWXT4VIAQML3GVQ5O3542SCKEXSTRQQ" target="_blank" rel="noopener">ESGLD6DI4F…</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Pera Quantum Account unlocked from the web page<span>Connect Pera, two taps, unlocked by the contract (tested on the first gate version).</span></div><span class="tag">Pera</span></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Classic Ed25519 account refused<span>The network answered: asset frozen in recipient.</span></div><span class="tag">refused</span></li>
+    </ul>
+  </section>
+
+  <section class="sec" id="code" aria-labelledby="h-code">
+    <div class="sec-head">
+      <p class="eyebrow">Open source</p>
+      <h2 id="h-code">Read the rules yourself.</h2>
+    </div>
+    <div class="code-card">
+      <p class="muted" style="margin:0">The gate contract is about 150 lines of Algorand Python. The source, the compiled program and the ABI are public in this site's repository. An independent automated review found no way for a classic account to unlock, and its fixes are part of this version. There has been no professional audit yet.</p>
+      <div class="cta-row">
+        <a class="btn ghost" href="https://github.com/FalQbit/falqbit.github.io/tree/main/contract" target="_blank" rel="noopener">View the contract on GitHub</a>
+      </div>
+      <p class="hash">Compiled approval program SHA-256: f14801163a468bc7e990531cd866dd21fe69a6f5d0b7bf0bd71cd8109e4f95a9</p>
+    </div>
+  </section>
+
+  <section class="sec" id="limits" aria-labelledby="h-limits">
+    <div class="sec-head">
+      <p class="eyebrow">Honest limits</p>
+      <h2 id="h-limits">What FALQBIT does not solve.</h2>
+    </div>
+    <ul class="limits">
+      <li><strong>Algorand consensus is still classical.</strong> Accounts and chain history are post-quantum; block voting is on Algorand's roadmap for 2027.</li>
+      <li><strong>Relocking happens after the fact.</strong> If an unlocked account rekeys back to a classic key, it stays unlocked until someone calls relock. Anyone can, and they earn the account's deposit for it.</li>
+      <li><strong>Approved code is a trust point.</strong> Until the approver role is renounced, the project can add applications to the approved list. It can never freeze, unfreeze or take tokens.</li>
+      <li><strong>Code-controlled addresses.</strong> Application and pool addresses are hashes. Whether such an address could be attacked by a future quantum computer depends on Algorand's ledger roadmap, not on this contract.</li>
+      <li><strong>Tinyman protocol fees.</strong> Fees paid in FALQBIT cannot be claimed by Tinyman's classic fee account. This does not affect traders.</li>
+    </ul>
+  </section>
+
+  <section class="sec" id="faq" aria-labelledby="h-faq">
+    <div class="sec-head">
+      <p class="eyebrow">FAQ</p>
+      <h2 id="h-faq">Questions people ask.</h2>
+    </div>
+    <div class="faq">
+      <details><summary>How do I get a quantum account?</summary><p>In Pera Wallet, tap + to add an account and choose Add Quantum Account. You can also rekey an existing account to a Falcon-1024 key and keep the same address.</p></details>
+      <details><summary>Can I lose my FALQBIT?</summary><p>Nobody can take them: there is no clawback. If you send to a classic account, the transfer is refused and the tokens stay with you. As with any crypto, losing your recovery phrase means losing access.</p></details>
+      <details><summary>What happens if I switch back to a classic key?</summary><p>Anyone can relock your holding. Your tokens stay yours, and you can unlock again after switching back to a Falcon key.</p></details>
+      <details><summary>Why are the fees higher?</summary><p>A Falcon-1024 signature is much larger than a classic one, so Algorand charges about three minimum fees for it: around 0.003 ALGO per transaction.</p></details>
+      <details><summary>Why can't I buy it on an exchange?</summary><p>An exchange would have to hold FALQBIT in quantum accounts. Any exchange can do that and unlock its accounts the same way you do.</p></details>
     </div>
   </section>
 
@@ -1042,8 +1123,8 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     </div>
     <ol class="road">
       <li class="done"><span class="state">Done</span><h3>Name and identity</h3><p>FALQBIT, the lattice falcon, the project quantum account and this site.</p></li>
-      <li class="now"><span class="state">In progress</span><h3>TestNet</h3><p>Gate contract live and tested. Unlock page in testing.</p></li>
-      <li><span class="state">Next</span><h3>Mainnet launch</h3><p>Token, contract and Tinyman pool on the same day.</p></li>
+      <li class="done"><span class="state">Done</span><h3>TestNet</h3><p>Gate contract, Tinyman pool, swaps and the Pera unlock page, all tested.</p></li>
+      <li class="now"><span class="state">Next</span><h3>Mainnet launch</h3><p>Token, contract and Tinyman pool on the same day.</p></li>
       <li><span class="state">Then</span><h3>Airdrop and staking</h3><p>Rewards for the first quantum accounts.</p></li>
     </ol>
   </section>
