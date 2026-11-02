@@ -216,6 +216,41 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 @media (max-width: 560px) { .proof li { grid-template-columns: 26px minmax(0, 1fr); } .proof a, .proof .tag { grid-column: 2; } }
 
 /* ---- modern layer ---- */
+.act { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); border: 1px solid rgba(60,78,122,.55); border-radius: 18px; background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.55)); }
+.act-chart { padding: 20px; position: relative; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.act-stats { border-left: 1px solid var(--line); padding: 20px; display: flex; flex-direction: column; gap: 18px; justify-content: center; }
+.act-stats > div { display: flex; flex-direction: column; gap: 4px; }
+.act-stats > div + div { border-top: 1px solid var(--line); padding-top: 16px; }
+.act-stats .k { font: 500 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); }
+.act-stats .v { font: 800 32px/1.05 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.act-stats .s { color: var(--muted); font-size: 13px; }
+.act-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.act-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.act-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.act-plot svg { display: block; width: 100%; height: auto; }
+.act-plot .ax { font: 500 11px var(--mono); fill: var(--muted); }
+.act-plot .grid { stroke: rgba(169,180,208,.14); stroke-width: 1; }
+.act-plot .hit { fill: transparent; cursor: default; }
+.act-plot .hit:hover { fill: rgba(232,236,246,.05); }
+.act-tip { position: absolute; pointer-events: none; z-index: 2; background: var(--ground); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 13px; min-width: 150px; box-shadow: 0 10px 30px -10px rgba(0,0,0,.6); }
+.act-tip b { display: block; margin-bottom: 6px; }
+.act-tip div { display: flex; justify-content: space-between; gap: 14px; color: var(--muted); }
+.act-tip div span:last-child { color: var(--fg); font-variant-numeric: tabular-nums; }
+.act-tip i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 6px; }
+.act-table summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.act-table .htable-wrap { margin-top: 10px; }
+@media (max-width: 860px) { .act { grid-template-columns: minmax(0, 1fr); } .act-stats { border-left: 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: 1fr 1fr; } .act-stats > div + div { border-top: 0; padding-top: 0; } }
+.hstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .hstats { grid-template-columns: minmax(0, 1fr); } }
+.htable-wrap { overflow-x: auto; border: 1px solid rgba(60,78,122,.55); border-radius: 16px; background: linear-gradient(180deg, rgba(24,34,62,.6), rgba(18,26,48,.45)); }
+.htable { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; min-width: 460px; }
+.htable th { text-align: left; font: 500 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.htable td { padding: 13px 16px; border-bottom: 1px solid rgba(36,48,79,.6); font-size: 15px; }
+.htable tr:last-child td { border-bottom: 0; }
+.htable th:not(:first-child), .htable td:not(:first-child) { text-align: right; }
+.htable td:first-child { font: 500 14px/1.3 var(--mono); }
+.htable tr.proj td { color: var(--muted); }
+.htable .barc { display: inline-block; height: 6px; border-radius: 3px; background: var(--cyan); vertical-align: middle; margin-left: 8px; }
 .hero-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin: 0; color: var(--muted); font-size: 15px; }
 .hero-meta a { color: var(--fg); }
 .proof-h { display: flex; align-items: center; gap: 12px; font: 600 16px/1.3 var(--body); color: var(--muted); margin: 8px 0 -14px; }
@@ -669,6 +704,7 @@ body { overflow-x: clip; }
       <a href="#how">How it works</a>
       <a href="#rewards">Rewards</a>
       <a href="#supply">Supply</a>
+      <a href="#holders">Holders</a>
       <a href="#proof">Proof</a>
       <a href="#faq">FAQ</a>
     </nav>
@@ -1192,7 +1228,49 @@ body { overflow-x: clip; }
       <li><div class="what">Rewards<span>Hold-to-earn and welcome drops (25% + 2%). Every payout leaves from here.</span></div><span class="bal" data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q">…</span><a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">V4J46S…CPTC2Q</a></li>
       <li><div class="what">Team<span>Team allocation (5%)</span></div><span class="bal" data-addr="XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q">…</span><a href="https://lora.algokit.io/mainnet/account/XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q" target="_blank" rel="noopener">XMKDQF…GBDT7Q</a></li>
       <li><div class="what">Project<span>Creator account and project reserve (5%)</span></div><span class="bal" data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU">…</span><a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></li>
+          <li><div class="what">Held by the community<span>Everyone else: buyers, welcome drops and rewards paid out.</span></div><span class="bal" id="bal-community">…</span><a href="#holders">See holders</a></li>
     </ul>
+  </section>
+
+  <section class="sec reveal" id="holders" aria-labelledby="h-holders">
+    <div class="sec-head">
+      <p class="eyebrow">Holders</p>
+      <h2 id="h-holders">Who holds FALQBIT.</h2>
+      <p class="muted">Every wallet that holds FALQBIT, grouped by size. Live from the chain. Project accounts and the pool are counted apart.</p>
+    </div>
+    <div class="hstats">
+      <div class="stat"><span class="k">Holders</span><span class="v" id="h-count">…</span><span class="s">community wallets with FALQBIT</span></div>
+      <div class="stat"><span class="k">Earning</span><span class="v" id="h-earn">…</span><span class="s">wallets with 1M+ (hold-to-earn)</span></div>
+      <div class="stat"><span class="k">Community share</span><span class="v" id="h-share">…</span><span class="s">of the 10B supply</span></div>
+    </div>
+    <div class="htable-wrap">
+      <table class="htable">
+        <thead><tr><th scope="col">Range (FALQBIT)</th><th scope="col">Wallets</th><th scope="col">Total FALQBIT</th><th scope="col">% of supply</th></tr></thead>
+        <tbody id="h-rows"><tr><td colspan="4" class="muted">Reading the chain…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="sec reveal" id="activity" aria-labelledby="h-activity">
+    <div class="sec-head">
+      <p class="eyebrow">Activity</p>
+      <h2 id="h-activity">FALQBIT on chain.</h2>
+      <p class="muted">The last 14 days, day by day (UTC). Live from the chain.</p>
+    </div>
+    <div class="act">
+      <div class="act-chart">
+        <div class="act-legend" id="act-legend"></div>
+        <div class="act-plot" id="act-plot"><p class="muted">Reading the chain…</p></div>
+        <div class="act-tip" id="act-tip" hidden></div>
+        <details class="act-table"><summary>Show as table</summary><div class="htable-wrap"><table class="htable"><thead><tr><th scope="col">Day</th><th scope="col">Buys</th><th scope="col">Sells</th><th scope="col">Unlocks</th><th scope="col">Transfers</th></tr></thead><tbody id="act-rows"></tbody></table></div></details>
+      </div>
+      <div class="act-stats">
+        <div><span class="k">Transactions</span><span class="v" id="act-tx">…</span><span class="s">FALQBIT actions, last 14 days</span></div>
+        <div><span class="k">Trades</span><span class="v" id="act-trades">…</span><span class="s" id="act-trades-s">buys and sells on Tinyman</span></div>
+        <div><span class="k">FALQBIT traded</span><span class="v" id="act-vol">…</span><span class="s">bought and sold, last 14 days</span></div>
+        <div><span class="k">Unlocks</span><span class="v" id="act-unl">…</span><span class="s">accounts unlocked by the gate</span></div>
+      </div>
+    </div>
   </section>
 
   <section class="sec reveal" aria-labelledby="h-rules">
@@ -1354,7 +1432,113 @@ document.documentElement.classList.add("js");
       }).catch(function () { el.textContent = "–"; });
     });
   }
-  load(); loadHeld(); setInterval(function () { load(); loadHeld(); }, 60000);
+  var IDX = "https://mainnet-idx.algonode.cloud";
+  var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": "Liquidity pool", "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": "Rewards", "XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q": "Team", "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU": "Project" };
+  var RANGES = [[0, 1e6, "Under 1M"], [1e6, 1e7, "1M – 10M"], [1e7, 1e8, "10M – 100M"], [1e8, 1e9, "100M – 1B"], [1e9, Infinity, "1B+"]];
+  function allBalances(next, acc) {
+    acc = acc || [];
+    return fetch(IDX + "/v2/assets/" + ASSET + "/balances?limit=1000&currency-greater-than=0" + (next ? "&next=" + encodeURIComponent(next) : ""))
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) { acc = acc.concat(j.balances || []); return j["next-token"] && (j.balances || []).length ? allBalances(j["next-token"], acc) : acc; });
+  }
+  function loadHolders() {
+    allBalances().then(function (list) {
+      var comm = list.filter(function (b) { return !PROJECT[b.address] && !b.deleted && b.amount > 0; });
+      var rows = RANGES.map(function (r) { return { label: r[2], n: 0, sum: 0, lo: r[0], hi: r[1] }; });
+      var total = 0;
+      comm.forEach(function (b) { var v = b.amount / 1e6; total += v; rows.forEach(function (r) { if (v >= r.lo && v < r.hi) { r.n++; r.sum += v; } }); });
+      var max = Math.max.apply(null, rows.map(function (r) { return r.sum; }).concat([1]));
+      var html = rows.map(function (r) {
+        var pct = r.sum / SUPPLY * 100;
+        return "<tr><td>" + r.label + "</td><td>" + fmt(r.n, 0) + "</td><td>" + fmt(r.sum, 0) + "</td><td>" + (pct > 0 && pct < 0.01 ? "<0.01" : fmt(pct, 2)) + "%<span class=\"barc\" style=\"width:" + Math.max(2, Math.round(60 * r.sum / max)) + "px\"></span></td></tr>";
+      }).join("");
+      var proj = list.filter(function (b) { return PROJECT[b.address]; });
+      var psum = proj.reduce(function (s, b) { return s + b.amount / 1e6; }, 0);
+      html += "<tr class=\"proj\"><td>Pool and project accounts</td><td>" + proj.length + "</td><td>" + fmt(psum, 0) + "</td><td>" + fmt(psum / SUPPLY * 100, 2) + "%</td></tr>";
+      $("h-rows").innerHTML = html;
+      $("h-count").textContent = fmt(comm.length, 0);
+      $("h-earn").textContent = fmt(comm.filter(function (b) { return b.amount >= 1e12; }).length, 0);
+      $("h-share").textContent = fmt(total / SUPPLY * 100, 1) + "%";
+      var cb = $("bal-community"); if (cb) cb.textContent = fmt(total, 0) + " FALQBIT";
+    }).catch(function () { $("h-rows").innerHTML = "<tr><td colspan=\"4\" class=\"muted\">Could not read the chain right now. Try again in a minute.</td></tr>"; });
+  }
+  // ---- activity: last 14 days of FALQBIT actions ----
+  var POOL_ADDR = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
+  var SERIES = [["buys", "Buys", "#1F9E94"], ["sells", "Sells", "#7A6EE6"], ["unlocks", "Unlocks", "#B97F18"], ["transfers", "Transfers", "#4C7FDB"]];
+  function allTx(after, next, acc) {
+    acc = acc || [];
+    return fetch(IDX + "/v2/assets/" + ASSET + "/transactions?limit=1000&after-time=" + encodeURIComponent(after) + (next ? "&next=" + encodeURIComponent(next) : ""))
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length ? allTx(after, j["next-token"], acc) : acc; });
+  }
+  function dayKey(t) { return new Date(t * 1000).toISOString().slice(0, 10); }
+  function loadActivity() {
+    var now = new Date(); var start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 13));
+    var days = []; for (var d = 0; d < 14; d++) { var x = new Date(start.getTime() + d * 86400000); days.push({ key: x.toISOString().slice(0, 10), date: x, buys: 0, sells: 0, unlocks: 0, transfers: 0 }); }
+    var byKey = {}; days.forEach(function (d) { byKey[d.key] = d; });
+    allTx(start.toISOString()).then(function (roots) {
+      var vol = 0, seen = {};
+      function walk(t, time) {
+        var k = byKey[dayKey(time)];
+        if (k) {
+          var a = t["asset-transfer-transaction"], f = t["asset-freeze-transaction"];
+          if (t["tx-type"] === "axfer" && a && a["asset-id"] === ASSET && a.amount > 0) {
+            if (t.sender === POOL_ADDR) { k.buys++; vol += a.amount / 1e6; }
+            else if (a.receiver === POOL_ADDR) { k.sells++; vol += a.amount / 1e6; }
+            else k.transfers++;
+          } else if (t["tx-type"] === "afrz" && f && f["asset-id"] === ASSET && f["new-freeze-status"] === false) k.unlocks++;
+        }
+        (t["inner-txns"] || []).forEach(function (it) { walk(it, time); });
+      }
+      roots.forEach(function (t) { if (seen[t.id]) return; seen[t.id] = 1; walk(t, t["round-time"]); });
+      drawActivity(days);
+      var tot = days.reduce(function (s, d) { return s + d.buys + d.sells + d.unlocks + d.transfers; }, 0);
+      var b = days.reduce(function (s, d) { return s + d.buys; }, 0), sl = days.reduce(function (s, d) { return s + d.sells; }, 0);
+      $("act-tx").textContent = fmt(tot, 0);
+      $("act-trades").textContent = fmt(b + sl, 0);
+      $("act-trades-s").textContent = fmt(b, 0) + " buys · " + fmt(sl, 0) + " sells on Tinyman";
+      $("act-vol").textContent = vol >= 1e9 ? fmt(vol / 1e9, 2) + "B" : vol >= 1e6 ? fmt(vol / 1e6, 1) + "M" : fmt(vol, 0);
+      $("act-unl").textContent = fmt(days.reduce(function (s, d) { return s + d.unlocks; }, 0), 0);
+    }).catch(function () { $("act-plot").innerHTML = "<p class=\"muted\">Could not read the chain right now. Try again in a minute.</p>"; });
+  }
+  function niceMax(v) { var raw = Math.max(1, v / 4), p = Math.pow(10, Math.floor(Math.log10(raw))); var step = [1, 2, 5, 10].map(function (m) { return m * p; }).find(function (s) { return s >= raw; }); return Math.max(1, Math.ceil(step)) * 4; }
+  var lastDays = null, rz = null;
+  window.addEventListener("resize", function () { clearTimeout(rz); rz = setTimeout(function () { if (lastDays) drawActivity(lastDays); }, 200); });
+  function drawActivity(days) {
+    lastDays = days;
+    var W = Math.max(300, Math.round($("act-plot").clientWidth || 640)), H = W < 500 ? 220 : 260, L = 34, R = 8, T = 10, B = 26, pw = W - L - R, ph = H - T - B;
+    var max = niceMax(Math.max.apply(null, days.map(function (d) { return d.buys + d.sells + d.unlocks + d.transfers; }).concat([1])));
+    var bw = pw / days.length, barW = Math.max(6, bw * 0.62), svg = "";
+    for (var g = 0; g <= 4; g++) { var gy = T + ph - ph * g / 4; svg += "<line class=\"grid\" x1=\"" + L + "\" x2=\"" + (W - R) + "\" y1=\"" + gy + "\" y2=\"" + gy + "\"/><text class=\"ax\" x=\"" + (L - 8) + "\" y=\"" + (gy + 4) + "\" text-anchor=\"end\">" + fmt(max * g / 4, 0) + "</text>"; }
+    days.forEach(function (d, i) {
+      var x = L + i * bw + (bw - barW) / 2, y = T + ph, parts = SERIES.filter(function (s) { return d[s[0]] > 0; });
+      parts.forEach(function (s, j) {
+        var h = ph * d[s[0]] / max, top = j === parts.length - 1, gap = j > 0 ? 2 : 0;
+        var yy = y - h, hh = Math.max(0, h - gap);
+        if (top) { var r = Math.min(4, hh, barW / 2); svg += "<path fill=\"" + s[2] + "\" d=\"M" + x + "," + (y - gap) + "V" + (yy + r) + "Q" + x + "," + yy + " " + (x + r) + "," + yy + "H" + (x + barW - r) + "Q" + (x + barW) + "," + yy + " " + (x + barW) + "," + (yy + r) + "V" + (y - gap) + "Z\"/>"; }
+        else svg += "<rect fill=\"" + s[2] + "\" x=\"" + x + "\" y=\"" + yy + "\" width=\"" + barW + "\" height=\"" + hh + "\"/>";
+        y = yy;
+      });
+      if ((W < 500 ? i % 3 === 1 : i % 2 === 1) || days.length <= 7) svg += "<text class=\"ax\" x=\"" + (L + i * bw + bw / 2) + "\" y=\"" + (H - 8) + "\" text-anchor=\"middle\">" + d.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }) + "</text>";
+      svg += "<rect class=\"hit\" data-i=\"" + i + "\" x=\"" + (L + i * bw) + "\" y=\"" + T + "\" width=\"" + bw + "\" height=\"" + ph + "\"/>";
+    });
+    $("act-plot").innerHTML = "<svg viewBox=\"0 0 " + W + " " + H + "\" role=\"img\" aria-label=\"FALQBIT actions per day, last 14 days\">" + svg + "</svg>";
+    $("act-legend").innerHTML = SERIES.map(function (s) { return "<span><i style=\"background:" + s[2] + "\"></i>" + s[1] + "</span>"; }).join("");
+    $("act-rows").innerHTML = days.slice().reverse().map(function (d) { return "<tr><td>" + d.key + "</td><td>" + d.buys + "</td><td>" + d.sells + "</td><td>" + d.unlocks + "</td><td>" + d.transfers + "</td></tr>"; }).join("");
+    var tip = $("act-tip"), wrap = $("act-plot").parentNode;
+    $("act-plot").querySelectorAll(".hit").forEach(function (h) {
+      h.addEventListener("mousemove", function (ev) {
+        var d = days[+h.dataset.i];
+        tip.innerHTML = "<b>" + d.date.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" }) + "</b>" + SERIES.map(function (s) { return "<div><span><i style=\"background:" + s[2] + "\"></i>" + s[1] + "</span><span>" + d[s[0]] + "</span></div>"; }).join("");
+        tip.hidden = false;
+        var rb = wrap.getBoundingClientRect(), x = ev.clientX - rb.left + 14, y = ev.clientY - rb.top + 14;
+        if (x + 170 > rb.width) x = ev.clientX - rb.left - 180;
+        tip.style.left = x + "px"; tip.style.top = y + "px";
+      });
+      h.addEventListener("mouseleave", function () { tip.hidden = true; });
+    });
+  }
+  load(); loadHeld(); loadHolders(); loadActivity(); setInterval(function () { load(); loadHeld(); loadHolders(); loadActivity(); }, 60000);
 })();
 </script>
 </body></html>
