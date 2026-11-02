@@ -216,6 +216,32 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 @media (max-width: 560px) { .proof li { grid-template-columns: 26px minmax(0, 1fr); } .proof a, .proof .tag { grid-column: 2; } }
 
 /* ---- modern layer ---- */
+.stat .usd { display: block; color: var(--cyan); font: 500 13px/1.4 var(--mono); margin-top: 2px; }
+.conv { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 14px; margin-top: -52px; }
+.conv-rates { display: flex; flex-direction: column; gap: 10px; }
+.rate { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(60,78,122,.55); background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.5)); font-variant-numeric: tabular-nums; }
+.rate .eq { color: var(--muted); }
+.rate .val { font: 600 16px/1.2 var(--body); overflow-wrap: anywhere; }
+.rate .val.muted { color: var(--muted); font-weight: 500; font-size: 14px; text-align: right; }
+.tk { display: inline-flex; align-items: center; gap: 7px; font: 600 13px/1 var(--mono); letter-spacing: .04em; padding: 7px 10px; border-radius: 999px; white-space: nowrap; }
+.tk img { border-radius: 50%; }
+.tk.fq { background: rgba(63,224,208,.12); color: var(--cyan); padding-left: 4px; }
+.tk.algo { background: rgba(232,236,246,.08); color: var(--fg); }
+.tk.usdc { background: rgba(91,141,239,.16); color: #9DBBF7; }
+.conv-box { padding: 18px; border-radius: 16px; border: 1px solid rgba(60,78,122,.55); background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.5)); display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.conv-h { font: 700 18px/1.2 var(--display); margin: 0; }
+.conv-in { display: flex; flex-wrap: wrap; gap: 8px; }
+.conv-in input { flex: 1 1 140px; min-width: 0; background: var(--ground); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font: 600 18px/1.2 var(--mono); }
+.conv-in input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.seg3 { display: inline-grid; grid-template-columns: repeat(3, auto); gap: 4px; padding: 4px; border-radius: 12px; background: var(--ground); border: 1px solid var(--line); }
+.seg3 button { border: 0; border-radius: 9px; padding: 0 12px; min-height: 38px; background: transparent; color: var(--muted); font: 600 13px/1 var(--mono); cursor: pointer; }
+.seg3 button[aria-pressed="true"] { background: var(--raise, #18223E); color: var(--fg); }
+.conv-out { display: flex; flex-direction: column; gap: 8px; }
+.conv-out div { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-block: 6px; border-top: 1px solid rgba(36,48,79,.7); }
+.conv-out b { font: 700 18px/1.2 var(--display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; text-align: right; }
+.fine-s { margin: 0; color: var(--muted); font-size: 12.5px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (max-width: 860px) { .conv { grid-template-columns: minmax(0, 1fr); margin-top: -36px; } }
 .act { display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr); border: 1px solid rgba(60,78,122,.55); border-radius: 18px; background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.55)); }
 .act-chart { padding: 20px; position: relative; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .act-stats { border-left: 1px solid var(--line); padding: 20px; display: flex; flex-direction: column; gap: 18px; justify-content: center; }
@@ -1115,11 +1141,37 @@ body { overflow-x: clip; }
   </section>
 
   <section class="stats reveal" aria-label="Live on-chain numbers">
-    <div class="stat"><span class="k">Price</span><span class="v" id="st-price">…</span><span class="s">ALGO per 1M FALQBIT</span></div>
-    <div class="stat"><span class="k">Pool liquidity</span><span class="v" id="st-pool">…</span><span class="s">ALGO in the Tinyman pool</span></div>
-    <div class="stat"><span class="k">Market value</span><span class="v" id="st-mcap">…</span><span class="s">ALGO, all 10B at pool price</span></div>
+    <div class="stat"><span class="k">Price</span><span class="v" id="st-price">…</span><span class="s">ALGO per 1M FALQBIT<span class="usd" id="st-price-usd"></span></span></div>
+    <div class="stat"><span class="k">Pool liquidity</span><span class="v" id="st-pool">…</span><span class="s">ALGO in the Tinyman pool<span class="usd" id="st-pool-usd"></span></span></div>
+    <div class="stat"><span class="k">Market value</span><span class="v" id="st-mcap">…</span><span class="s">ALGO, all 10B at pool price<span class="usd" id="st-mcap-usd"></span></span></div>
     <div class="stat"><span class="k">Unlocked accounts</span><span class="v" id="st-unlocked">…</span><span class="s">accounts approved by the gate</span></div>
     <p class="stats-note"><i aria-hidden="true"></i><span id="st-note">Reading Algorand MainNet…</span></p>
+  </section>
+
+  <section class="conv reveal" aria-labelledby="h-conv">
+    <div class="conv-rates" id="conv-rates">
+      <div class="rate"><span class="tk fq"><img src="./icon.png" alt="" width="22" height="22">1M FALQBIT</span><span class="eq">=</span><span class="val" id="r-fq-algo">…</span><span class="val muted" id="r-fq-usd">…</span></div>
+      <div class="rate"><span class="tk algo">1 ALGO</span><span class="eq">=</span><span class="val" id="r-algo-fq">…</span><span class="val muted" id="r-algo-usd">…</span></div>
+      <div class="rate"><span class="tk usdc">1 USDC</span><span class="eq">=</span><span class="val" id="r-usdc-fq">…</span><span class="val muted" id="r-usdc-algo">…</span></div>
+    </div>
+    <div class="conv-box">
+      <h2 id="h-conv" class="conv-h">Converter</h2>
+      <div class="conv-in">
+        <label class="sr" for="cv-amount">Amount</label>
+        <input id="cv-amount" type="number" inputmode="decimal" min="0" step="any" value="1000000">
+        <div class="seg3" role="group" aria-label="Currency">
+          <button type="button" data-c="fq" aria-pressed="true">FALQBIT</button>
+          <button type="button" data-c="algo" aria-pressed="false">ALGO</button>
+          <button type="button" data-c="usd" aria-pressed="false">USDC</button>
+        </div>
+      </div>
+      <div class="conv-out">
+        <div><span class="tk fq"><img src="./icon.png" alt="" width="18" height="18">FALQBIT</span><b id="cv-fq">…</b></div>
+        <div><span class="tk algo">ALGO</span><b id="cv-algo">…</b></div>
+        <div><span class="tk usdc">USDC</span><b id="cv-usd">…</b></div>
+      </div>
+      <p class="fine-s">Prices from the Tinyman FALQBIT/ALGO and ALGO/USDC pools, read live from the chain. Large trades move the price.</p>
+    </div>
   </section>
 
   <section class="sec reveal" id="how" aria-labelledby="h-how">
@@ -1405,7 +1457,40 @@ document.documentElement.classList.add("js");
   function $(id) { return document.getElementById(id); }
   function fmt(n, d) { return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); }
   function get(p) { return fetch(ALGOD + p).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  var USDC_POOL = "2PIFZW53RHCSFSYMCFUBW4XOCXOMB7XOYQSQ6KGT3KVGJTL4HM6COZRNMM";
+  var PX = { algoPerFq: 0, usdPerAlgo: 0 }, cvCur = "fq";
+  function usd(n) { if (!(n > 0)) return "$0"; if (n < 1) return "$" + Number(n.toPrecision(3)); return "$" + fmt(n, n < 100 ? 2 : 0); }
+  function amt(n) { if (!(n > 0)) return "0"; if (n < 1) return n.toPrecision(3); return fmt(n, n < 1000 ? 2 : 0); }
+  function renderPx() {
+    var a = PX.algoPerFq, u = PX.usdPerAlgo;
+    if (!a) return;
+    $("r-fq-algo").textContent = fmt(a * 1e6, 3) + " ALGO";
+    $("r-fq-usd").textContent = u ? usd(a * 1e6 * u) : "";
+    $("r-algo-fq").textContent = amt(1 / a) + " FALQBIT";
+    $("r-algo-usd").textContent = u ? usd(u) : "";
+    $("r-usdc-fq").textContent = u ? amt(1 / (u * a)) + " FALQBIT" : "–";
+    $("r-usdc-algo").textContent = u ? amt(1 / u) + " ALGO" : "";
+    var v = Number($("cv-amount").value) || 0, fq, al, us;
+    if (cvCur === "fq") { fq = v; al = v * a; us = al * u; }
+    else if (cvCur === "algo") { al = v; fq = v / a; us = v * u; }
+    else { us = v; al = u ? v / u : 0; fq = al / a; }
+    $("cv-fq").textContent = amt(fq); $("cv-algo").textContent = amt(al); $("cv-usd").textContent = u ? usd(us) : "–";
+  }
+  document.querySelectorAll(".seg3 button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      cvCur = b.dataset.c;
+      document.querySelectorAll(".seg3 button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      $("cv-amount").value = cvCur === "fq" ? 1000000 : cvCur === "algo" ? 1 : 1;
+      renderPx();
+    });
+  });
+  $("cv-amount").addEventListener("input", renderPx);
   function load() {
+    var usdp = get("/v2/accounts/" + USDC_POOL + "/applications/" + TINYMAN).then(function (j) {
+      var kv = (j["app-local-state"] || {})["key-value"] || [], r = {};
+      kv.forEach(function (x) { r[atob(x.key)] = x.value.uint; });
+      return r.asset_1_reserves / r.asset_2_reserves; // USDC per ALGO (both 6 decimals)
+    }).catch(function () { return 0; });
     var reserves = get("/v2/accounts/" + POOL + "/applications/" + TINYMAN).then(function (j) {
       var kv = (j["app-local-state"] || {})["key-value"] || [], r = {};
       kv.forEach(function (x) { r[atob(x.key)] = x.value.uint; });
@@ -1414,14 +1499,21 @@ document.documentElement.classList.add("js");
     var unlocked = get("/v2/applications/" + GATE + "/boxes?max=100000").then(function (j) {
       return (j.boxes || []).filter(function (b) { return atob(b.name).charAt(0) === "a"; }).length;
     });
-    reserves.then(function (r) {
-      var p = r.algo / r.fq;
+    Promise.all([reserves, usdp]).then(function (x) {
+      var r = x[0], u = x[1], p = r.algo / r.fq;
+      PX.algoPerFq = p; PX.usdPerAlgo = u;
       $("st-price").textContent = fmt(p * 1e6, 3);
       $("st-pool").textContent = fmt(r.algo, 1);
       $("st-mcap").textContent = fmt(p * SUPPLY, 0);
+      if (u) {
+        $("st-price-usd").textContent = "≈ " + usd(p * 1e6 * u) + " per 1M";
+        $("st-pool-usd").textContent = "≈ " + usd(r.algo * u * 2) + " total value";
+        $("st-mcap-usd").textContent = "≈ " + usd(p * SUPPLY * u);
+      }
+      renderPx();
     }).catch(function () { ["st-price", "st-pool", "st-mcap"].forEach(function (id) { $(id).textContent = "–"; }); });
     unlocked.then(function (n) { $("st-unlocked").textContent = fmt(n, 0); }).catch(function () { $("st-unlocked").textContent = "–"; });
-    Promise.allSettled([reserves, unlocked]).then(function () {
+    Promise.allSettled([reserves, unlocked, usdp]).then(function () {
       $("st-note").textContent = "Live from Algorand MainNet · updated " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     });
   }
