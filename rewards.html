@@ -84,13 +84,14 @@ import { algosdk, NETWORKS, client, loadConfig, pickNetwork, short } from "./fal
 // ---- rules -------------------------------------------------------------
 const DEC = 1_000_000n;                    // 6 decimals
 const WELCOME = 1_000_000n * DEC;          // 1,000,000 FALQBIT per new account
-const WELCOME_CAP = 1000;                  // first 1,000 accounts
+const WELCOME_CAP = 200;                   // first 200 accounts
+const WELCOME_MIN_ALGO = 2_000_000;        // the account must hold at least 2 ALGO on payout day
 // Hold-to-earn rules. November 2026 keeps the launch announcement (1%, 62.5M pool);
-// from December 2026: 0.5% of the lowest balance since the 1st, max 1M per wallet, 15M pool, paid on the 25th.
+// from December 2026: 0.5% of the lowest balance since the 1st, max 500k per wallet, 15M pool, paid on the 25th.
 const PAY_DAY = 25;
 function holdRules(m) {
   if (m <= "2026-11") return { rate: 100n, pool: 62_500_000n * DEC, perWallet: null, lowest: false };
-  return { rate: 50n, pool: 15_000_000n * DEC, perWallet: 1_000_000n * DEC, lowest: true };
+  return { rate: 50n, pool: 15_000_000n * DEC, perWallet: 500_000n * DEC, lowest: true };
 }
 const MIN_HOLD = 1_000_000n * DEC;         // hold at least 1,000,000 FALQBIT
 const BATCH = 16;                          // Algorand group limit
@@ -160,9 +161,13 @@ async function unlockedAccounts() {
 async function buildWelcome() {
   const [unlocked, hold, paid] = await Promise.all([unlockedAccounts(), holders(), paidWith(NOTE_WELCOME)]);
   const left = Math.max(0, WELCOME_CAP - paid.size);
-  const due = unlocked.filter((a) => !EXCLUDE.has(a) && !SKIP.has(a) && !paid.has(a) && hold.has(a) && !hold.get(a).frozen)
-    .slice(0, left).map((a) => ({ to: a, amount: WELCOME }));
-  $("p-summary").textContent = `${unlocked.length} unlocked accounts on chain · ${paid.size} already welcomed · ${left} welcome drops left · ${due.length} to pay now (${fq(WELCOME * BigInt(due.length))} FALQBIT).`;
+  const cand = unlocked.filter((a) => !EXCLUDE.has(a) && !SKIP.has(a) && !paid.has(a) && hold.has(a) && !hold.get(a).frozen);
+  // anti-farming: the account must hold at least 2 ALGO right now
+  const algo = await Promise.all(cand.map((a) => c.algodGet(`/v2/accounts/${a}?exclude=all`).then((j) => Number(j?.amount || 0)).catch(() => 0)));
+  const ok = cand.filter((a, i) => algo[i] >= WELCOME_MIN_ALGO);
+  const low = cand.length - ok.length;
+  const due = ok.slice(0, left).map((a) => ({ to: a, amount: WELCOME }));
+  $("p-summary").textContent = `${unlocked.length} unlocked accounts on chain · ${paid.size} of ${WELCOME_CAP} welcomed · ${left} left · ${due.length} to pay now (${fq(WELCOME * BigInt(due.length))} FALQBIT)` + (low ? ` · ${low} skipped automatically (under ${WELCOME_MIN_ALGO / 1e6} ALGO)` : "") + ".";
   return due;
 }
 
@@ -280,7 +285,7 @@ function setMode(m) {
   $("p-summary").textContent = 'Press "Check the chain" to build the list.';
   if (m === "welcome") {
     $("p-title").textContent = "Welcome drop";
-    $("p-rules").innerHTML = `<li>${fq(WELCOME)} FALQBIT to every quantum account the gate has unlocked.</li><li>Only the first ${WELCOME_CAP.toLocaleString()} accounts. Each account once, ever.</li><li>Project accounts and the pool are left out. Transfers carry the note "${NOTE_WELCOME}".</li>`;
+    $("p-rules").innerHTML = `<li>${fq(WELCOME)} FALQBIT to every quantum account the gate has unlocked.</li><li>Only the first ${WELCOME_CAP.toLocaleString()} accounts. Each account once, ever. The account must hold at least ${WELCOME_MIN_ALGO / 1e6} ALGO; others are skipped automatically and can get it in a later round.</li><li>Project accounts and the pool are left out. Transfers carry the note "${NOTE_WELCOME}".</li>`;
   } else {
     $("p-title").textContent = "Hold-to-earn";
     const R = holdRules(month);
