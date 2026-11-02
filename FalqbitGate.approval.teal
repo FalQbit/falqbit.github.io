@@ -1,0 +1,709 @@
+#pragma version 11
+#pragma typetrack false
+
+// algopy.arc4.ARC4Contract.approval_program() -> uint64:
+main:
+    intcblock 1 0 32 8 28500
+    bytecblock "asset_id" "approver" 0x61 0x70
+    txn ApplicationID
+    bnz main_after_if_else@2
+    // falqbit_gate.py:59
+    // self.asset_id = GlobalState(UInt64(0))
+    bytec_0 // "asset_id"
+    intc_1 // 0
+    app_global_put
+    // falqbit_gate.py:60
+    // self.approver = GlobalState(Global.creator_address)
+    bytec_1 // "approver"
+    global CreatorAddress
+    app_global_put
+
+main_after_if_else@2:
+    // falqbit_gate.py:57
+    // class FalqbitGate(ARC4Contract):
+    txn NumAppArgs
+    bz main___algopy_default_create@16
+    txn OnCompletion
+    !
+    assert
+    txn ApplicationID
+    assert
+    pushbytess 0x0197225e 0xcb97ad31 0x65148b34 0xb1bc260d 0xcb95690b 0xe2a50040 0x1b8efc59 // method "bind_asset(uint64)void", method "approve_app(pay,uint64)void", method "renounce_approver()void", method "unlock_falcon(pay,address,byte,byte[])void", method "unlock_code(pay,address,uint64)void", method "relock(address)void", method "is_approved(address)bool"
+    txna ApplicationArgs 0
+    match bind_asset approve_app renounce_approver unlock_falcon unlock_code relock is_approved
+    err
+
+main___algopy_default_create@16:
+    txn OnCompletion
+    !
+    txn ApplicationID
+    !
+    &&
+    return
+
+
+// falqbit_gate.current_signer(acct: bytes) -> bytes, uint64:
+current_signer:
+    // falqbit_gate.py:48-49
+    // @subroutine
+    // def current_signer(acct: Account) -> tuple[Account, bool]:
+    proto 1 2
+    // falqbit_gate.py:51
+    // auth, funded = op.AcctParamsGet.acct_auth_addr(acct)
+    frame_dig -1
+    acct_params_get AcctAuthAddr
+    swap
+    dup
+    // falqbit_gate.py:52
+    // if auth == Global.zero_address:
+    global ZeroAddress
+    ==
+    bz current_signer_after_if_else@2
+    pop
+    // falqbit_gate.py:53
+    // return acct, funded
+    frame_dig -1
+    swap
+    retsub
+
+current_signer_after_if_else@2:
+    // falqbit_gate.py:54
+    // return auth, funded
+    swap
+    retsub
+
+
+// falqbit_gate.FalqbitGate.bind_asset[routing]() -> void:
+bind_asset:
+    // falqbit_gate.py:64-65
+    // # ---------------------------------------------------------------- setup
+    // @arc4.abimethod
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_3 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    // falqbit_gate.py:68
+    // assert Txn.sender == Global.creator_address, "creator only"
+    txn Sender
+    global CreatorAddress
+    ==
+    assert // creator only
+    // falqbit_gate.py:69
+    // assert self.asset_id.value == 0, "already bound"
+    intc_1 // 0
+    bytec_0 // "asset_id"
+    app_global_get_ex
+    assert // check self.asset_id exists
+    !
+    assert // already bound
+    // falqbit_gate.py:70
+    // assert asset.freeze == Global.current_application_address, "freeze must be this app"
+    dup
+    asset_params_get AssetFreeze
+    assert // asset exists
+    global CurrentApplicationAddress
+    ==
+    assert // freeze must be this app
+    // falqbit_gate.py:71
+    // assert asset.clawback == Global.zero_address, "clawback must be empty"
+    dup
+    asset_params_get AssetClawback
+    assert // asset exists
+    global ZeroAddress
+    ==
+    assert // clawback must be empty
+    // falqbit_gate.py:72
+    // assert asset.manager == Global.zero_address, "asset must be immutable"
+    dup
+    asset_params_get AssetManager
+    assert // asset exists
+    global ZeroAddress
+    ==
+    assert // asset must be immutable
+    // falqbit_gate.py:73
+    // assert asset.default_frozen, "asset must start frozen"
+    dup
+    asset_params_get AssetDefaultFrozen
+    assert // asset exists
+    assert // asset must start frozen
+    // falqbit_gate.py:74
+    // self.asset_id.value = asset.id
+    bytec_0 // "asset_id"
+    swap
+    app_global_put
+    // falqbit_gate.py:64-65
+    // # ---------------------------------------------------------------- setup
+    // @arc4.abimethod
+    intc_0 // 1
+    return
+
+
+// falqbit_gate.FalqbitGate.approve_app[routing]() -> void:
+approve_app:
+    // falqbit_gate.py:76
+    // @arc4.abimethod
+    txn GroupIndex
+    intc_0 // 1
+    -
+    dup
+    gtxns TypeEnum
+    intc_0 // pay
+    ==
+    assert // transaction type is pay
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_3 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    // falqbit_gate.py:79
+    // assert Txn.sender == self.approver.value, "approver only"
+    txn Sender
+    intc_1 // 0
+    bytec_1 // "approver"
+    app_global_get_ex
+    assert // check self.approver exists
+    ==
+    assert // approver only
+    // falqbit_gate.py:80
+    // assert app.creator != Global.zero_address, "application does not exist"
+    dup
+    app_params_get AppCreator
+    assert // application exists
+    global ZeroAddress
+    !=
+    assert // application does not exist
+    // falqbit_gate.py:81
+    // assert pay.receiver == Global.current_application_address, "pay the app"
+    dig 1
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    assert // pay the app
+    // falqbit_gate.py:82
+    // assert pay.amount >= APP_MBR, "deposit too small"
+    swap
+    gtxns Amount
+    pushint 6500
+    >=
+    assert // deposit too small
+    // falqbit_gate.py:83
+    // self.code_apps[app.id] = arc4.Bool(True)  # noqa: FBT003
+    itob
+    bytec_3 // 0x70
+    swap
+    concat
+    pushbytes 0x80
+    box_put
+    // falqbit_gate.py:76
+    // @arc4.abimethod
+    intc_0 // 1
+    return
+
+
+// falqbit_gate.FalqbitGate.renounce_approver[routing]() -> void:
+renounce_approver:
+    // falqbit_gate.py:88
+    // assert Txn.sender == self.approver.value, "approver only"
+    txn Sender
+    intc_1 // 0
+    bytec_1 // "approver"
+    app_global_get_ex
+    assert // check self.approver exists
+    ==
+    assert // approver only
+    // falqbit_gate.py:89
+    // self.approver.value = Global.zero_address
+    bytec_1 // "approver"
+    global ZeroAddress
+    app_global_put
+    // falqbit_gate.py:85
+    // @arc4.abimethod
+    intc_0 // 1
+    return
+
+
+// falqbit_gate.FalqbitGate.unlock_falcon[routing]() -> void:
+unlock_falcon:
+    // falqbit_gate.py:91-92
+    // # --------------------------------------------------------------- unlock
+    // @arc4.abimethod
+    txn GroupIndex
+    intc_0 // 1
+    -
+    dup
+    gtxns TypeEnum
+    intc_0 // pay
+    ==
+    assert // transaction type is pay
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_2 // 32
+    ==
+    assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
+    txna ApplicationArgs 2
+    dup
+    len
+    intc_0 // 1
+    ==
+    assert // invalid number of bytes for arc4.uint8
+    txna ApplicationArgs 3
+    dup
+    intc_1 // 0
+    extract_uint16 // on error: invalid array length header
+    pushint 2
+    +
+    dig 1
+    len
+    ==
+    assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
+    // falqbit_gate.py:104
+    // pk = public_key.native
+    extract 2 0
+    // falqbit_gate.py:105
+    // assert pk.length == FALCON1024_PK_LEN, "not a Falcon-1024 public key"
+    dup
+    len
+    pushint 1793
+    ==
+    assert // not a Falcon-1024 public key
+    // falqbit_gate.py:106
+    // derived = op.sha512_256(Bytes(b"PQAf1") + salt.bytes + pk)
+    pushbytes 0x5051416631
+    uncover 2
+    concat
+    swap
+    concat
+    sha512_256
+    // falqbit_gate.py:107
+    // signer, funded = current_signer(account)
+    dig 1
+    callsub current_signer
+    // falqbit_gate.py:108
+    // assert funded, "account does not exist"
+    assert // account does not exist
+    // falqbit_gate.py:109
+    // assert derived == signer.bytes, "account is not authorised by this Falcon key"
+    swap
+    dig 1
+    ==
+    assert // account is not authorised by this Falcon key
+    // falqbit_gate.py:110
+    // self._approve(pay, account, signer)
+    callsub _approve
+    // falqbit_gate.py:91-92
+    // # --------------------------------------------------------------- unlock
+    // @arc4.abimethod
+    intc_0 // 1
+    return
+
+
+// falqbit_gate.FalqbitGate.unlock_code[routing]() -> void:
+unlock_code:
+    // falqbit_gate.py:112
+    // @arc4.abimethod
+    txn GroupIndex
+    intc_0 // 1
+    -
+    dup
+    gtxns TypeEnum
+    intc_0 // pay
+    ==
+    assert // transaction type is pay
+    txna ApplicationArgs 1
+    dup
+    len
+    intc_2 // 32
+    ==
+    assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
+    txna ApplicationArgs 2
+    dup
+    len
+    intc_3 // 8
+    ==
+    assert // invalid number of bytes for arc4.uint64
+    btoi
+    // falqbit_gate.py:121
+    // assert app.id in self.code_apps, "application not approved"
+    dup
+    itob
+    bytec_3 // 0x70
+    swap
+    concat
+    box_len
+    bury 1
+    assert // application not approved
+    // falqbit_gate.py:122
+    // signer, funded = current_signer(account)
+    dig 1
+    callsub current_signer
+    // falqbit_gate.py:123
+    // assert funded, "account does not exist"
+    assert // account does not exist
+    // falqbit_gate.py:124
+    // assert signer == app.address, "account is not controlled by this application"
+    swap
+    app_params_get AppAddress
+    assert // application exists
+    dig 1
+    ==
+    assert // account is not controlled by this application
+    // falqbit_gate.py:125
+    // self._approve(pay, account, signer)
+    callsub _approve
+    // falqbit_gate.py:112
+    // @arc4.abimethod
+    intc_0 // 1
+    return
+
+
+// falqbit_gate.FalqbitGate.relock[routing]() -> void:
+relock:
+    // falqbit_gate.py:127-128
+    // # ---------------------------------------------------------------- relock
+    // @arc4.abimethod
+    txna ApplicationArgs 1
+    dupn 2
+    len
+    intc_2 // 32
+    ==
+    assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
+    // falqbit_gate.py:136
+    // asset = Asset(self.asset_id.value)
+    intc_1 // 0
+    bytec_0 // "asset_id"
+    app_global_get_ex
+    swap
+    dup
+    cover 2
+    cover 3
+    assert // check self.asset_id exists
+    // falqbit_gate.py:137
+    // _balance, opted = op.AssetHoldingGet.asset_balance(account, asset)
+    dig 1
+    swap
+    asset_holding_get AssetBalance
+    cover 2
+    pop
+    // falqbit_gate.py:138
+    // signer, funded = current_signer(account)
+    dup
+    callsub current_signer
+    cover 2
+    cover 3
+    // falqbit_gate.py:140
+    // if account in self.approved:
+    bytec_2 // 0x61
+    swap
+    concat
+    dup
+    box_len
+    bury 1
+    bz relock_else_body@8
+    // falqbit_gate.py:141
+    // assert (not funded) or signer != self.approved[account].native, (
+    swap
+    bz relock_bool_true@4
+    dup
+    box_get
+    assert // check self.approved entry exists
+    dig 3
+    !=
+    bz relock_bool_false@5
+
+relock_bool_true@4:
+    intc_0 // 1
+
+relock_bool_merge@6:
+    // falqbit_gate.py:141-143
+    // assert (not funded) or signer != self.approved[account].native, (
+    //     "authoriser unchanged"
+    // )
+    assert // authoriser unchanged
+    // falqbit_gate.py:144
+    // del self.approved[account]
+    box_del
+    pop
+    // falqbit_gate.py:145
+    // itxn.Payment(receiver=Txn.sender, amount=APPROVAL_MBR, fee=0).submit()
+    itxn_begin
+    txn Sender
+    intc 4 // 28500
+    itxn_field Amount
+    itxn_field Receiver
+    intc_0 // pay
+    itxn_field TypeEnum
+    intc_1 // 0
+    itxn_field Fee
+    itxn_submit
+
+relock_after_if_else@9:
+    // falqbit_gate.py:151
+    // if opted:
+    bz relock_after_if_else@12
+    // falqbit_gate.py:152-154
+    // itxn.AssetFreeze(
+    //     freeze_asset=asset, freeze_account=account, frozen=True, fee=0
+    // ).submit()
+    itxn_begin
+    // falqbit_gate.py:153
+    // freeze_asset=asset, freeze_account=account, frozen=True, fee=0
+    intc_0 // 1
+    itxn_field FreezeAssetFrozen
+    dig 2
+    itxn_field FreezeAssetAccount
+    dig 1
+    itxn_field FreezeAsset
+    // falqbit_gate.py:152
+    // itxn.AssetFreeze(
+    pushint 5 // afrz
+    itxn_field TypeEnum
+    // falqbit_gate.py:153
+    // freeze_asset=asset, freeze_account=account, frozen=True, fee=0
+    intc_1 // 0
+    itxn_field Fee
+    // falqbit_gate.py:152-154
+    // itxn.AssetFreeze(
+    //     freeze_asset=asset, freeze_account=account, frozen=True, fee=0
+    // ).submit()
+    itxn_submit
+
+relock_after_if_else@12:
+    // falqbit_gate.py:127-128
+    // # ---------------------------------------------------------------- relock
+    // @arc4.abimethod
+    intc_0 // 1
+    return
+
+relock_bool_false@5:
+    intc_1 // 0
+    b relock_bool_merge@6
+
+relock_else_body@8:
+    popn 2
+    // falqbit_gate.py:147
+    // assert opted, "nothing to relock"
+    dup
+    assert // nothing to relock
+    // falqbit_gate.py:148
+    // frozen, _x = op.AssetHoldingGet.asset_frozen(account, asset)
+    dig 3
+    dig 3
+    asset_holding_get AssetFrozen
+    pop
+    // falqbit_gate.py:149
+    // assert not frozen, "already frozen"
+    !
+    assert // already frozen
+    b relock_after_if_else@9
+
+
+// falqbit_gate.FalqbitGate.is_approved[routing]() -> void:
+is_approved:
+    intc_1 // 0
+    // falqbit_gate.py:156-157
+    // # ------------------------------------------------------------- read-only
+    // @arc4.abimethod(readonly=True)
+    txna ApplicationArgs 1
+    dupn 2
+    len
+    intc_2 // 32
+    ==
+    assert // invalid number of bytes for arc4.static_array<arc4.uint8, 32>
+    // falqbit_gate.py:159
+    // if account not in self.approved:
+    bytec_2 // 0x61
+    swap
+    concat
+    dup
+    cover 2
+    box_len
+    bury 1
+    bnz is_approved_after_if_else@3
+    pop
+    // falqbit_gate.py:160
+    // return False
+    intc_1 // 0
+
+is_approved_after_inlined_falqbit_gate.FalqbitGate.is_approved@8:
+    // falqbit_gate.py:156-157
+    // # ------------------------------------------------------------- read-only
+    // @arc4.abimethod(readonly=True)
+    pushbytes 0x00
+    intc_1 // 0
+    uncover 2
+    setbit
+    pushbytes 0x151f7c75
+    swap
+    concat
+    log
+    intc_0 // 1
+    return
+
+is_approved_after_if_else@3:
+    // falqbit_gate.py:161
+    // signer, funded = current_signer(account)
+    callsub current_signer
+    swap
+    bury 3
+    // falqbit_gate.py:162
+    // return funded and signer == self.approved[account].native
+    bz is_approved_bool_false@6
+    dup
+    box_get
+    assert // check self.approved entry exists
+    dig 2
+    ==
+    bz is_approved_bool_false@6
+    intc_0 // 1
+    // falqbit_gate.py:156-157
+    // # ------------------------------------------------------------- read-only
+    // @arc4.abimethod(readonly=True)
+    b is_approved_after_inlined_falqbit_gate.FalqbitGate.is_approved@8
+
+is_approved_bool_false@6:
+    intc_1 // 0
+    // falqbit_gate.py:156-157
+    // # ------------------------------------------------------------- read-only
+    // @arc4.abimethod(readonly=True)
+    b is_approved_after_inlined_falqbit_gate.FalqbitGate.is_approved@8
+
+
+// falqbit_gate.FalqbitGate._approve(pay: uint64, account: bytes, signer: bytes) -> void:
+_approve:
+    // falqbit_gate.py:164-166
+    // # -------------------------------------------------------------- internal
+    // @subroutine
+    // def _approve(self, pay: gtxn.PaymentTransaction, account: Account, signer: Account) -> None:
+    proto 3 0
+    // falqbit_gate.py:167
+    // assert self.asset_id.value != 0, "asset not bound yet"
+    intc_1 // 0
+    bytec_0 // "asset_id"
+    app_global_get_ex
+    assert // check self.asset_id exists
+    assert // asset not bound yet
+    // falqbit_gate.py:168
+    // assert pay.receiver == Global.current_application_address, "pay the app"
+    frame_dig -3
+    gtxns Receiver
+    global CurrentApplicationAddress
+    ==
+    assert // pay the app
+    // falqbit_gate.py:169
+    // if account not in self.approved:
+    bytec_2 // 0x61
+    frame_dig -2
+    concat
+    dup
+    box_len
+    bury 1
+    bnz _approve_after_if_else@2
+    // falqbit_gate.py:170
+    // assert pay.amount >= APPROVAL_MBR, "deposit too small"
+    frame_dig -3
+    gtxns Amount
+    intc 4 // 28500
+    >=
+    assert // deposit too small
+
+_approve_after_if_else@2:
+    // falqbit_gate.py:171-172
+    // # No later transaction in this group may rekey the account away.
+    // for i in urange(Txn.group_index + 1, Global.group_size):
+    global GroupSize
+    txn GroupIndex
+    intc_0 // 1
+    +
+
+_approve_for_header@3:
+    // falqbit_gate.py:171-172
+    // # No later transaction in this group may rekey the account away.
+    // for i in urange(Txn.group_index + 1, Global.group_size):
+    dup
+    dig 2
+    <
+    bz _approve_after_for@10
+    // falqbit_gate.py:174
+    // assert not (t.sender == account and t.rekey_to != Global.zero_address), (
+    dup
+    gtxns Sender
+    frame_dig -2
+    ==
+    bz _approve_bool_false@7
+    dup
+    gtxns RekeyTo
+    global ZeroAddress
+    !=
+    bz _approve_bool_false@7
+    intc_0 // 1
+
+_approve_bool_merge@8:
+    // falqbit_gate.py:174
+    // assert not (t.sender == account and t.rekey_to != Global.zero_address), (
+    !
+    // falqbit_gate.py:174-176
+    // assert not (t.sender == account and t.rekey_to != Global.zero_address), (
+    //     "account is rekeyed later in this group"
+    // )
+    assert // account is rekeyed later in this group
+    // falqbit_gate.py:171-172
+    // # No later transaction in this group may rekey the account away.
+    // for i in urange(Txn.group_index + 1, Global.group_size):
+    intc_0 // 1
+    +
+    b _approve_for_header@3
+
+_approve_bool_false@7:
+    intc_1 // 0
+    b _approve_bool_merge@8
+
+_approve_after_for@10:
+    // falqbit_gate.py:177
+    // self.approved[account] = arc4.Address(signer)
+    frame_dig 0
+    frame_dig -1
+    box_put
+    // falqbit_gate.py:178-183
+    // itxn.AssetFreeze(
+    //     freeze_asset=Asset(self.asset_id.value),
+    //     freeze_account=account,
+    //     frozen=False,
+    //     fee=0,
+    // ).submit()
+    itxn_begin
+    // falqbit_gate.py:179
+    // freeze_asset=Asset(self.asset_id.value),
+    intc_1 // 0
+    bytec_0 // "asset_id"
+    app_global_get_ex
+    assert // check self.asset_id exists
+    // falqbit_gate.py:181
+    // frozen=False,
+    intc_1 // 0
+    itxn_field FreezeAssetFrozen
+    frame_dig -2
+    itxn_field FreezeAssetAccount
+    itxn_field FreezeAsset
+    // falqbit_gate.py:178
+    // itxn.AssetFreeze(
+    pushint 5 // afrz
+    itxn_field TypeEnum
+    // falqbit_gate.py:182
+    // fee=0,
+    intc_1 // 0
+    itxn_field Fee
+    // falqbit_gate.py:178-183
+    // itxn.AssetFreeze(
+    //     freeze_asset=Asset(self.asset_id.value),
+    //     freeze_account=account,
+    //     frozen=False,
+    //     fee=0,
+    // ).submit()
+    itxn_submit
+    retsub
