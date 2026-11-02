@@ -14,7 +14,7 @@ Site: https://falqbit.github.io · X: https://x.com/FalQbit
 ## How it works
 
 - FALQBIT is created **frozen by default**, with **no manager** and **no clawback**.
-- Its freeze role belongs to an **immutable gate contract** (`contract/falqbit_gate.py`).
+- Its freeze role belongs to an **immutable gate contract** (`falqbit_gate.py`).
 - The gate unfreezes an account only if it proves a Falcon-1024 key signs for it:
   `address = SHA512-256("PQA" || "f1" || salt || public_key)`.
 - Pools and contracts can hold FALQBIT only if their controlling app is on the approved list (Tinyman v2 only). The approver role has been renounced, so the list is final.
@@ -29,7 +29,7 @@ Site: https://falqbit.github.io · X: https://x.com/FalQbit
 
 ## Contract
 
-`contract/` has the Algorand Python source, compiled TEAL and ARC-56 spec.
+`falqbit_gate.py` is the Algorand Python source; `FalqbitGate.approval.teal`, `FalqbitGate.clear.teal` and `FalqbitGate.arc56.json` are the compiled program and spec.
 Compiled approval program SHA-256: `f14801163a468bc7e990531cd866dd21fe69a6f5d0b7bf0bd71cd8109e4f95a9`
 
 ## Limits
