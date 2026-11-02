@@ -131,6 +131,8 @@ p { margin: 0; }
 .venue .role { font: 500 12px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan); }
 .venue .name { font: 700 22px/1.1 var(--display); }
 .venue p { color: var(--muted); font-size: 15px; }
+a.venue { text-decoration: none; color: var(--fg); }
+a.venue:hover { color: var(--fg); }
 
 /* roadmap: real order */
 .road { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
@@ -1222,10 +1224,10 @@ body { overflow-x: clip; }
       <p class="muted">The FALQBIT/ALGO pool is live on Tinyman. Aggregators and wallets pick it up from there.</p>
     </div>
     <div class="venues">
-      <div class="venue"><span class="role">Pool</span><span class="name">Tinyman</span><p>FALQBIT / ALGO liquidity</p></div>
-      <div class="venue"><span class="role">Swaps</span><span class="name">Haystack</span><p>Routes to the best price</p></div>
-      <div class="venue"><span class="role">Wallet</span><span class="name">Pera</span><p>Swap without leaving the app</p></div>
-      <div class="venue"><span class="role">Charts</span><span class="name">Vestige</span><p>Price, volume and holders</p></div>
+      <a class="venue" href="https://app.tinyman.org/swap?asset_in=0&amp;asset_out=3760920399" target="_blank" rel="noopener"><span class="role">Pool</span><span class="name">Tinyman ↗</span><p>FALQBIT / ALGO liquidity</p></a>
+      <a class="venue" href="https://hay.app/" target="_blank" rel="noopener"><span class="role">Swaps</span><span class="name">Haystack ↗</span><p>Routes to the best price</p></a>
+      <a class="venue" href="https://perawallet.app/" target="_blank" rel="noopener"><span class="role">Wallet</span><span class="name">Pera ↗</span><p>Swap without leaving the app</p></a>
+      <a class="venue" href="https://www.vestige.fi/asset/3760920399" target="_blank" rel="noopener"><span class="role">Charts</span><span class="name">Vestige ↗</span><p>Price, volume and holders</p></a>
     </div>
   </section>
 
