@@ -166,8 +166,10 @@ async function buildWelcome() {
   const algo = await Promise.all(cand.map((a) => c.algodGet(`/v2/accounts/${a}?exclude=all`).then((j) => Number(j?.amount || 0)).catch(() => 0)));
   const ok = cand.filter((a, i) => algo[i] >= WELCOME_MIN_ALGO);
   const low = cand.length - ok.length;
+  const lowList = cand.map((a, i) => [a, algo[i]]).filter(([, v]) => v < WELCOME_MIN_ALGO);
   const due = ok.slice(0, left).map((a) => ({ to: a, amount: WELCOME }));
   $("p-summary").textContent = `${unlocked.length} unlocked accounts on chain · ${paid.size} of ${WELCOME_CAP} welcomed · ${left} left · ${due.length} to pay now (${fq(WELCOME * BigInt(due.length))} FALQBIT)` + (low ? ` · ${low} skipped automatically (under ${WELCOME_MIN_ALGO / 1e6} ALGO)` : "") + ".";
+  if (lowList.length) $("p-summary").innerHTML += "<br>Under " + (WELCOME_MIN_ALGO / 1e6) + " ALGO: " + lowList.map(([a, v]) => `<a href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)}</a> (${(v / 1e6).toFixed(3)} ALGO)`).join(", ");
   return due;
 }
 

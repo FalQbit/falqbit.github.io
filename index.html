@@ -1141,37 +1141,11 @@ body { overflow-x: clip; }
   </section>
 
   <section class="stats reveal" aria-label="Live on-chain numbers">
-    <div class="stat"><span class="k">Price</span><span class="v" id="st-price">…</span><span class="s">ALGO per 1M FALQBIT<span class="usd" id="st-price-usd"></span></span></div>
-    <div class="stat"><span class="k">Pool liquidity</span><span class="v" id="st-pool">…</span><span class="s">ALGO in the Tinyman pool<span class="usd" id="st-pool-usd"></span></span></div>
-    <div class="stat"><span class="k">Market value</span><span class="v" id="st-mcap">…</span><span class="s">ALGO, all 10B at pool price<span class="usd" id="st-mcap-usd"></span></span></div>
+    <div class="stat"><span class="k">Price</span><span class="v" id="st-price">…</span><span class="s">ALGO per 1M FALQBIT</span></div>
+    <div class="stat"><span class="k">Pool liquidity</span><span class="v" id="st-pool">…</span><span class="s">ALGO in the Tinyman pool</span></div>
+    <div class="stat"><span class="k">Market value</span><span class="v" id="st-mcap">…</span><span class="s">ALGO, all 10B at pool price</span></div>
     <div class="stat"><span class="k">Unlocked accounts</span><span class="v" id="st-unlocked">…</span><span class="s">accounts approved by the gate</span></div>
     <p class="stats-note"><i aria-hidden="true"></i><span id="st-note">Reading Algorand MainNet…</span></p>
-  </section>
-
-  <section class="conv reveal" aria-labelledby="h-conv">
-    <div class="conv-rates" id="conv-rates">
-      <div class="rate"><span class="tk fq"><img src="./icon.png" alt="" width="22" height="22">1M FALQBIT</span><span class="eq">=</span><span class="val" id="r-fq-algo">…</span><span class="val muted" id="r-fq-usd">…</span></div>
-      <div class="rate"><span class="tk algo">1 ALGO</span><span class="eq">=</span><span class="val" id="r-algo-fq">…</span><span class="val muted" id="r-algo-usd">…</span></div>
-      <div class="rate"><span class="tk usdc">1 USDC</span><span class="eq">=</span><span class="val" id="r-usdc-fq">…</span><span class="val muted" id="r-usdc-algo">…</span></div>
-    </div>
-    <div class="conv-box">
-      <h2 id="h-conv" class="conv-h">Converter</h2>
-      <div class="conv-in">
-        <label class="sr" for="cv-amount">Amount</label>
-        <input id="cv-amount" type="number" inputmode="decimal" min="0" step="any" value="1000000">
-        <div class="seg3" role="group" aria-label="Currency">
-          <button type="button" data-c="fq" aria-pressed="true">FALQBIT</button>
-          <button type="button" data-c="algo" aria-pressed="false">ALGO</button>
-          <button type="button" data-c="usd" aria-pressed="false">USDC</button>
-        </div>
-      </div>
-      <div class="conv-out">
-        <div><span class="tk fq"><img src="./icon.png" alt="" width="18" height="18">FALQBIT</span><b id="cv-fq">…</b></div>
-        <div><span class="tk algo">ALGO</span><b id="cv-algo">…</b></div>
-        <div><span class="tk usdc">USDC</span><b id="cv-usd">…</b></div>
-      </div>
-      <p class="fine-s">Prices from the Tinyman FALQBIT/ALGO and ALGO/USDC pools, read live from the chain. Large trades move the price.</p>
-    </div>
   </section>
 
   <section class="sec reveal" id="how" aria-labelledby="h-how">
@@ -1463,7 +1437,7 @@ document.documentElement.classList.add("js");
   function amt(n) { if (!(n > 0)) return "0"; if (n < 1) return n.toPrecision(3); return fmt(n, n < 1000 ? 2 : 0); }
   function renderPx() {
     var a = PX.algoPerFq, u = PX.usdPerAlgo;
-    if (!a) return;
+    if (!a || !$("conv-rates")) return;
     $("r-fq-algo").textContent = fmt(a * 1e6, 3) + " ALGO";
     $("r-fq-usd").textContent = u ? usd(a * 1e6 * u) : "";
     $("r-algo-fq").textContent = amt(1 / a) + " FALQBIT";
@@ -1476,7 +1450,7 @@ document.documentElement.classList.add("js");
     else { us = v; al = u ? v / u : 0; fq = al / a; }
     $("cv-fq").textContent = amt(fq); $("cv-algo").textContent = amt(al); $("cv-usd").textContent = u ? usd(us) : "–";
   }
-  document.querySelectorAll(".seg3 button").forEach(function (b) {
+  if ($("cv-amount")) document.querySelectorAll(".seg3 button").forEach(function (b) {
     b.addEventListener("click", function () {
       cvCur = b.dataset.c;
       document.querySelectorAll(".seg3 button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
@@ -1484,7 +1458,7 @@ document.documentElement.classList.add("js");
       renderPx();
     });
   });
-  $("cv-amount").addEventListener("input", renderPx);
+  if ($("cv-amount")) $("cv-amount").addEventListener("input", renderPx);
   function load() {
     var usdp = get("/v2/accounts/" + USDC_POOL + "/applications/" + TINYMAN).then(function (j) {
       var kv = (j["app-local-state"] || {})["key-value"] || [], r = {};
@@ -1505,11 +1479,6 @@ document.documentElement.classList.add("js");
       $("st-price").textContent = fmt(p * 1e6, 3);
       $("st-pool").textContent = fmt(r.algo, 1);
       $("st-mcap").textContent = fmt(p * SUPPLY, 0);
-      if (u) {
-        $("st-price-usd").textContent = "≈ " + usd(p * 1e6 * u) + " per 1M";
-        $("st-pool-usd").textContent = "≈ " + usd(r.algo * u * 2) + " total value";
-        $("st-mcap-usd").textContent = "≈ " + usd(p * SUPPLY * u);
-      }
       renderPx();
     }).catch(function () { ["st-price", "st-pool", "st-mcap"].forEach(function (id) { $(id).textContent = "–"; }); });
     unlocked.then(function (n) { $("st-unlocked").textContent = fmt(n, 0); }).catch(function () { $("st-unlocked").textContent = "–"; });
