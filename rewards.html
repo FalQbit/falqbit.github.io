@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>FALQBIT Rewards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="./app.css">
+<style>
+.tabs { display: flex; gap: 8px; }
+.tabs button { flex: 1; }
+.tabs button[aria-pressed="true"] { background: var(--cyan); color: var(--ground); }
+.tabs button[aria-pressed="false"] { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+.rules { color: var(--muted); font-size: 15px; margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.list { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow-y: auto; border: 1px solid var(--line); border-radius: 12px; }
+.list li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); font: 500 13px/1.4 var(--mono); }
+.list li:last-child { border-bottom: 0; }
+.list li .amt { color: var(--cyan); white-space: nowrap; }
+.list li.empty { color: var(--muted); font-family: var(--body); }
+.log { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./">FALQBIT</a>
+    <nav class="nets" aria-label="Network">
+      <a href="?net=mainnet" id="n-mainnet">MAINNET</a>
+      <a href="?net=testnet" id="n-testnet" class="test">TESTNET</a>
+    </nav>
+  </header>
+
+  <section>
+    <h1>Pay <em>rewards</em>.</h1>
+    <p class="lede">This page reads the chain, works out who is owed what, and builds the transfers. You approve each batch of up to 16 in Pera with the Rewards account. The key never leaves your phone.</p>
+  </section>
+
+  <div id="notlive" class="warnbox" hidden></div>
+
+  <section class="panel" id="status">
+    <div class="row" id="r-wallet"><span class="dot"></span><div><div class="label">Rewards account</div><div class="detail">Not connected</div></div></div>
+    <div class="row" id="r-funds"><span class="dot"></span><div><div class="label">Balance</div><div class="detail">Waiting for a wallet</div></div></div>
+  </section>
+
+  <div class="actions" id="conn">
+    <button class="primary" id="b-connect" type="button">Connect Pera Wallet</button>
+    <button class="ghost" id="b-disconnect" type="button" hidden>Disconnect</button>
+  </div>
+
+  <div class="tabs" role="group" aria-label="Reward type">
+    <button type="button" id="t-welcome" aria-pressed="true">Welcome drop</button>
+    <button type="button" id="t-hold" aria-pressed="false">Hold-to-earn</button>
+  </div>
+
+  <section class="panel" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+    <h2 id="p-title">Welcome drop</h2>
+    <ul class="rules" id="p-rules"></ul>
+    <div class="actions" style="flex-direction:row; flex-wrap:wrap;">
+      <button class="ghost small" id="b-scan" type="button">Check the chain</button>
+      <button class="ghost small" id="b-reset" type="button" hidden>Take a new snapshot</button>
+    </div>
+    <p class="detail" id="p-summary">Press "Check the chain" to build the list.</p>
+    <ul class="list" id="p-list"><li class="empty">No list yet.</li></ul>
+    <button class="primary" id="b-pay" type="button" disabled>Sign next batch in Pera</button>
+  </section>
+
+  <div id="msg" class="msg" hidden></div>
+  <div class="log" id="log"></div>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script type="module">
+import { algosdk, NETWORKS, client, loadConfig, pickNetwork, short } from "./falqbit.js";
+
+// ---- rules -------------------------------------------------------------
+const DEC = 1_000_000n;                    // 6 decimals
+const WELCOME = 1_000_000n * DEC;          // 1,000,000 FALQBIT per new account
+const WELCOME_CAP = 1000;                  // first 1,000 accounts
+const MONTHLY_POT = 62_500_000n * DEC;     // 1.5B over 24 months
+const MIN_HOLD = 1_000_000n * DEC;         // hold at least 1,000,000 FALQBIT
+const BATCH = 16;                          // Algorand group limit
+const FEE = 3000;                          // a Falcon-signed transfer
+const NOTE_WELCOME = "FALQBIT welcome";
+const month = new Date().toISOString().slice(0, 7);
+const NOTE_HOLD = `FALQBIT hold ${month}`;
+
+const cfgAll = await loadConfig();
+const net = pickNetwork() || "mainnet";
+const cfg = cfgAll[net];
+const c = client(net);
+const $ = (id) => document.getElementById(id);
+$("n-" + net).setAttribute("aria-current", "true");
+
+let account = null, mode = "welcome", queue = [];
+
+const say = (html, kind = "") => { const m = $("msg"); m.hidden = !html; m.className = "msg " + kind; m.innerHTML = html; };
+const log = (html) => { const p = document.createElement("p"); p.className = "detail"; p.innerHTML = html; $("log").prepend(p); };
+const fq = (base) => (Number(base / DEC)).toLocaleString("en-US");
+const setRow = (id, s, d) => { const r = $(id); r.dataset.s = s; r.querySelector(".detail").textContent = d; };
+
+if (!cfg || !cfg.rewards) {
+  $("notlive").hidden = false;
+  $("notlive").innerHTML = `<strong>No Rewards account configured for ${NETWORKS[net].label}.</strong>`;
+  for (const id of ["status", "conn", "b-scan"]) $(id).hidden = true;
+} else {
+  $("foot").innerHTML = `${NETWORKS[net].label}. Token <a href="${c.n.lora}/asset/${cfg.asset_id}" target="_blank" rel="noopener">${cfg.asset_id}</a> · Rewards <a href="${c.n.lora}/account/${cfg.rewards}" target="_blank" rel="noopener">${short(cfg.rewards)}</a>`;
+}
+const EXCLUDE = new Set([cfg?.pool, cfg?.rewards, cfg?.team, cfg?.project, cfg?.app_address].filter(Boolean));
+
+// ---- chain reads -------------------------------------------------------
+async function indexerAll(path, key) {
+  const out = []; let next = "";
+  for (let i = 0; i < 200; i++) {
+    const sep = path.includes("?") ? "&" : "?";
+    const j = await c.getJSON(`${c.n.indexer}${path}${sep}limit=1000${next ? "&next=" + encodeURIComponent(next) : ""}`);
+    if (!j) break;
+    out.push(...(j[key] || []));
+    if (!j["next-token"] || !(j[key] || []).length) break;
+    next = j["next-token"];
+  }
+  return out;
+}
+async function holders() {
+  // every account opted in to FALQBIT, with balance and frozen flag
+  const list = await indexerAll(`/v2/assets/${cfg.asset_id}/balances`, "balances");
+  const m = new Map();
+  for (const b of list) if (!b.deleted) m.set(b.address, { amount: BigInt(b.amount), frozen: !!b["is-frozen"] });
+  return m;
+}
+async function paidWith(note) {
+  const prefix = encodeURIComponent(btoa(note));
+  const txns = await indexerAll(`/v2/accounts/${cfg.rewards}/transactions?asset-id=${cfg.asset_id}&tx-type=axfer&note-prefix=${prefix}`, "transactions");
+  const s = new Set();
+  for (const t of txns) if (t.sender === cfg.rewards && t["asset-transfer-transaction"]) s.add(t["asset-transfer-transaction"].receiver);
+  return s;
+}
+async function unlockedAccounts() {
+  const j = await c.algodGet(`/v2/applications/${cfg.app_id}/boxes?max=100000`);
+  return (j?.boxes || []).map((b) => Uint8Array.from(atob(b.name), (x) => x.charCodeAt(0)))
+    .filter((n) => n[0] === 97 && n.length === 33)
+    .map((n) => algosdk.encodeAddress(n.slice(1)));
+}
+
+// ---- building the lists -------------------------------------------------
+async function buildWelcome() {
+  const [unlocked, hold, paid] = await Promise.all([unlockedAccounts(), holders(), paidWith(NOTE_WELCOME)]);
+  const left = Math.max(0, WELCOME_CAP - paid.size);
+  const due = unlocked.filter((a) => !EXCLUDE.has(a) && !paid.has(a) && hold.has(a) && !hold.get(a).frozen)
+    .slice(0, left).map((a) => ({ to: a, amount: WELCOME }));
+  $("p-summary").textContent = `${unlocked.length} unlocked accounts on chain · ${paid.size} already welcomed · ${left} welcome drops left · ${due.length} to pay now (${fq(WELCOME * BigInt(due.length))} FALQBIT).`;
+  return due;
+}
+
+const SNAP_KEY = () => `falqbit-hold-${net}-${month}`;
+function loadSnap() { try { return JSON.parse(localStorage.getItem(SNAP_KEY()) || "null"); } catch { return null; } }
+function saveSnap(s) { try { localStorage.setItem(SNAP_KEY(), JSON.stringify(s)); } catch {} }
+
+async function buildHold() {
+  const [hold, paid] = await Promise.all([holders(), paidWith(NOTE_HOLD)]);
+  let snap = loadSnap();
+  if (!snap) {
+    // snapshot: who holds at least MIN_HOLD right now, excluding project accounts and the pool
+    const eligible = [...hold.entries()].filter(([a, h]) => !EXCLUDE.has(a) && !h.frozen && h.amount >= MIN_HOLD);
+    const total = eligible.reduce((s, [, h]) => s + h.amount, 0n);
+    snap = { taken: new Date().toISOString(), total: total.toString(),
+      rows: eligible.map(([a, h]) => ({ to: a, amount: total ? ((MONTHLY_POT * h.amount) / total).toString() : "0" })) };
+    saveSnap(snap);
+  }
+  $("b-reset").hidden = false;
+  const due = snap.rows.map((r) => ({ to: r.to, amount: BigInt(r.amount) }))
+    .filter((r) => r.amount > 0n && !paid.has(r.to) && hold.has(r.to) && !hold.get(r.to).frozen);
+  $("p-summary").textContent = `Month ${month} · snapshot ${new Date(snap.taken).toLocaleString()} · ${snap.rows.length} holders with at least ${fq(MIN_HOLD)} FALQBIT · ${paid.size} already paid · ${due.length} to pay now (${fq(due.reduce((s, r) => s + r.amount, 0n))} FALQBIT).`;
+  return due;
+}
+
+function render() {
+  const ul = $("p-list"); ul.innerHTML = "";
+  if (!queue.length) { ul.innerHTML = `<li class="empty">Nobody to pay right now.</li>`; }
+  for (const r of queue.slice(0, 500)) {
+    const li = document.createElement("li");
+    li.innerHTML = `<a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a><span class="amt">${fq(r.amount)}</span>`;
+    ul.append(li);
+  }
+  const n = Math.min(BATCH, queue.length);
+  $("b-pay").disabled = !account || account !== cfg.rewards || !n;
+  $("b-pay").textContent = n ? `Sign next batch in Pera (${n} of ${queue.length})` : "Sign next batch in Pera";
+}
+
+async function scan() {
+  try {
+    $("b-scan").disabled = true; say("Reading the chain…");
+    queue = mode === "welcome" ? await buildWelcome() : await buildHold();
+    say(""); render();
+  } catch (e) { say(e.message || String(e), "err"); }
+  finally { $("b-scan").disabled = false; }
+}
+
+function setMode(m) {
+  mode = m; queue = []; render();
+  $("t-welcome").setAttribute("aria-pressed", String(m === "welcome"));
+  $("t-hold").setAttribute("aria-pressed", String(m === "hold"));
+  $("b-reset").hidden = true;
+  $("p-summary").textContent = 'Press "Check the chain" to build the list.';
+  if (m === "welcome") {
+    $("p-title").textContent = "Welcome drop";
+    $("p-rules").innerHTML = `<li>${fq(WELCOME)} FALQBIT to every quantum account the gate has unlocked.</li><li>Only the first ${WELCOME_CAP.toLocaleString()} accounts. Each account once, ever.</li><li>Project accounts and the pool are left out. Transfers carry the note "${NOTE_WELCOME}".</li>`;
+  } else {
+    $("p-title").textContent = "Hold-to-earn";
+    $("p-rules").innerHTML = `<li>${fq(MONTHLY_POT)} FALQBIT a month, split by balance among holders of at least ${fq(MIN_HOLD)} FALQBIT.</li><li>The snapshot is taken the first time you check this month and kept for every batch.</li><li>Project accounts and the pool are left out. Transfers carry the note "${NOTE_HOLD}".</li>`;
+  }
+}
+
+// ---- paying --------------------------------------------------------------
+async function payBatch() {
+  const batch = queue.slice(0, BATCH);
+  if (!batch.length) return;
+  try {
+    $("b-pay").disabled = true;
+    say(`Approve ${batch.length} transfers in Pera…`);
+    const sp = await c.params(FEE);
+    const note = new TextEncoder().encode(mode === "welcome" ? NOTE_WELCOME : NOTE_HOLD);
+    const txns = batch.map((r) => algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+      sender: account, receiver: r.to, amount: r.amount, assetIndex: cfg.asset_id, note, suggestedParams: sp,
+    }));
+    const { id } = await c.signAndSend(txns);
+    log(`Paid ${batch.length} accounts · <a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">view on Lora</a>`);
+    queue = queue.slice(batch.length);
+    say(queue.length ? "Batch done. Sign the next one when ready." : "All paid.", "ok");
+    render(); refreshWallet();
+  } catch (e) { say(e.message || String(e), "err"); render(); }
+}
+
+// ---- wallet --------------------------------------------------------------
+async function refreshWallet() {
+  if (!account) return;
+  $("b-connect").hidden = true; $("b-disconnect").hidden = false;
+  if (account !== cfg.rewards) {
+    setRow("r-wallet", "bad", `${short(account)} is not the Rewards account (${short(cfg.rewards)}). Connect the Rewards account.`);
+    setRow("r-funds", "", "–"); render(); return;
+  }
+  setRow("r-wallet", "ok", `${short(account)} · Rewards`);
+  const info = await c.algodGet(`/v2/accounts/${account}`);
+  const algo = info ? Number(info.amount) / 1e6 : 0;
+  const minb = info ? Number(info["min-balance"]) / 1e6 : 0;
+  const h = (info?.assets || []).find((a) => a["asset-id"] === cfg.asset_id);
+  const spare = algo - minb;
+  setRow("r-funds", spare >= 0.06 ? "ok" : "warn",
+    `${h ? fq(BigInt(h.amount)) : 0} FALQBIT · ${algo.toFixed(3)} ALGO (${spare.toFixed(3)} free, ~${(BATCH * FEE / 1e6).toFixed(3)} per full batch)`);
+  render();
+}
+function disconnect() { c.pera.disconnect(); account = null; $("b-connect").hidden = false; $("b-disconnect").hidden = true; setRow("r-wallet", "", "Not connected"); setRow("r-funds", "", "Waiting for a wallet"); render(); }
+
+$("b-connect").addEventListener("click", async () => {
+  try { account = (await c.connect())[0]; c.pera.connector?.on("disconnect", disconnect); refreshWallet(); }
+  catch (e) { if (e?.data?.type !== "CONNECT_MODAL_CLOSED") say(e.message || String(e), "err"); }
+});
+$("b-disconnect").addEventListener("click", disconnect);
+$("t-welcome").addEventListener("click", () => setMode("welcome"));
+$("t-hold").addEventListener("click", () => setMode("hold"));
+$("b-scan").addEventListener("click", scan);
+$("b-reset").addEventListener("click", () => {
+  try { localStorage.removeItem(SNAP_KEY()); } catch {}
+  scan();
+});
+$("b-pay").addEventListener("click", payBatch);
+
+setMode("welcome");
+if (cfg?.rewards) c.reconnect().then((a) => { if (a.length) { account = a[0]; c.pera.connector?.on("disconnect", disconnect); refreshWallet(); } }).catch(() => {});
+</script>
+</body>
+</html>
