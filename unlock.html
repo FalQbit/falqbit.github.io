@@ -130,7 +130,7 @@ $("b-unlock").addEventListener("click", async () => {
         sender: account, receiver: account, amount: 0, assetIndex: cfg.asset_id, suggestedParams: await c.params(FEE_PQ),
       }));
     }
-    const box = await c.algodGet(`/v2/applications/${cfg.app_id}/box?name=b64:${btoa(String.fromCharCode(...holderBox(account)))}`);
+    const box = await c.algodGet(`/v2/applications/${cfg.app_id}/box?name=${encodeURIComponent("b64:" + btoa(String.fromCharCode(...holderBox(account))))}`);
     txns.push(algosdk.makePaymentTxnWithSuggestedParamsFromObject({
       sender: account, receiver: cfg.app_address, amount: box ? 0 : HOLDER_DEPOSIT, suggestedParams: await c.params(FEE_PQ),
     }));
