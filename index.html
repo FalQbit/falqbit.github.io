@@ -104,7 +104,7 @@ p { margin: 0; }
 .step { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .step .n { font: 500 13px/1 var(--mono); color: var(--cyan); letter-spacing: 0.1em; }
 .step p { color: var(--muted); font-size: 16px; }
-.lock { display: inline-flex; align-items: center; gap: 8px; font: 500 13px/1 var(--mono); padding: 7px 11px; border-radius: 999px; align-self: flex-start; }
+.lock { display: inline-flex; align-items: center; gap: 8px; font: 500 12px/1 var(--mono); padding: 6px 10px; border-radius: 999px; white-space: nowrap; align-self: flex-start; margin-top: auto; }
 .lock.off { color: var(--amber); border: 1px solid var(--amber); }
 .lock.on { color: var(--ground); background: var(--cyan); }
 
@@ -588,7 +588,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
         <a class="btn ghost" href="#how">How it works</a>
         <a class="btn ghost" href="https://x.com/hashtag/FALQBIT" target="_blank" rel="noopener">Follow #FALQBIT on X</a>
       </div>
-      <p class="formula" aria-label="How a post-quantum address is derived on Algorand">address = SHA512-256(<b>"PQA"</b> ‖ scheme ‖ salt ‖ falcon_public_key)</p>
+      <p class="formula" aria-label="How a post-quantum address is derived on Algorand"><span style="display:block;color:var(--cyan);font-size:12px;letter-spacing:.1em;margin-bottom:4px">HOW A QUANTUM ADDRESS IS MADE</span>address = SHA512-256(<b>"PQA"</b> ‖ scheme ‖ salt ‖ falcon_public_key)</p>
     </div>
     <div class="hero-art"><svg viewBox="0 0 200 200" role="img" aria-label="FALQBIT falcon logo made of lattice dots"><g class="hot"><circle cx="100" cy="100" r="98" fill="#0A0F1E"/>
 <circle cx="76" cy="12" r="1.2" fill="#2A3556"/>
@@ -987,13 +987,13 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
         <span class="n">STEP 1</span>
         <h3>Add FALQBIT to your wallet</h3>
         <p>Create a Quantum Account in Pera and add FALQBIT. Your balance starts locked, like a new bank card.</p>
-        <span class="lock off">Locked</span>
+        <span class="lock off">Starts locked</span>
       </article>
       <article class="step">
         <span class="n">STEP 2</span>
         <h3>Prove your account is Falcon</h3>
         <p>Open the unlock page and approve in Pera. The gatekeeper contract checks that your account is signed by a Falcon-1024 key. Adding and unlocking happen in one step.</p>
-        <span class="lock off">Checking</span>
+        <span class="lock off">Contract checks</span>
       </article>
       <article class="step">
         <span class="n">STEP 3</span>
