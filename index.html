@@ -91,7 +91,7 @@ p { margin: 0; }
 /* formula strip */
 .formula {
   font: 500 14px/1.5 var(--mono); color: var(--muted);
-  border-top: 1px solid var(--line); padding-top: 16px; overflow-x: auto; white-space: nowrap;
+  border-top: 1px solid var(--line); padding-top: 16px; overflow-wrap: anywhere;
 }
 .formula b { color: var(--violet); font-weight: 500; }
 
@@ -986,19 +986,19 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
       <article class="step">
         <span class="n">STEP 1</span>
         <h3>Add FALQBIT to your wallet</h3>
-        <p>Opt in to the token from your Pera Quantum Account. Your FALQBIT balance starts locked, like a new bank card.</p>
+        <p>Create a Quantum Account in Pera and add FALQBIT. Your balance starts locked, like a new bank card.</p>
         <span class="lock off">Locked</span>
       </article>
       <article class="step">
         <span class="n">STEP 2</span>
         <h3>Prove your account is Falcon</h3>
-        <p>One tap on the unlock page. The gatekeeper contract checks that your account is signed by a Falcon-1024 key.</p>
+        <p>Open the unlock page and approve in Pera. The gatekeeper contract checks that your account is signed by a Falcon-1024 key. Adding and unlocking happen in one step.</p>
         <span class="lock off">Checking</span>
       </article>
       <article class="step">
         <span class="n">STEP 3</span>
-        <h3>Trade, send and stake</h3>
-        <p>Once unlocked, FALQBIT moves freely between quantum accounts, pools and contracts. Classic accounts stay locked.</p>
+        <h3>Trade, send and hold</h3>
+        <p>Once unlocked, FALQBIT moves freely between quantum accounts and the Tinyman pool. Classic accounts stay locked.</p>
         <span class="lock on">Unlocked</span>
       </article>
     </div>
