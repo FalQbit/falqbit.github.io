@@ -79,7 +79,8 @@ import { algosdk, NETWORKS, client, loadConfig, pickNetwork, short } from "./fal
 const DEC = 1_000_000n;                    // 6 decimals
 const WELCOME = 1_000_000n * DEC;          // 1,000,000 FALQBIT per new account
 const WELCOME_CAP = 1000;                  // first 1,000 accounts
-const MONTHLY_POT = 62_500_000n * DEC;     // 1.5B over 24 months
+const RATE_BP = 100n;                      // 1% of each balance per month (basis points)
+const MONTHLY_POT = 62_500_000n * DEC;     // monthly cap; anything unused stays in Rewards
 const MIN_HOLD = 1_000_000n * DEC;         // hold at least 1,000,000 FALQBIT
 const BATCH = 16;                          // Algorand group limit
 const FEE = 3000;                          // a Falcon-signed transfer
@@ -166,7 +167,12 @@ async function buildHold() {
     const eligible = [...hold.entries()].filter(([a, h]) => !EXCLUDE.has(a) && !h.frozen && h.amount >= MIN_HOLD);
     const total = eligible.reduce((s, [, h]) => s + h.amount, 0n);
     snap = { taken: new Date().toISOString(), total: total.toString(),
-      rows: eligible.map(([a, h]) => ({ to: a, amount: total ? ((MONTHLY_POT * h.amount) / total).toString() : "0" })) };
+      // 1% of each balance; if the sum would pass the cap, everyone is scaled down to fit it
+      rows: (() => {
+        const want = eligible.map(([a, h]) => [a, (h.amount * RATE_BP) / 10000n]);
+        const sum = want.reduce((s, [, w]) => s + w, 0n);
+        return want.map(([a, w]) => ({ to: a, amount: (sum > MONTHLY_POT ? (MONTHLY_POT * w) / sum : w).toString() }));
+      })() };
     saveSnap(snap);
   }
   $("b-reset").hidden = false;
@@ -209,7 +215,7 @@ function setMode(m) {
     $("p-rules").innerHTML = `<li>${fq(WELCOME)} FALQBIT to every quantum account the gate has unlocked.</li><li>Only the first ${WELCOME_CAP.toLocaleString()} accounts. Each account once, ever.</li><li>Project accounts and the pool are left out. Transfers carry the note "${NOTE_WELCOME}".</li>`;
   } else {
     $("p-title").textContent = "Hold-to-earn";
-    $("p-rules").innerHTML = `<li>${fq(MONTHLY_POT)} FALQBIT a month, split by balance among holders of at least ${fq(MIN_HOLD)} FALQBIT.</li><li>The snapshot is taken the first time you check this month and kept for every batch.</li><li>Project accounts and the pool are left out. Transfers carry the note "${NOTE_HOLD}".</li>`;
+    $("p-rules").innerHTML = `<li>Every holder of at least ${fq(MIN_HOLD)} FALQBIT gets ${Number(RATE_BP) / 100}% of their balance each month.</li><li>At most ${fq(MONTHLY_POT)} FALQBIT a month in total; above that, everyone is scaled down to fit. Unused rewards stay in the Rewards account.</li><li>The snapshot is taken the first time you check this month and kept for every batch.</li><li>Project accounts and the pool are left out. Transfers carry the note "${NOTE_HOLD}".</li>`;
   }
 }
 

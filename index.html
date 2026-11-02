@@ -634,6 +634,7 @@ body { overflow-x: clip; }
     <nav class="topnav" aria-label="Sections">
       <a href="#how">How it works</a>
       <a href="#proof">Proof</a>
+      <a href="#rewards">Rewards</a>
       <a href="#supply">Supply</a>
       <a href="#faq">FAQ</a>
     </nav>
@@ -1146,11 +1147,39 @@ body { overflow-x: clip; }
     </div>
     <div class="faq">
       <details><summary>How do I get a quantum account?</summary><p>In Pera Wallet, tap + to add an account and choose Add Quantum Account. You can also rekey an existing account to a Falcon-1024 key and keep the same address.</p></details>
-      <details><summary>How do the rewards work?</summary><p>Welcome drop: every quantum account that unlocks gets 1,000,000 FALQBIT, for the first 1,000 accounts. Hold-to-earn: each month 62,500,000 FALQBIT are shared among everyone holding at least 1,000,000 FALQBIT, in proportion to their balance. Both are paid from the public Rewards account, so anyone can check them.</p></details>
+      <details><summary>How do the rewards work?</summary><p>Welcome drop: every quantum account that unlocks gets 1,000,000 FALQBIT, for the first 1,000 accounts. Hold-to-earn: everyone holding at least 1,000,000 FALQBIT gets 1% of their balance once a month, on an unannounced day, up to 62,500,000 FALQBIT a month in total. There is no staking: your tokens stay in your own account and you can sell at any time. Both are paid from the public Rewards account, so anyone can check them.</p></details>
       <details><summary>Can I lose my FALQBIT?</summary><p>Nobody can take them: there is no clawback. If you send to a classic account, the transfer is refused and the tokens stay with you. As with any crypto, losing your recovery phrase means losing access.</p></details>
       <details><summary>What happens if I switch back to a classic key?</summary><p>Anyone can relock your holding. Your tokens stay yours, and you can unlock again after switching back to a Falcon key.</p></details>
       <details><summary>Why are the fees higher?</summary><p>A Falcon-1024 signature is much larger than a classic one, so Algorand charges about three minimum fees for it: around 0.003 ALGO per transaction.</p></details>
       <details><summary>Why can't I buy it on an exchange?</summary><p>An exchange would have to hold FALQBIT in quantum accounts. Any exchange can do that and unlock its accounts the same way you do.</p></details>
+    </div>
+  </section>
+
+  <section class="sec reveal" id="rewards" aria-labelledby="h-rewards">
+    <div class="sec-head">
+      <p class="eyebrow">Rewards</p>
+      <h2 id="h-rewards">Get FALQBIT for joining. Earn more for holding.</h2>
+      <p class="muted">No staking, no lock-up, no contract. Your FALQBIT never leave your own quantum account. Rewards are paid from the public <a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">Rewards account</a>, so every payment can be checked on-chain.</p>
+    </div>
+    <div class="steps">
+      <article class="step">
+        <span class="n">WELCOME DROP</span>
+        <h3>1,000,000 FALQBIT to join</h3>
+        <p>The first 1,000 quantum accounts that unlock on the <a href="./unlock.html">unlock page</a> get 1,000,000 FALQBIT each, once per account. No purchase needed. Drops are paid in weekly rounds.</p>
+        <span class="lock on">First 1,000 accounts</span>
+      </article>
+      <article class="step">
+        <span class="n">HOLD-TO-EARN</span>
+        <h3>1% a month for holding</h3>
+        <p>Keep at least 1,000,000 FALQBIT in your account and get 1% of your balance once a month. Nothing to deposit or claim: just hold. Up to 62,500,000 FALQBIT a month in total; unused rewards stay in the Rewards account.</p>
+        <span class="lock on">Min. 1,000,000 FALQBIT</span>
+      </article>
+      <article class="step">
+        <span class="n">HOW IT IS PAID</span>
+        <h3>Held on payout day</h3>
+        <p>Once a month, on a day that is not announced, the balances are read from the chain and the 1% is sent. The best way to qualify is simply to hold all month. Project accounts and the pool are left out.</p>
+        <span class="lock off">Unannounced day</span>
+      </article>
     </div>
   </section>
 
@@ -1172,7 +1201,7 @@ body { overflow-x: clip; }
     <ul class="legend">
       <li><span class="sw" style="background: var(--cyan)"></span><span class="what">Liquidity pool</span><span class="pct">55%</span><span class="amt">5,500,000,000 · Tinyman, paired with ALGO</span></li>
       <li><span class="sw" style="background: var(--violet)"></span><span class="what">Airdrops</span><span class="pct">20%</span><span class="amt">2,000,000,000 · 1,000,000 to each of the first 1,000 unlocked accounts</span></li>
-      <li><span class="sw" style="background: var(--teal)"></span><span class="what">Staking rewards</span><span class="pct">15%</span><span class="amt">1,500,000,000 · 62.5M a month to holders, for 2 years</span></li>
+      <li><span class="sw" style="background: var(--teal)"></span><span class="what">Staking rewards</span><span class="pct">15%</span><span class="amt">1,500,000,000 · 1% a month to holders of 1M+</span></li>
       <li><span class="sw" style="background: var(--slate)"></span><span class="what">Project reserve</span><span class="pct">5%</span><span class="amt">500,000,000 · contests and partners</span></li>
       <li><span class="sw" style="background: var(--pale)"></span><span class="what">Team</span><span class="pct">5%</span><span class="amt">500,000,000 · held in a quantum account</span></li>
     </ul>
