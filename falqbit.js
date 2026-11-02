@@ -90,7 +90,17 @@ export function client(net) {
     return { id, info: await waitFor(id) };
   }
 
-  return { net, n, pera, getJSON, algodGet, params, signAndSend };
+  // Send transactions that are already signed (e.g. a LogicSig txn) without Pera.
+  async function sendRaw(blob, id) {
+    const r = await fetch(`${n.algod}/v2/transactions`, {
+      method: "POST", headers: { "Content-Type": "application/x-binary" }, body: blob,
+    });
+    const body = await r.json();
+    if (!r.ok) throw new Error(body.message || JSON.stringify(body));
+    return { id, info: await waitFor(id) };
+  }
+
+  return { net, n, pera, getJSON, algodGet, params, signAndSend, sendRaw };
 }
 
 // ---- Falcon-1024 key discovery ------------------------------------------

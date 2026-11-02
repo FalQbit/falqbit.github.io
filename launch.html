@@ -194,17 +194,31 @@ const STEPS = [
     id: "pool", title: "Create the Tinyman pool",
     info: () => S.pool ? `Pool ${lora("account", S.pool)} · pool token ${lora("asset", S.pool_token)}` : `FALQBIT / ALGO. Funds the pool account with ${(POOL_BOOTSTRAP_ALGO / 1e6).toFixed(3)} ALGO.`,
     async run() {
+      // Two separate sends: Pera signs only the funding payment, then the page
+      // sends the pool's own (LogicSig) bootstrap. Pera rejects groups that
+      // contain a transaction it does not sign.
       const lsig = poolLogicSig(net, S.asset_id);
       const pool = lsig.address().toString();
-      const fund = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: pool, amount: POOL_BOOTSTRAP_ALGO, suggestedParams: await c.params(FEE_PQ) });
+      let acct = await c.algodGet(`/v2/accounts/${pool}`);
+      if (acct && acct["auth-addr"]) {
+        // Already bootstrapped (an earlier attempt got through): read the pool token.
+        S.pool = pool; S.pool_token = Number(acct["created-assets"][0].index);
+        return;
+      }
+      const have = acct ? Number(acct.amount) : 0;
+      if (have < POOL_BOOTSTRAP_ALGO) {
+        say("1 of 2: approve the funding payment in Pera…");
+        const fund = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: pool, amount: POOL_BOOTSTRAP_ALGO - have, suggestedParams: await c.params(FEE_PQ) });
+        await c.signAndSend([fund]);
+      }
+      say("2 of 2: creating the pool (no signature needed)…");
       const boot = algosdk.makeApplicationOptInTxnFromObject({
         sender: pool, appIndex: T, suggestedParams: await c.params(6000),
         appArgs: [new TextEncoder().encode("bootstrap")], foreignAssets: [S.asset_id, 0],
         rekeyTo: algosdk.getApplicationAddress(T),
       });
-      algosdk.assignGroupID([fund, boot]);
-      const signedBoot = algosdk.signLogicSigTransactionObject(boot, lsig).blob;
-      const { info } = await c.signAndSend([fund, boot], { 1: signedBoot }, 1);
+      const signed = algosdk.signLogicSigTransactionObject(boot, lsig);
+      const { info } = await c.sendRaw(signed.blob, signed.txID);
       const inner = (info["inner-txns"] || []).find((i) => i["asset-index"]);
       S.pool = pool; S.pool_token = Number(inner["asset-index"]);
     },
