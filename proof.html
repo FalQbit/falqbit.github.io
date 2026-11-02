@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FALQBIT Proof</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./">FALQBIT</a>
+    <nav class="nets" aria-label="Network">
+      <a href="?net=mainnet" id="n-mainnet">MAINNET</a>
+      <a href="?net=testnet" id="n-testnet" class="test">TESTNET</a>
+    </nav>
+  </header>
+  <section>
+    <h1>Ownership <em>proof</em>.</h1>
+    <p class="lede">Signs a 0 ALGO payment from your account to itself with a note. Used to prove control of the creator account, for example for token lists.</p>
+  </section>
+  <section class="panel">
+    <div class="row" id="r-wallet"><span class="dot"></span><div><div class="label">Wallet</div><div class="detail">Not connected</div></div></div>
+  </section>
+  <label class="field">Note
+    <input type="text" id="note" value="https://github.com/tinymanorg/asa-list/pull/918">
+  </label>
+  <div class="actions">
+    <button class="primary" id="b-connect" type="button">Connect Pera Wallet</button>
+    <button class="primary" id="b-send" type="button" hidden>Sign 0 ALGO with this note</button>
+    <button class="ghost" id="b-disconnect" type="button" hidden>Disconnect</button>
+  </div>
+  <div id="msg" class="msg" hidden></div>
+</div>
+<script type="module">
+import { algosdk, FEE_PQ, client, pickNetwork, short } from "./falqbit.js";
+const net = pickNetwork() || "mainnet";
+const c = client(net);
+const $ = (id) => document.getElementById(id);
+$("n-" + net).setAttribute("aria-current", "true");
+let account = null;
+const say = (html, kind = "") => { const m = $("msg"); m.hidden = !html; m.className = "msg " + kind; m.innerHTML = html; };
+function show() {
+  const r = $("r-wallet");
+  r.dataset.s = account ? "ok" : "";
+  r.querySelector(".detail").textContent = account ? `${short(account)} · ${c.n.label}` : "Not connected";
+  $("b-connect").hidden = !!account; $("b-send").hidden = !account; $("b-disconnect").hidden = !account;
+}
+function disconnect() { c.pera.disconnect(); account = null; say(""); show(); }
+$("b-connect").addEventListener("click", async () => {
+  try { account = (await c.connect())[0]; c.pera.connector?.on("disconnect", disconnect); show(); }
+  catch (e) { if (e?.data?.type !== "CONNECT_MODAL_CLOSED") say(e.message || String(e), "err"); }
+});
+$("b-disconnect").addEventListener("click", disconnect);
+$("b-send").addEventListener("click", async () => {
+  try {
+    $("b-send").disabled = true;
+    say("Approve the request in Pera…");
+    const txn = algosdk.makePaymentTxnWithSuggestedParamsFromObject({
+      sender: account, receiver: account, amount: 0,
+      note: new TextEncoder().encode($("note").value.trim()),
+      suggestedParams: await c.params(FEE_PQ),
+    });
+    const { id } = await c.signAndSend([txn]);
+    say(`Done. Transaction ID:<br><strong class="mono">${id}</strong><br><a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">View on Lora</a>`, "ok");
+  } catch (e) { say(e.message || String(e), "err"); }
+  finally { $("b-send").disabled = false; }
+});
+c.reconnect().then((a) => { if (a.length) { account = a[0]; c.pera.connector?.on("disconnect", disconnect); } show(); }).catch(() => show());
+</script>
+</body>
+</html>
