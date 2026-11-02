@@ -90,7 +90,7 @@ const WELCOME_MIN_ALGO = 2_000_000;        // the account must hold at least 2 A
 // from December 2026: 0.5% of the lowest balance since the 1st, max 500k per wallet, 15M pool, paid on the 25th.
 const PAY_DAY = 25;
 function holdRules(m) {
-  if (m <= "2026-11") return { rate: 100n, pool: 62_500_000n * DEC, perWallet: null, lowest: false };
+  if (m <= "2026-11") return { rate: 100n, pool: 15_000_000n * DEC, perWallet: 500_000n * DEC, lowest: false }; // launch month: 1% of the balance on the 25th (the token started on the 2nd)
   return { rate: 50n, pool: 15_000_000n * DEC, perWallet: 500_000n * DEC, lowest: true };
 }
 const MIN_HOLD = 1_000_000n * DEC;         // hold at least 1,000,000 FALQBIT
@@ -215,7 +215,7 @@ async function lowestSinceFirst(current, addrs) {
 async function buildHold() {
   const R = holdRules(month);
   const today = new Date().getUTCDate();
-  if (R.lowest && today < PAY_DAY && !loadSnap()) {
+  if (today < PAY_DAY && !loadSnap()) {
     $("b-reset").hidden = true;
     $("p-summary").textContent = `Month ${month} · payout day is the ${PAY_DAY}th. Come back then: balances are checked from the 1st up to that day.`;
     return [];
@@ -293,7 +293,7 @@ function setMode(m) {
     const R = holdRules(month);
     $("p-rules").innerHTML = R.lowest
       ? `<li>${Number(R.rate) / 100}% of each wallet's lowest balance since the 1st, for wallets with at least ${fq(MIN_HOLD)} FALQBIT.</li><li>Max ${fq(R.perWallet)} FALQBIT per wallet. Monthly pool ${fq(R.pool)} FALQBIT shared by everyone; above it, all payouts shrink in the same proportion.</li><li>Paid on the ${PAY_DAY}th. The list is fixed the first time you check that day.</li><li>Project accounts, the pool and skipped wallets are left out. Transfers carry the note "${NOTE_HOLD}".</li>`
-      : `<li>Launch month: ${Number(R.rate) / 100}% of each balance, for wallets with at least ${fq(MIN_HOLD)} FALQBIT.</li><li>Monthly pool ${fq(R.pool)} FALQBIT shared by everyone; above it, all payouts shrink in the same proportion.</li><li>Pay on the ${PAY_DAY}th. The list is fixed the first time you check and kept for every batch.</li><li>Project accounts, the pool and skipped wallets are left out. Transfers carry the note "${NOTE_HOLD}".</li>`;
+      : `<li>Launch month: ${Number(R.rate) / 100}% of each balance on the ${PAY_DAY}th, for wallets with at least ${fq(MIN_HOLD)} FALQBIT.</li><li>Max ${fq(R.perWallet)} FALQBIT per wallet. Monthly pool ${fq(R.pool)} FALQBIT shared by everyone; above it, all payouts shrink in the same proportion.</li><li>Pay on the ${PAY_DAY}th. The list is fixed the first time you check and kept for every batch.</li><li>Project accounts, the pool and skipped wallets are left out. Transfers carry the note "${NOTE_HOLD}".</li>`;
   }
 }
 
