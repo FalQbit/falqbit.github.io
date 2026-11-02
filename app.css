@@ -24,7 +24,8 @@ body {
 }
 a { color: var(--cyan); }
 .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-.brand { font: 800 20px/1 var(--display); letter-spacing: .02em; text-decoration: none; color: var(--fg); }
+.brand { display: inline-flex; align-items: center; gap: 10px; font: 800 20px/1 var(--display); letter-spacing: .02em; text-decoration: none; color: var(--fg); }
+.brand img { width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 18px rgba(63,224,208,.35); }
 .nets { display: flex; gap: 6px; }
 .nets a {
   font: 500 12px/1 var(--mono); letter-spacing: .1em; text-decoration: none;

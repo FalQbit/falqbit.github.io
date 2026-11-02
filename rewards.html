@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <link rel="stylesheet" href="./app.css">
+<link rel="icon" type="image/png" href="./icon.png">
 <style>
 .tabs { display: flex; gap: 8px; }
 .tabs button { flex: 1; }
@@ -19,6 +20,10 @@
 .list li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); font: 500 13px/1.4 var(--mono); }
 .list li:last-child { border-bottom: 0; }
 .list li .amt { color: var(--cyan); white-space: nowrap; }
+.list li .right { display: inline-flex; align-items: center; gap: 10px; }
+.list li button.skip, .skipped button.unskip { min-height: 28px; padding: 0 10px; font: 600 12px/1 var(--body); border-radius: 8px; background: transparent; color: var(--muted); border: 1px solid var(--line); cursor: pointer; }
+.list li button.skip:hover, .skipped button.unskip:hover { color: var(--fg); border-color: var(--muted); }
+.skipped { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; }
 .list li.empty { color: var(--muted); font-family: var(--body); }
 .log { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 </style>
@@ -26,7 +31,7 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <a class="brand" href="./">FALQBIT</a>
+    <a class="brand" href="./"><img src="./icon.png" alt="" width="34" height="34">FALQBIT</a>
     <nav class="nets" aria-label="Network">
       <a href="?net=mainnet" id="n-mainnet">MAINNET</a>
       <a href="?net=testnet" id="n-testnet" class="test">TESTNET</a>
@@ -64,6 +69,7 @@
     </div>
     <p class="detail" id="p-summary">Press "Check the chain" to build the list.</p>
     <ul class="list" id="p-list"><li class="empty">No list yet.</li></ul>
+    <p class="detail skipped" id="skipped" hidden></p>
     <button class="primary" id="b-pay" type="button" disabled>Sign next batch in Pera</button>
   </section>
 
@@ -149,11 +155,16 @@ async function unlockedAccounts() {
 async function buildWelcome() {
   const [unlocked, hold, paid] = await Promise.all([unlockedAccounts(), holders(), paidWith(NOTE_WELCOME)]);
   const left = Math.max(0, WELCOME_CAP - paid.size);
-  const due = unlocked.filter((a) => !EXCLUDE.has(a) && !paid.has(a) && hold.has(a) && !hold.get(a).frozen)
+  const due = unlocked.filter((a) => !EXCLUDE.has(a) && !SKIP.has(a) && !paid.has(a) && hold.has(a) && !hold.get(a).frozen)
     .slice(0, left).map((a) => ({ to: a, amount: WELCOME }));
   $("p-summary").textContent = `${unlocked.length} unlocked accounts on chain · ${paid.size} already welcomed · ${left} welcome drops left · ${due.length} to pay now (${fq(WELCOME * BigInt(due.length))} FALQBIT).`;
   return due;
 }
+
+const SKIP_KEY = `falqbit-skip-${net}`;
+let SKIP = new Set();
+try { SKIP = new Set(JSON.parse(localStorage.getItem(SKIP_KEY) || "[]")); } catch { SKIP = new Set(); }
+const saveSkip = () => { try { localStorage.setItem(SKIP_KEY, JSON.stringify([...SKIP])); } catch {} };
 
 const SNAP_KEY = () => `falqbit-hold-${net}-${month}`;
 function loadSnap() { try { return JSON.parse(localStorage.getItem(SNAP_KEY()) || "null"); } catch { return null; } }
@@ -164,7 +175,7 @@ async function buildHold() {
   let snap = loadSnap();
   if (!snap) {
     // snapshot: who holds at least MIN_HOLD right now, excluding project accounts and the pool
-    const eligible = [...hold.entries()].filter(([a, h]) => !EXCLUDE.has(a) && !h.frozen && h.amount >= MIN_HOLD);
+    const eligible = [...hold.entries()].filter(([a, h]) => !EXCLUDE.has(a) && !SKIP.has(a) && !h.frozen && h.amount >= MIN_HOLD);
     const total = eligible.reduce((s, [, h]) => s + h.amount, 0n);
     snap = { taken: new Date().toISOString(), total: total.toString(),
       // 1% of each balance; if the sum would pass the cap, everyone is scaled down to fit it
@@ -177,7 +188,7 @@ async function buildHold() {
   }
   $("b-reset").hidden = false;
   const due = snap.rows.map((r) => ({ to: r.to, amount: BigInt(r.amount) }))
-    .filter((r) => r.amount > 0n && !paid.has(r.to) && hold.has(r.to) && !hold.get(r.to).frozen);
+    .filter((r) => r.amount > 0n && !SKIP.has(r.to) && !paid.has(r.to) && hold.has(r.to) && !hold.get(r.to).frozen);
   $("p-summary").textContent = `Month ${month} · snapshot ${new Date(snap.taken).toLocaleString()} · ${snap.rows.length} holders with at least ${fq(MIN_HOLD)} FALQBIT · ${paid.size} already paid · ${due.length} to pay now (${fq(due.reduce((s, r) => s + r.amount, 0n))} FALQBIT).`;
   return due;
 }
@@ -187,12 +198,28 @@ function render() {
   if (!queue.length) { ul.innerHTML = `<li class="empty">Nobody to pay right now.</li>`; }
   for (const r of queue.slice(0, 500)) {
     const li = document.createElement("li");
-    li.innerHTML = `<a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a><span class="amt">${fq(r.amount)}</span>`;
+    li.innerHTML = `<a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a><span class="right"><span class="amt">${fq(r.amount)}</span><button type="button" class="skip">Skip</button></span>`;
+    li.querySelector(".skip").addEventListener("click", () => {
+      SKIP.add(r.to); saveSkip();
+      queue = queue.filter((q) => q.to !== r.to); render(); renderSkipped();
+    });
     ul.append(li);
   }
+  renderSkipped();
   const n = Math.min(BATCH, queue.length);
   $("b-pay").disabled = !account || account !== cfg.rewards || !n;
   $("b-pay").textContent = n ? `Sign next batch in Pera (${n} of ${queue.length})` : "Sign next batch in Pera";
+}
+
+function renderSkipped() {
+  const box = $("skipped");
+  box.hidden = !SKIP.size;
+  box.innerHTML = SKIP.size ? `<span>Skipped in this browser: </span>` + [...SKIP].map((a) =>
+    `<button type="button" class="unskip" data-a="${a}" title="Put back on the list">${short(a)} ✕</button>`).join(" ") : "";
+  box.querySelectorAll(".unskip").forEach((b) => b.addEventListener("click", () => {
+    SKIP.delete(b.dataset.a); saveSkip(); renderSkipped();
+    say("Put back. Press \"Check the chain\" to refresh the list.");
+  }));
 }
 
 async function scan() {
