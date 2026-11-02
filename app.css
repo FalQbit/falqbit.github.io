@@ -9,6 +9,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   margin: 0; background: var(--ground);
   background-image: radial-gradient(var(--line) 1.2px, transparent 1.3px); background-size: 22px 22px;

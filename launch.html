@@ -79,7 +79,7 @@ $("n-" + net).setAttribute("aria-current", "true");
 if (net === "mainnet") $("mainnet-guard").hidden = false;
 
 $("liq-fq").value = 5500000000;
-$("liq-algo").value = net === "mainnet" ? 500 : 1;
+$("liq-algo").value = net === "mainnet" ? 1000 : 1;
 
 let account = null;
 let S = {};          // launch state for this network + account
@@ -338,13 +338,13 @@ function disconnect() {
 }
 $("b-connect").addEventListener("click", async () => {
   try {
-    const accs = await c.pera.connect();
+    const accs = await c.connect();
     c.pera.connector?.on("disconnect", disconnect);
     await connected(accs[0]);
   } catch (e) { if (e?.data?.type !== "CONNECT_MODAL_CLOSED") say(e.message || String(e), "err"); }
 });
 $("b-disconnect").addEventListener("click", disconnect);
-c.pera.reconnectSession().then((accs) => {
+c.reconnect().then((accs) => {
   c.pera.connector?.on("disconnect", disconnect);
   if (accs.length) connected(accs[0]).catch((e) => say(e.message, "err"));
 }).catch(() => {});

@@ -574,7 +574,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 <circle cx="141" cy="78" r="6.5" fill="#8B7CFF"/>
 <circle cx="100" cy="100" r="97" fill="none" stroke="#3FE0D0" stroke-width="2.5"/>
 </svg><span>FALQBIT</span></div>
-    <span class="status-pill"><i aria-hidden="true"></i>TestNet: fully tested</span>
+    <span class="status-pill"><i aria-hidden="true" style="background: var(--cyan)"></i>Live on MainNet</span>
   </header>
 
   <section class="hero" aria-labelledby="h-hero">
@@ -583,7 +583,8 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
       <h1 id="h-hero">The token that only lives in <em>post-quantum</em> accounts.</h1>
       <p class="lede">A quantum computer could one day forge the signatures that guard most crypto wallets. FALQBIT can only be held by accounts signed with Falcon-1024, the NIST-selected scheme built to resist that attack.</p>
       <div class="cta-row">
-        <a class="btn primary" href="./unlock.html?net=testnet">Try the unlock (TestNet)</a>
+        <a class="btn primary" href="./unlock.html?net=mainnet">Unlock your account</a>
+        <a class="btn ghost" href="https://app.tinyman.org/swap?asset_in=0&amp;asset_out=3760920399" target="_blank" rel="noopener">Buy on Tinyman</a>
         <a class="btn ghost" href="#how">How it works</a>
         <a class="btn ghost" href="https://x.com/hashtag/FALQBIT" target="_blank" rel="noopener">Follow #FALQBIT on X</a>
       </div>
@@ -1011,7 +1012,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     <div class="rules">
       <div class="rule"><h3>No clawback</h3><p>Nobody can take tokens out of your account. Not the contract, not the creator.</p></div>
       <div class="rule"><h3>No admin backdoor</h3><p>The freeze role belongs to a public smart contract, not to a person or a private key.</p></div>
-      <div class="rule"><h3>Approved code only</h3><p>Pools and contracts can hold FALQBIT only if the code that controls them is on the gate's approved list, starting with Tinyman v2. The approver can only add to the list, and will give up the role for good.</p></div>
+      <div class="rule"><h3>Approved code only</h3><p>Pools and contracts can hold FALQBIT only if the code that controls them is on the gate's approved list, Tinyman v2 is the only app on the list. The approver role has been renounced, so the list can never change.</p></div>
       <div class="rule"><h3>Nothing can be changed</h3><p>The token has no manager and the gate contract cannot be updated or deleted. The rules you read here are the rules forever.</p></div>
       <div class="rule"><h3>Go back to classic, get locked again</h3><p>If an account rekeys away from Falcon, anyone can ask the contract to lock it. Your tokens stay yours and unlock again when you return to Falcon.</p></div>
     </div>
@@ -1058,7 +1059,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     <ul class="limits">
       <li><strong>Algorand consensus is still classical.</strong> Accounts and chain history are post-quantum; block voting is on Algorand's roadmap for 2027.</li>
       <li><strong>Relocking happens after the fact.</strong> If an unlocked account rekeys back to a classic key, it stays unlocked until someone calls relock. Anyone can, and they earn the account's deposit for it.</li>
-      <li><strong>Approved code is a trust point.</strong> Until the approver role is renounced, the project can add applications to the approved list. It can never freeze, unfreeze or take tokens.</li>
+      <li><strong>Only Tinyman v2 pools.</strong> The approved list is final, so other exchanges and new contracts cannot hold FALQBIT. Airdrops and rewards go straight to unlocked quantum accounts.</li>
       <li><strong>Code-controlled addresses.</strong> Application and pool addresses are hashes. Whether such an address could be attacked by a future quantum computer depends on Algorand's ledger roadmap, not on this contract.</li>
       <li><strong>Tinyman protocol fees.</strong> Fees paid in FALQBIT cannot be claimed by Tinyman's classic fee account. This does not affect traders.</li>
     </ul>
@@ -1104,9 +1105,9 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 
   <section class="sec" aria-labelledby="h-trade">
     <div class="sec-head">
-      <p class="eyebrow">Where it will trade</p>
+      <p class="eyebrow">Where it trades</p>
       <h2 id="h-trade">One pool, found everywhere on Algorand.</h2>
-      <p class="muted">At launch the FALQBIT/ALGO pool opens on Tinyman. Aggregators and wallets pick it up from there.</p>
+      <p class="muted">The FALQBIT/ALGO pool is live on Tinyman. Aggregators and wallets pick it up from there.</p>
     </div>
     <div class="venues">
       <div class="venue"><span class="role">Pool</span><span class="name">Tinyman</span><p>FALQBIT / ALGO liquidity</p></div>
@@ -1124,8 +1125,8 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     <ol class="road">
       <li class="done"><span class="state">Done</span><h3>Name and identity</h3><p>FALQBIT, the lattice falcon, the project quantum account and this site.</p></li>
       <li class="done"><span class="state">Done</span><h3>TestNet</h3><p>Gate contract, Tinyman pool, swaps and the Pera unlock page, all tested.</p></li>
-      <li class="now"><span class="state">Next</span><h3>Mainnet launch</h3><p>Token, contract and Tinyman pool on the same day.</p></li>
-      <li><span class="state">Then</span><h3>Airdrop and staking</h3><p>Rewards for the first quantum accounts.</p></li>
+      <li class="done"><span class="state">Done</span><h3>Mainnet launch</h3><p>Token, gate contract and Tinyman pool, launched on 2 November 2026.</p></li>
+      <li class="now"><span class="state">Next</span><h3>Airdrop and staking</h3><p>Rewards for the first quantum accounts.</p></li>
     </ol>
   </section>
 
@@ -1134,7 +1135,7 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
       <h3 id="h-warn">Beware of fakes</h3>
       <p class="muted">Anyone can copy a name. Only the token ID can't be copied.</p>
     </div>
-    <p class="id"><span>Official token ID:</span> announced at launch</p>
+    <p class="id"><span>Official token ID:</span> <a href="https://lora.algokit.io/mainnet/asset/3760920399" target="_blank" rel="noopener">3760920399</a><br><span>Gate contract:</span> <a href="https://lora.algokit.io/mainnet/application/3760919863" target="_blank" rel="noopener">3760919863</a><br><span>Creator:</span> <a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></p>
   </section>
 
   <footer>

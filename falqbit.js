@@ -100,7 +100,27 @@ export function client(net) {
     return { id, info: await waitFor(id) };
   }
 
-  return { net, n, pera, getJSON, algodGet, params, signAndSend, sendRaw };
+  // Pera keeps one session per site. A session opened on the other network
+  // must be closed first, or Pera answers "Session currently connected".
+  const NET_KEY = "falqbit-pera-net";
+  const getNet = () => { try { return localStorage.getItem(NET_KEY); } catch { return null; } };
+  const setNet = () => { try { localStorage.setItem(NET_KEY, net); } catch {} };
+  async function connect() {
+    try { await pera.disconnect(); } catch {}
+    const accounts = await pera.connect();
+    setNet();
+    return accounts;
+  }
+  async function reconnect() {
+    const accounts = await pera.reconnectSession();
+    if (accounts.length && getNet() !== net) {
+      try { await pera.disconnect(); } catch {}
+      return [];
+    }
+    return accounts;
+  }
+
+  return { net, n, pera, getJSON, algodGet, params, signAndSend, sendRaw, connect, reconnect };
 }
 
 // ---- Falcon-1024 key discovery ------------------------------------------

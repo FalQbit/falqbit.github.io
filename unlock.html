@@ -166,7 +166,7 @@ function disconnect() {
 
 $("b-connect").addEventListener("click", async () => {
   try {
-    const accounts = await c.pera.connect();
+    const accounts = await c.connect();
     c.pera.connector?.on("disconnect", disconnect);
     account = accounts[0];
     say("");
@@ -178,7 +178,7 @@ $("b-connect").addEventListener("click", async () => {
 $("b-disconnect").addEventListener("click", disconnect);
 
 if (cfg) {
-  c.pera.reconnectSession().then((accounts) => {
+  c.reconnect().then((accounts) => {
     c.pera.connector?.on("disconnect", disconnect);
     if (accounts.length) { account = accounts[0]; refresh().catch((e) => say(e.message, "err")); }
   }).catch(() => {});
