@@ -1,5 +1,16 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FALQBIT</title>
+<meta name="description" content="FALQBIT is the first Algorand token that only post-quantum (Falcon-1024) accounts can hold. Immutable gate contract, Tinyman pool, open source.">
+<link rel="icon" type="image/png" href="/icon.png">
+<link rel="apple-touch-icon" href="/icon.png">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://falqbit.com/">
+<meta property="og:title" content="FALQBIT · the token only post-quantum accounts can hold">
+<meta property="og:description" content="Live on Algorand MainNet. 1,000,000 FALQBIT for the first 1,000 quantum accounts, 1% a month for holders.">
+<meta property="og:image" content="https://falqbit.com/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@FalQbit">
+<meta name="twitter:image" content="https://falqbit.com/og.png">
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -91,7 +102,7 @@ p { margin: 0; }
 /* formula strip */
 .formula {
   font: 500 14px/1.5 var(--mono); color: var(--muted);
-  border-top: 1px solid var(--line); padding-top: 16px; overflow-x: auto; white-space: nowrap;
+  border-top: 1px solid var(--line); padding-top: 16px; overflow-wrap: anywhere;
 }
 .formula b { color: var(--violet); font-weight: 500; }
 
@@ -104,7 +115,10 @@ p { margin: 0; }
 .step { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .step .n { font: 500 13px/1 var(--mono); color: var(--cyan); letter-spacing: 0.1em; }
 .step p { color: var(--muted); font-size: 16px; }
-.lock { display: inline-flex; align-items: center; gap: 8px; font: 500 13px/1 var(--mono); padding: 7px 11px; border-radius: 999px; align-self: flex-start; }
+.step .eg { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font: 500 14px/1.5 var(--mono); font-variant-numeric: tabular-nums; color: var(--fg); background: rgba(63,224,208,.08); border: 1px solid rgba(63,224,208,.25); border-radius: 10px; padding: 10px 12px; }
+.step .eg span:nth-child(even) { text-align: right; color: var(--cyan); }
+.step .eg .h { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) !important; }
+.lock { display: inline-flex; align-items: center; gap: 8px; font: 500 12px/1 var(--mono); padding: 6px 10px; border-radius: 999px; white-space: nowrap; align-self: flex-start; margin-top: auto; }
 .lock.off { color: var(--amber); border: 1px solid var(--amber); }
 .lock.on { color: var(--ground); background: var(--cyan); }
 
@@ -131,9 +145,11 @@ p { margin: 0; }
 .venue .role { font: 500 12px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan); }
 .venue .name { font: 700 22px/1.1 var(--display); }
 .venue p { color: var(--muted); font-size: 15px; }
+a.venue { text-decoration: none; color: var(--fg); }
+a.venue:hover { color: var(--fg); }
 
 /* roadmap: real order */
-.road { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.road { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
 .road li { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 3px solid var(--line); min-width: 0; }
 .road li.done { border-top-color: var(--cyan); }
 .road li.now { border-top-color: var(--amber); }
@@ -178,18 +194,82 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 .code-card .hash { font: 500 13px/1.5 var(--mono); color: var(--muted); overflow-wrap: anywhere; }
 .limits { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; color: var(--muted); max-width: 46em; }
 .limits strong { color: var(--fg); }
+.held-h { font: 700 20px/1.2 var(--display); margin: 28px 0 6px; }
+.proof.held li { grid-template-columns: minmax(0, 1fr) auto; }
+@media (max-width: 560px) { .proof.held li { grid-template-columns: minmax(0, 1fr); } .proof.held a { grid-column: 1; } }
 .faq { display: flex; flex-direction: column; gap: 0; }
 .faq details { border-top: 1px solid var(--line); padding-block: 16px; }
 .faq summary { cursor: pointer; font-weight: 600; font-size: 18px; list-style-position: outside; }
 .faq summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
 .faq p { color: var(--muted); margin: 10px 0 0; max-width: 46em; }
 @media (max-width: 560px) { .proof li { grid-template-columns: 26px minmax(0, 1fr); } .proof a, .proof .tag { grid-column: 2; } }
+
+/* ---- modern layer ---- */
+.hero-meta { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin: 0; color: var(--muted); font-size: 15px; }
+.hero-meta a { color: var(--fg); }
+.proof-h { display: flex; align-items: center; gap: 12px; font: 600 16px/1.3 var(--body); color: var(--muted); margin: 8px 0 -14px; }
+.net { font: 600 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; padding: 6px 10px; border-radius: 999px; }
+.net.main { background: var(--cyan); color: var(--ground); }
+.net.test { border: 1px solid var(--amber); color: var(--amber); }
+@media (min-width: 861px) and (max-width: 1000px) { .road { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+html { scroll-behavior: smooth; scroll-padding-top: 96px; }
+body { overflow-x: clip; }
+.glow { position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(600px 420px at 85% 8%, rgba(63,224,208,.13), transparent 70%),
+    radial-gradient(520px 380px at 8% 38%, rgba(156,144,255,.11), transparent 70%),
+    radial-gradient(700px 500px at 60% 100%, rgba(63,224,208,.07), transparent 70%); }
+.wrap { padding-top: 0; }
+.top { position: sticky; top: 0; z-index: 10; margin-inline: calc(50% - 50vw); padding: 14px max(16px, calc(50vw - 504px));
+  background: rgba(10,15,30,.72); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom: 1px solid rgba(36,48,79,.7); flex-wrap: nowrap; }
+.brand { text-decoration: none; color: var(--fg); }
+.brand svg { width: 34px; height: 34px; }
+.topnav { display: flex; gap: 4px; }
+.topnav a { color: var(--muted); text-decoration: none; font-size: 15px; padding: 8px 12px; border-radius: 10px; }
+.topnav a:hover { color: var(--fg); background: rgba(255,255,255,.05); }
+.top-right { display: flex; align-items: center; gap: 10px; }
+.status-pill i { background: var(--cyan); box-shadow: 0 0 0 0 rgba(63,224,208,.6); }
+.btn.small { min-height: 38px; padding: 0 16px; font-size: 15px; border-radius: 10px; }
+.btn { transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease; }
+.btn.primary { box-shadow: 0 6px 24px -8px rgba(63,224,208,.7); }
+.btn.primary:hover { transform: translateY(-1px); box-shadow: 0 10px 30px -8px rgba(63,224,208,.85); }
+.btn.ghost { background: rgba(18,26,48,.6); backdrop-filter: blur(8px); }
+.hero { padding-top: 24px; }
+.hero h1 em { background: linear-gradient(100deg, var(--cyan) 10%, #8FF3EA 45%, var(--violet) 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-art svg { filter: drop-shadow(0 0 40px rgba(63,224,208,.18)); }
+.step, .venue, .code-card { background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.55)); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border-color: rgba(60,78,122,.55); transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.step:hover, .venue:hover { transform: translateY(-3px); border-color: rgba(63,224,208,.45); box-shadow: 0 16px 40px -20px rgba(63,224,208,.45); }
+.warn { background: linear-gradient(180deg, rgba(245,185,66,.06), rgba(245,185,66,.02)); }
+.bar { box-shadow: 0 0 30px -6px rgba(63,224,208,.35); }
+
+/* live stats */
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: -40px; }
+.stat { display: flex; flex-direction: column; gap: 6px; padding: 20px; border-radius: 16px; min-width: 0;
+  background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.5)); border: 1px solid rgba(60,78,122,.55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.stat .k { font: 500 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); }
+.stat .v { font: 800 clamp(26px, 3vw, 34px)/1.05 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.stat .s { color: var(--muted); font-size: 13px; }
+.stats-note { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; color: var(--muted); font: 500 12px/1.4 var(--mono); }
+.stats-note i { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); flex: none; }
+
+@media (max-width: 860px) { .topnav { display: none; } .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: -24px; } }
+@media (max-width: 420px) { .status-pill { display: none; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .status-pill i, .stats-note i { animation: pulse 2.4s ease-out infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(63,224,208,.55); } 80%, 100% { box-shadow: 0 0 0 8px rgba(63,224,208,0); } }
+  .js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+  .js .reveal.in { opacity: 1; transform: none; }
+}
 </style>
-</head><body>
+</head><body id="top">
+<div class="glow" aria-hidden="true"></div>
 
 <div class="wrap">
   <header class="top">
-    <div class="brand"><svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="98" fill="#0A0F1E"/>
+    <a class="brand" href="#top" aria-label="FALQBIT home"><svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="98" fill="#0A0F1E"/>
 <circle cx="76" cy="12" r="1.2" fill="#2A3556"/>
 <circle cx="84" cy="12" r="1.2" fill="#2A3556"/>
 <circle cx="92" cy="12" r="1.2" fill="#2A3556"/>
@@ -573,8 +653,18 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 <path d="M 52 172 C 40 122 54 76 94 56 C 124 42 160 48 173 68 L 184 80 C 191 89 190 101 181 109 L 176 99 C 171 103 165 105 159 105 C 149 121 136 138 130 172 Z" fill="none" stroke="#3FE0D0" stroke-width="1.6" stroke-linejoin="round" opacity="0.9"/>
 <circle cx="141" cy="78" r="6.5" fill="#8B7CFF"/>
 <circle cx="100" cy="100" r="97" fill="none" stroke="#3FE0D0" stroke-width="2.5"/>
-</svg><span>FALQBIT</span></div>
-    <span class="status-pill"><i aria-hidden="true" style="background: var(--cyan)"></i>Live on MainNet</span>
+</svg><span>FALQBIT</span></a>
+    <nav class="topnav" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#rewards">Rewards</a>
+      <a href="#supply">Supply</a>
+      <a href="#proof">Proof</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="top-right">
+      <span class="status-pill"><i aria-hidden="true"></i>Live on MainNet</span>
+      <a class="btn primary small" href="https://app.tinyman.org/swap?asset_in=0&amp;asset_out=3760920399" target="_blank" rel="noopener">Buy</a>
+    </div>
   </header>
 
   <section class="hero" aria-labelledby="h-hero">
@@ -586,9 +676,9 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
         <a class="btn primary" href="./unlock.html?net=mainnet">Unlock your account</a>
         <a class="btn ghost" href="https://app.tinyman.org/swap?asset_in=0&amp;asset_out=3760920399" target="_blank" rel="noopener">Buy on Tinyman</a>
         <a class="btn ghost" href="#how">How it works</a>
-        <a class="btn ghost" href="https://x.com/hashtag/FALQBIT" target="_blank" rel="noopener">Follow #FALQBIT on X</a>
       </div>
-      <p class="formula" aria-label="How a post-quantum address is derived on Algorand">address = SHA512-256(<b>"PQA"</b> ‖ scheme ‖ salt ‖ falcon_public_key)</p>
+      <p class="hero-meta"><a href="https://x.com/FalQbit" target="_blank" rel="noopener">Follow @FalQbit on X</a><span aria-hidden="true">·</span><span>Official ID <a href="https://lora.algokit.io/mainnet/asset/3760920399" target="_blank" rel="noopener">3760920399</a></span></p>
+      <p class="formula" aria-label="How a post-quantum address is derived on Algorand"><span style="display:block;color:var(--cyan);font-size:12px;letter-spacing:.1em;margin-bottom:4px">HOW A QUANTUM ADDRESS IS MADE</span>address = SHA512-256(<b>"PQA"</b> ‖ scheme ‖ salt ‖ falcon_public_key)</p>
     </div>
     <div class="hero-art"><svg viewBox="0 0 200 200" role="img" aria-label="FALQBIT falcon logo made of lattice dots"><g class="hot"><circle cx="100" cy="100" r="98" fill="#0A0F1E"/>
 <circle cx="76" cy="12" r="1.2" fill="#2A3556"/>
@@ -977,7 +1067,15 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 </g></svg></div>
   </section>
 
-  <section class="sec" id="how" aria-labelledby="h-how">
+  <section class="stats reveal" aria-label="Live on-chain numbers">
+    <div class="stat"><span class="k">Price</span><span class="v" id="st-price">…</span><span class="s">ALGO per 1M FALQBIT</span></div>
+    <div class="stat"><span class="k">Pool liquidity</span><span class="v" id="st-pool">…</span><span class="s">ALGO in the Tinyman pool</span></div>
+    <div class="stat"><span class="k">Market value</span><span class="v" id="st-mcap">…</span><span class="s">ALGO, all 10B at pool price</span></div>
+    <div class="stat"><span class="k">Unlocked accounts</span><span class="v" id="st-unlocked">…</span><span class="s">accounts approved by the gate</span></div>
+    <p class="stats-note"><i aria-hidden="true"></i><span id="st-note">Reading Algorand MainNet…</span></p>
+  </section>
+
+  <section class="sec reveal" id="how" aria-labelledby="h-how">
     <div class="sec-head">
       <p class="eyebrow">How it works</p>
       <h2 id="h-how">Everyone starts locked. Only quantum accounts get unlocked.</h2>
@@ -986,100 +1084,69 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
       <article class="step">
         <span class="n">STEP 1</span>
         <h3>Add FALQBIT to your wallet</h3>
-        <p>Opt in to the token from your Pera Quantum Account. Your FALQBIT balance starts locked, like a new bank card.</p>
-        <span class="lock off">Locked</span>
+        <p>Create a Quantum Account in Pera and add FALQBIT. Your balance starts locked, like a new bank card.</p>
+        <span class="lock off">Starts locked</span>
       </article>
       <article class="step">
         <span class="n">STEP 2</span>
         <h3>Prove your account is Falcon</h3>
-        <p>One tap on the unlock page. The gatekeeper contract checks that your account is signed by a Falcon-1024 key.</p>
-        <span class="lock off">Checking</span>
+        <p>Open the unlock page and approve in Pera. The gatekeeper contract checks that your account is signed by a Falcon-1024 key. Adding and unlocking happen in one step.</p>
+        <span class="lock off">Contract checks</span>
       </article>
       <article class="step">
         <span class="n">STEP 3</span>
-        <h3>Trade, send and stake</h3>
-        <p>Once unlocked, FALQBIT moves freely between quantum accounts, pools and contracts. Classic accounts stay locked.</p>
+        <h3>Trade, send and hold</h3>
+        <p>Once unlocked, FALQBIT moves freely between quantum accounts and the Tinyman pool. Classic accounts stay locked.</p>
         <span class="lock on">Unlocked</span>
       </article>
     </div>
   </section>
 
-  <section class="sec" aria-labelledby="h-rules">
+  <section class="sec reveal" id="rewards" aria-labelledby="h-rewards">
     <div class="sec-head">
-      <p class="eyebrow">The rules</p>
-      <h2 id="h-rules">Code decides. Nobody else can.</h2>
+      <p class="eyebrow">Rewards</p>
+      <h2 id="h-rewards">Get FALQBIT for joining. Earn more for holding.</h2>
+      <p class="muted">No staking, no lock-up, no contract. Your FALQBIT never leave your own quantum account. Rewards are paid from the public <a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">Rewards account</a>, so every payment can be checked on-chain.</p>
     </div>
-    <div class="rules">
-      <div class="rule"><h3>No clawback</h3><p>Nobody can take tokens out of your account. Not the contract, not the creator.</p></div>
-      <div class="rule"><h3>No admin backdoor</h3><p>The freeze role belongs to a public smart contract, not to a person or a private key.</p></div>
-      <div class="rule"><h3>Approved code only</h3><p>Pools and contracts can hold FALQBIT only if the code that controls them is on the gate's approved list, Tinyman v2 is the only app on the list. The approver role has been renounced, so the list can never change.</p></div>
-      <div class="rule"><h3>Nothing can be changed</h3><p>The token has no manager and the gate contract cannot be updated or deleted. The rules you read here are the rules forever.</p></div>
-      <div class="rule"><h3>Go back to classic, get locked again</h3><p>If an account rekeys away from Falcon, anyone can ask the contract to lock it. Your tokens stay yours and unlock again when you return to Falcon.</p></div>
+    <div class="steps">
+      <article class="step">
+        <span class="n">WELCOME DROP</span>
+        <h3>1,000,000 FALQBIT to join</h3>
+        <p>The first 1,000 quantum accounts that unlock on the <a href="./unlock.html">unlock page</a> get 1,000,000 FALQBIT each, once per account. No purchase needed. Drops are paid in weekly rounds.</p>
+        <span class="lock on">First 1,000 accounts</span>
+      </article>
+      <article class="step">
+        <span class="n">HOLD-TO-EARN</span>
+        <h3>1% a month for holding</h3>
+        <p>Hold 1,000,000 FALQBIT or more and you get 1% of what you hold, once a month, sent straight to your wallet.</p>
+        <div class="eg"><span class="h">You hold</span><span class="h">You get / month</span><span>10,000,000</span><span>100,000</span><span>100,000,000</span><span>1,000,000</span></div>
+        <p>No staking, nothing to claim. Your tokens never leave your wallet and you can sell anytime.</p>
+        <span class="lock on">Min. 1,000,000 FALQBIT</span>
+      </article>
+      <article class="step">
+        <span class="n">HOW IT IS PAID</span>
+        <h3>Held on payout day</h3>
+        <p>Once a month, on a day that is not announced, the balances are read from the chain and the 1% is sent. The best way to qualify is simply to hold all month. The total is capped at 62,500,000 FALQBIT a month; anything unused stays in the Rewards account. Project accounts and the pool are left out.</p>
+        <span class="lock off">Unannounced day</span>
+      </article>
     </div>
   </section>
 
-
-  <section class="sec" id="proof" aria-labelledby="h-proof">
+  <section class="sec reveal" aria-labelledby="h-trade">
     <div class="sec-head">
-      <p class="eyebrow">Proof</p>
-      <h2 id="h-proof">Every rule, tested on-chain.</h2>
-      <p class="muted">The full flow ran on Algorand TestNet with the final contract. Each line links to the transaction or object on the Lora explorer.</p>
+      <p class="eyebrow">Where it trades</p>
+      <h2 id="h-trade">One pool, found everywhere on Algorand.</h2>
+      <p class="muted">The FALQBIT/ALGO pool is live on Tinyman. Aggregators and wallets pick it up from there.</p>
     </div>
-    <ul class="proof">
-      <li><span class="ok" aria-hidden="true">✓</span><div class="what">First token minted by a Falcon-1024 account<span>Look for the PQSig tag: the transaction was signed post-quantum.</span></div><a href="https://lora.algokit.io/testnet/transaction/PINTCBLCXIHJED2CUW46ADDZ3DCIRFWSYWN2VKEOORFLWXDSCU7A" target="_blank" rel="noopener">PINTCBLCXI…</a></li>
-      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Gate contract published<span>Immutable. Freezes and unfreezes by rule, nothing else.</span></div><a href="https://lora.algokit.io/testnet/application/775346075" target="_blank" rel="noopener">775346075</a></li>
-      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Test token created frozen by default<span>No manager, no clawback, freeze role = the gate. Checked by the contract itself.</span></div><a href="https://lora.algokit.io/testnet/asset/775346086" target="_blank" rel="noopener">775346086</a></li>
-      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Tinyman pool unlocked by the gate<span>The pool is controlled by the approved Tinyman v2 code.</span></div><a href="https://lora.algokit.io/testnet/account/RE6ETC5PPZEUZ3A2CX6APOBRXKF5XYZSZWJ7RAAWCKDV7LWQADDH6QVZIU" target="_blank" rel="noopener">Pool account</a></li>
-      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Liquidity added<span>2,000,000 test tokens + 2 ALGO in the pool.</span></div><a href="https://lora.algokit.io/testnet/asset/775346105" target="_blank" rel="noopener">Pool token</a></li>
-      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Bought through Tinyman<span>0.1 ALGO swapped for the test token from a Falcon account.</span></div><a href="https://lora.algokit.io/testnet/transaction/ESGLD6DI4FPKS5QMG4HVJCWXT4VIAQML3GVQ5O3542SCKEXSTRQQ" target="_blank" rel="noopener">ESGLD6DI4F…</a></li>
-      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Pera Quantum Account unlocked from the web page<span>Connect Pera, two taps, unlocked by the contract (tested on the first gate version).</span></div><span class="tag">Pera</span></li>
-      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Classic Ed25519 account refused<span>The network answered: asset frozen in recipient.</span></div><span class="tag">refused</span></li>
-    </ul>
-  </section>
-
-  <section class="sec" id="code" aria-labelledby="h-code">
-    <div class="sec-head">
-      <p class="eyebrow">Open source</p>
-      <h2 id="h-code">Read the rules yourself.</h2>
-    </div>
-    <div class="code-card">
-      <p class="muted" style="margin:0">The gate contract is about 150 lines of Algorand Python. The source, the compiled program and the ABI are public in this site's repository. An independent automated review found no way for a classic account to unlock, and its fixes are part of this version. There has been no professional audit yet.</p>
-      <div class="cta-row">
-        <a class="btn ghost" href="https://github.com/FalQbit/falqbit.github.io/blob/main/falqbit_gate.py" target="_blank" rel="noopener">View the contract on GitHub</a>
-      </div>
-      <p class="hash">Compiled approval program SHA-256: f14801163a468bc7e990531cd866dd21fe69a6f5d0b7bf0bd71cd8109e4f95a9</p>
+    <div class="venues">
+      <a class="venue" href="https://app.tinyman.org/swap?asset_in=0&amp;asset_out=3760920399" target="_blank" rel="noopener"><span class="role">Pool</span><span class="name">Tinyman ↗</span><p>FALQBIT / ALGO liquidity</p></a>
+      <a class="venue" href="https://hay.app/" target="_blank" rel="noopener"><span class="role">Swaps</span><span class="name">Haystack ↗</span><p>Routes to the best price</p></a>
+      <a class="venue" href="https://perawallet.app/" target="_blank" rel="noopener"><span class="role">Wallet</span><span class="name">Pera ↗</span><p>Swap without leaving the app</p></a>
+      <a class="venue" href="https://www.vestige.fi/asset/3760920399" target="_blank" rel="noopener"><span class="role">Charts</span><span class="name">Vestige ↗</span><p>Price, volume and holders</p></a>
     </div>
   </section>
 
-  <section class="sec" id="limits" aria-labelledby="h-limits">
-    <div class="sec-head">
-      <p class="eyebrow">Honest limits</p>
-      <h2 id="h-limits">What FALQBIT does not solve.</h2>
-    </div>
-    <ul class="limits">
-      <li><strong>Algorand consensus is still classical.</strong> Accounts and chain history are post-quantum; block voting is on Algorand's roadmap for 2027.</li>
-      <li><strong>Relocking happens after the fact.</strong> If an unlocked account rekeys back to a classic key, it stays unlocked until someone calls relock. Anyone can, and they earn the account's deposit for it.</li>
-      <li><strong>Only Tinyman v2 pools.</strong> The approved list is final, so other exchanges and new contracts cannot hold FALQBIT. Airdrops and rewards go straight to unlocked quantum accounts.</li>
-      <li><strong>Code-controlled addresses.</strong> Application and pool addresses are hashes. Whether such an address could be attacked by a future quantum computer depends on Algorand's ledger roadmap, not on this contract.</li>
-      <li><strong>Tinyman protocol fees.</strong> Fees paid in FALQBIT cannot be claimed by Tinyman's classic fee account. This does not affect traders.</li>
-    </ul>
-  </section>
-
-  <section class="sec" id="faq" aria-labelledby="h-faq">
-    <div class="sec-head">
-      <p class="eyebrow">FAQ</p>
-      <h2 id="h-faq">Questions people ask.</h2>
-    </div>
-    <div class="faq">
-      <details><summary>How do I get a quantum account?</summary><p>In Pera Wallet, tap + to add an account and choose Add Quantum Account. You can also rekey an existing account to a Falcon-1024 key and keep the same address.</p></details>
-      <details><summary>Can I lose my FALQBIT?</summary><p>Nobody can take them: there is no clawback. If you send to a classic account, the transfer is refused and the tokens stay with you. As with any crypto, losing your recovery phrase means losing access.</p></details>
-      <details><summary>What happens if I switch back to a classic key?</summary><p>Anyone can relock your holding. Your tokens stay yours, and you can unlock again after switching back to a Falcon key.</p></details>
-      <details><summary>Why are the fees higher?</summary><p>A Falcon-1024 signature is much larger than a classic one, so Algorand charges about three minimum fees for it: around 0.003 ALGO per transaction.</p></details>
-      <details><summary>Why can't I buy it on an exchange?</summary><p>An exchange would have to hold FALQBIT in quantum accounts. Any exchange can do that and unlock its accounts the same way you do.</p></details>
-    </div>
-  </section>
-
-  <section class="sec" aria-labelledby="h-supply">
+  <section class="sec reveal" id="supply" aria-labelledby="h-supply">
     <div class="sec-head">
       <p class="eyebrow">Supply</p>
       <h2 id="h-supply">Ten billion FALQBIT, split in the open.</h2>
@@ -1096,28 +1163,90 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
     </div>
     <ul class="legend">
       <li><span class="sw" style="background: var(--cyan)"></span><span class="what">Liquidity pool</span><span class="pct">55%</span><span class="amt">5,500,000,000 · Tinyman, paired with ALGO</span></li>
-      <li><span class="sw" style="background: var(--violet)"></span><span class="what">Airdrops</span><span class="pct">20%</span><span class="amt">2,000,000,000 · first quantum accounts</span></li>
-      <li><span class="sw" style="background: var(--teal)"></span><span class="what">Staking rewards</span><span class="pct">15%</span><span class="amt">1,500,000,000 · released over 2 years</span></li>
+      <li><span class="sw" style="background: var(--violet)"></span><span class="what">Airdrops</span><span class="pct">20%</span><span class="amt">2,000,000,000 · 1,000,000 to each of the first 1,000 unlocked accounts</span></li>
+      <li><span class="sw" style="background: var(--teal)"></span><span class="what">Staking rewards</span><span class="pct">15%</span><span class="amt">1,500,000,000 · 1% a month to holders of 1M+</span></li>
       <li><span class="sw" style="background: var(--slate)"></span><span class="what">Project reserve</span><span class="pct">5%</span><span class="amt">500,000,000 · contests and partners</span></li>
       <li><span class="sw" style="background: var(--pale)"></span><span class="what">Team</span><span class="pct">5%</span><span class="amt">500,000,000 · held in a quantum account</span></li>
     </ul>
+    <h3 class="held-h">Where it is held</h3>
+    <p class="muted" style="margin:0">Every allocation sits in its own Falcon-1024 account or in the pool. Check any balance on the explorer.</p>
+    <ul class="proof held">
+      <li><div class="what">Liquidity pool<span>Tinyman v2 pool, controlled by Tinyman's code</span></div><a href="https://lora.algokit.io/mainnet/account/CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA" target="_blank" rel="noopener">CEQH5W…M7VCIA</a></li>
+      <li><div class="what">Rewards<span>Airdrops and staking rewards (35%)</span></div><a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">V4J46S…CPTC2Q</a></li>
+      <li><div class="what">Team<span>Team allocation (5%)</span></div><a href="https://lora.algokit.io/mainnet/account/XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q" target="_blank" rel="noopener">XMKDQF…GBDT7Q</a></li>
+      <li><div class="what">Project<span>Creator account and project reserve (5%)</span></div><a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></li>
+    </ul>
   </section>
 
-  <section class="sec" aria-labelledby="h-trade">
+  <section class="sec reveal" aria-labelledby="h-rules">
     <div class="sec-head">
-      <p class="eyebrow">Where it trades</p>
-      <h2 id="h-trade">One pool, found everywhere on Algorand.</h2>
-      <p class="muted">The FALQBIT/ALGO pool is live on Tinyman. Aggregators and wallets pick it up from there.</p>
+      <p class="eyebrow">The rules</p>
+      <h2 id="h-rules">Code decides. Nobody else can.</h2>
     </div>
-    <div class="venues">
-      <div class="venue"><span class="role">Pool</span><span class="name">Tinyman</span><p>FALQBIT / ALGO liquidity</p></div>
-      <div class="venue"><span class="role">Swaps</span><span class="name">Haystack</span><p>Routes to the best price</p></div>
-      <div class="venue"><span class="role">Wallet</span><span class="name">Pera</span><p>Swap without leaving the app</p></div>
-      <div class="venue"><span class="role">Charts</span><span class="name">Vestige</span><p>Price, volume and holders</p></div>
+    <div class="rules">
+      <div class="rule"><h3>No clawback</h3><p>Nobody can take tokens out of your account. Not the contract, not the creator.</p></div>
+      <div class="rule"><h3>No admin backdoor</h3><p>The freeze role belongs to a public smart contract, not to a person or a private key.</p></div>
+      <div class="rule"><h3>Approved code only</h3><p>Pools and contracts can hold FALQBIT only if the code that controls them is on the gate's approved list. Tinyman v2 is the only app on it, so any Tinyman v2 pool works. The approver role has been renounced, so the list can never change.</p></div>
+      <div class="rule"><h3>Nothing can be changed</h3><p>The token has no manager and the gate contract cannot be updated or deleted. The rules you read here are the rules forever.</p></div>
+      <div class="rule"><h3>Go back to classic, get locked again</h3><p>If an account rekeys away from Falcon, anyone can ask the contract to lock it. Your tokens stay yours and unlock again when you return to Falcon.</p></div>
     </div>
   </section>
 
-  <section class="sec" aria-labelledby="h-road">
+  <section class="sec reveal" id="proof" aria-labelledby="h-proof">
+    <div class="sec-head">
+      <p class="eyebrow">Proof</p>
+      <h2 id="h-proof">Every rule, checkable on-chain.</h2>
+      <p class="muted">Each line links to the object or transaction on the Lora explorer. Nothing here needs trust.</p>
+    </div>
+    <h3 class="proof-h"><span class="net main">MainNet</span> Live since 2 November 2026</h3>
+    <ul class="proof">
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Token created frozen, no manager, no clawback<span>10 billion FALQBIT. The freeze role belongs to the gate contract.</span></div><a href="https://lora.algokit.io/mainnet/asset/3760920399" target="_blank" rel="noopener">3760920399</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Gate contract live and immutable<span>Unlocks quantum accounts, keeps classic keys locked. Cannot be updated or deleted.</span></div><a href="https://lora.algokit.io/mainnet/application/3760919863" target="_blank" rel="noopener">3760919863</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Tinyman pool unlocked by the gate<span>FALQBIT/ALGO liquidity, controlled by Tinyman v2 code.</span></div><a href="https://lora.algokit.io/mainnet/account/CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA" target="_blank" rel="noopener">Pool account</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">First welcome drop paid<span>1,000,000 FALQBIT from the public Rewards account, signed with Falcon-1024.</span></div><a href="https://lora.algokit.io/mainnet/transaction/U7XHD54CQNOI4OD7LHQFEAYFG5JAFKO5OH7WQ5RAIFKSUYP7A43Q" target="_blank" rel="noopener">U7XHD54CQN…</a></li>
+    </ul>
+    <h3 class="proof-h"><span class="net test">TestNet</span> Full rehearsal before launch</h3>
+    <ul class="proof">
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">First token minted by a Falcon-1024 account<span>Look for the PQSig tag: the transaction was signed post-quantum.</span></div><a href="https://lora.algokit.io/testnet/transaction/PINTCBLCXIHJED2CUW46ADDZ3DCIRFWSYWN2VKEOORFLWXDSCU7A" target="_blank" rel="noopener">PINTCBLCXI…</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Gate contract published<span>Immutable. Freezes and unfreezes by rule, nothing else.</span></div><a href="https://lora.algokit.io/testnet/application/775346075" target="_blank" rel="noopener">775346075</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Test token created frozen by default<span>No manager, no clawback, freeze role = the gate. Checked by the contract itself.</span></div><a href="https://lora.algokit.io/testnet/asset/775346086" target="_blank" rel="noopener">775346086</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Tinyman pool unlocked by the gate<span>The pool is controlled by the approved Tinyman v2 code.</span></div><a href="https://lora.algokit.io/testnet/account/RE6ETC5PPZEUZ3A2CX6APOBRXKF5XYZSZWJ7RAAWCKDV7LWQADDH6QVZIU" target="_blank" rel="noopener">Pool account</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Liquidity added<span>2,000,000 test tokens + 2 ALGO in the pool.</span></div><a href="https://lora.algokit.io/testnet/asset/775346105" target="_blank" rel="noopener">Pool token</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Bought through Tinyman<span>0.1 ALGO swapped for the test token from a Falcon account.</span></div><a href="https://lora.algokit.io/testnet/transaction/ESGLD6DI4FPKS5QMG4HVJCWXT4VIAQML3GVQ5O3542SCKEXSTRQQ" target="_blank" rel="noopener">ESGLD6DI4F…</a></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Pera Quantum Account unlocked from the web page<span>Connect Pera, two taps, unlocked by the contract (tested on the first gate version).</span></div><span class="tag">Pera</span></li>
+      <li><span class="ok" aria-hidden="true">✓</span><div class="what">Classic Ed25519 account refused<span>The network answered: asset frozen in recipient.</span></div><span class="tag">refused</span></li>
+    </ul>
+  </section>
+
+  <section class="sec reveal" id="code" aria-labelledby="h-code">
+    <div class="sec-head">
+      <p class="eyebrow">Open source</p>
+      <h2 id="h-code">Read the rules yourself.</h2>
+    </div>
+    <div class="code-card">
+      <p class="muted" style="margin:0">The gate contract is under 200 lines of Algorand Python. The source, the compiled program and the ABI are public in this site's repository. An independent automated review found no way for a classic account to unlock, and its fixes are part of this version. There has been no professional audit yet.</p>
+      <div class="cta-row">
+        <a class="btn ghost" href="https://github.com/FalQbit/falqbit.github.io/blob/main/falqbit_gate.py" target="_blank" rel="noopener">View the contract on GitHub</a>
+      </div>
+      <p class="hash">Compiled approval program SHA-256: f14801163a468bc7e990531cd866dd21fe69a6f5d0b7bf0bd71cd8109e4f95a9</p>
+    </div>
+  </section>
+
+  <section class="sec reveal" id="limits" aria-labelledby="h-limits">
+    <div class="sec-head">
+      <p class="eyebrow">Honest limits</p>
+      <h2 id="h-limits">What FALQBIT does not solve.</h2>
+    </div>
+    <ul class="limits">
+      <li><strong>Algorand consensus is still classical.</strong> Accounts and chain history are post-quantum; block voting is on Algorand's roadmap for 2027.</li>
+      <li><strong>Relocking happens after the fact.</strong> If an unlocked account rekeys back to a classic key, it stays unlocked until someone calls relock. Anyone can, and they earn the account's deposit for it.</li>
+      <li><strong>Tinyman v2 pools only.</strong> The approved list is final: pools on other DEXs and new smart contracts cannot hold FALQBIT. Any Tinyman v2 pool works (FALQBIT/ALGO, FALQBIT/USDC and so on), and exchanges can still list it using quantum accounts. Rewards are paid straight to unlocked quantum accounts, so they need no contract.</li>
+      <li><strong>Code-controlled addresses.</strong> Application and pool addresses are hashes. Whether such an address could be attacked by a future quantum computer depends on Algorand's ledger roadmap, not on this contract.</li>
+      <li><strong>Tinyman protocol fees.</strong> Fees paid in FALQBIT cannot be claimed by Tinyman's classic fee account. This does not affect traders.</li>
+    </ul>
+  </section>
+
+  <section class="sec reveal" id="road" aria-labelledby="h-road">
     <div class="sec-head">
       <p class="eyebrow">Progress</p>
       <h2 id="h-road">Built in public, tested before launch.</h2>
@@ -1126,11 +1255,27 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
       <li class="done"><span class="state">Done</span><h3>Name and identity</h3><p>FALQBIT, the lattice falcon, the project quantum account and this site.</p></li>
       <li class="done"><span class="state">Done</span><h3>TestNet</h3><p>Gate contract, Tinyman pool, swaps and the Pera unlock page, all tested.</p></li>
       <li class="done"><span class="state">Done</span><h3>Mainnet launch</h3><p>Token, gate contract and Tinyman pool, launched on 2 November 2026.</p></li>
-      <li class="now"><span class="state">Next</span><h3>Airdrop and staking</h3><p>Rewards for the first quantum accounts.</p></li>
+      <li class="done"><span class="state">Done</span><h3>Rewards live</h3><p>Welcome drops for the first 1,000 accounts and 1% a month for holders, paid on-chain.</p></li>
+      <li class="now"><span class="state">Next</span><h3>Verified everywhere</h3><p>Pera verification, logo on Tinyman and Vestige, more wallets and explorers.</p></li>
     </ol>
   </section>
 
-  <section class="warn" aria-labelledby="h-warn">
+  <section class="sec reveal" id="faq" aria-labelledby="h-faq">
+    <div class="sec-head">
+      <p class="eyebrow">FAQ</p>
+      <h2 id="h-faq">Questions people ask.</h2>
+    </div>
+    <div class="faq">
+      <details><summary>How do I get a quantum account?</summary><p>In Pera Wallet, tap + to add an account and choose Add Quantum Account. You can also rekey an existing account to a Falcon-1024 key and keep the same address.</p></details>
+      <details><summary>How do the rewards work?</summary><p>Welcome drop: every quantum account that unlocks gets 1,000,000 FALQBIT, for the first 1,000 accounts. Hold-to-earn: everyone holding at least 1,000,000 FALQBIT gets 1% of their balance once a month, on an unannounced day, up to 62,500,000 FALQBIT a month in total. There is no staking: your tokens stay in your own account and you can sell at any time. Both are paid from the public Rewards account, so anyone can check them.</p></details>
+      <details><summary>Can I lose my FALQBIT?</summary><p>Nobody can take them: there is no clawback. If you send to a classic account, the transfer is refused and the tokens stay with you. As with any crypto, losing your recovery phrase means losing access.</p></details>
+      <details><summary>What happens if I switch back to a classic key?</summary><p>Anyone can relock your holding. Your tokens stay yours, and you can unlock again after switching back to a Falcon key.</p></details>
+      <details><summary>Why are the fees higher?</summary><p>A Falcon-1024 signature is much larger than a classic one, so Algorand charges about three minimum fees for it: around 0.003 ALGO per transaction.</p></details>
+      <details><summary>Can FALQBIT be listed on other exchanges?</summary><p>Centralized exchanges can list it: they hold FALQBIT in quantum accounts and unlock them the same way you do. On-chain, it trades in Tinyman v2 pools, and aggregators such as Haystack route through them. Pools on other DEXs cannot hold it, because the gate's approved list is final.</p></details>
+    </div>
+  </section>
+
+  <section class="warn reveal" aria-labelledby="h-warn">
     <div>
       <h3 id="h-warn">Beware of fakes</h3>
       <p class="muted">Anyone can copy a name. Only the token ID can't be copied.</p>
@@ -1139,11 +1284,53 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
   </section>
 
   <footer>
-    <span>FALQBIT · an experiment on Algorand</span>
+    <span>FALQBIT · an experiment on Algorand · <a href="mailto:contact@falqbit.com">contact@falqbit.com</a></span>
     <nav aria-label="Links">
-      <a href="https://x.com/hashtag/FALQBIT" target="_blank" rel="noopener">#FALQBIT on X</a>
+      <a href="https://x.com/FalQbit" target="_blank" rel="noopener">@FalQbit on X</a>
+      <a href="https://github.com/FalQbit/falqbit.github.io" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.vestige.fi/asset/3760920399" target="_blank" rel="noopener">Vestige</a>
       <a href="https://algorand.co/technology/post-quantum" target="_blank" rel="noopener">Algorand post-quantum</a>
     </nav>
   </footer>
 </div>
+<script>
+document.documentElement.classList.add("js");
+(function () {
+  // reveal on scroll
+  var els = document.querySelectorAll(".reveal");
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }); }, { rootMargin: "0px 0px -8% 0px" });
+    els.forEach(function (el) { io.observe(el); });
+  } else { els.forEach(function (el) { el.classList.add("in"); }); }
+
+  // live numbers from Algorand MainNet
+  var ALGOD = "https://mainnet-api.algonode.cloud";
+  var POOL = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
+  var TINYMAN = 1002541853, GATE = 3760919863, ASSET = 3760920399, SUPPLY = 10000000000;
+  function $(id) { return document.getElementById(id); }
+  function fmt(n, d) { return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+  function get(p) { return fetch(ALGOD + p).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  function load() {
+    var reserves = get("/v2/accounts/" + POOL + "/applications/" + TINYMAN).then(function (j) {
+      var kv = (j["app-local-state"] || {})["key-value"] || [], r = {};
+      kv.forEach(function (x) { r[atob(x.key)] = x.value.uint; });
+      return { algo: r.asset_2_reserves / 1e6, fq: r.asset_1_reserves / 1e6 };
+    });
+    var unlocked = get("/v2/applications/" + GATE + "/boxes?max=100000").then(function (j) {
+      return (j.boxes || []).filter(function (b) { return atob(b.name).charAt(0) === "a"; }).length;
+    });
+    reserves.then(function (r) {
+      var p = r.algo / r.fq;
+      $("st-price").textContent = fmt(p * 1e6, 3);
+      $("st-pool").textContent = fmt(r.algo, 1);
+      $("st-mcap").textContent = fmt(p * SUPPLY, 0);
+    }).catch(function () { ["st-price", "st-pool", "st-mcap"].forEach(function (id) { $(id).textContent = "–"; }); });
+    unlocked.then(function (n) { $("st-unlocked").textContent = fmt(n, 0); }).catch(function () { $("st-unlocked").textContent = "–"; });
+    Promise.allSettled([reserves, unlocked]).then(function () {
+      $("st-note").textContent = "Live from Algorand MainNet · updated " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    });
+  }
+  load(); setInterval(load, 60000);
+})();
+</script>
 </body></html>
