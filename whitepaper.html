@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FALQBIT Whitepaper</title>
+<meta name="description" content="FALQBIT whitepaper: the Algorand token that only post-quantum Falcon-1024 accounts can hold. Design, tokenomics, rewards, roadmap and risks.">
+<link rel="icon" type="image/png" href="./icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+:root {
+  --bg: #0A1020; --surface: #121A30; --line: rgba(169,180,208,.18);
+  --fg: #E8ECF6; --muted: #A9B4D0; --cyan: #3FE0D0; --violet: #9B8CFF;
+  --display: "Bricolage Grotesque", "Inter Display", "Inter", system-ui, sans-serif;
+  --text: "IBM Plex Sans", "Inter", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 17px/1.65 var(--text); }
+.doc { max-width: 760px; margin: 0 auto; padding: 32px 16px 80px; }
+a { color: var(--cyan); text-underline-offset: 3px; overflow-wrap: anywhere; }
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 48px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font: 800 20px/1 var(--display); color: var(--fg); text-decoration: none; }
+.brand img { width: 34px; height: 34px; border-radius: 50%; }
+.dl { font: 500 14px/1 var(--mono); border: 1px solid var(--cyan); border-radius: 999px; padding: 10px 16px; text-decoration: none; }
+.kicker { font: 500 13px/1 var(--mono); letter-spacing: .12em; color: var(--cyan); text-transform: uppercase; }
+h1 { font: 800 clamp(36px, 8vw, 56px)/1.05 var(--display); margin: 14px 0 16px; letter-spacing: -.01em; }
+h1 em { font-style: normal; color: var(--cyan); }
+.lede { font-size: 19px; color: var(--muted); margin: 0 0 12px; }
+.meta { font: 500 13px/1.6 var(--mono); color: var(--muted); }
+h2 { font: 800 28px/1.15 var(--display); margin: 56px 0 12px; scroll-margin-top: 16px; }
+h2 .n { color: var(--cyan); font: 500 15px/1 var(--mono); display: block; margin-bottom: 8px; letter-spacing: .08em; }
+h3 { font: 600 18px/1.3 var(--text); margin: 28px 0 6px; }
+p { margin: 0 0 14px; }
+ul, ol { padding-left: 22px; margin: 0 0 14px; }
+li { margin: 4px 0; }
+strong { color: var(--fg); font-weight: 600; }
+.muted { color: var(--muted); }
+code, .mono { font: 500 .88em/1.4 var(--mono); overflow-wrap: anywhere; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; margin: 18px 0; }
+.box.warn { border-color: rgba(185,127,24,.6); }
+.formula { font: 500 15px/1.5 var(--mono); color: var(--cyan); background: var(--surface); border-radius: 12px; padding: 14px 16px; overflow-x: auto; margin: 14px 0; }
+.toc { columns: 2; column-gap: 24px; font-size: 15px; padding-left: 20px; }
+@media (max-width: 560px) { .toc { columns: 1; } }
+.tbl { width: 100%; overflow-x: auto; margin: 16px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 15px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font: 500 12px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+td.num { text-align: right; font-family: var(--mono); white-space: nowrap; }
+.bar { display: flex; height: 16px; border-radius: 999px; overflow: hidden; margin: 18px 0 6px; }
+.bar span { display: block; height: 100%; }
+.sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 8px; vertical-align: 0; }
+footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--line); font-size: 14px; color: var(--muted); }
+
+@media print {
+  :root { --bg: #fff; --surface: #F3F5FA; --line: #D8DDE8; --fg: #10162A; --muted: #4A5573; --cyan: #0E8F84; }
+  body { font-size: 11pt; }
+  .doc { max-width: none; padding: 0; }
+  .dl { display: none; }
+  h2 { break-after: avoid; break-inside: avoid; page-break-inside: avoid; margin-top: 36px; }
+  h3 { break-after: avoid; page-break-after: avoid; }
+  h2 .n { display: inline; margin-right: 10px; }
+  .box, table, .formula { break-inside: avoid; }
+  a { text-decoration: none; }
+  @page { size: A4; margin: 18mm 16mm; }
+}
+</style>
+</head>
+<body>
+<div class="doc">
+<header class="top">
+  <a class="brand" href="./"><img src="./icon.png" alt="" width="34" height="34">FALQBIT</a>
+  <a class="dl" href="./falqbit-whitepaper.pdf" download>Download PDF</a>
+</header>
+
+<div class="kicker">Whitepaper · Version 1.0</div>
+<h1>The token only <em>quantum-safe</em> accounts can hold.</h1>
+<p class="lede">FALQBIT is an Algorand Standard Asset that can only be held by accounts secured with Falcon-1024, a post-quantum signature scheme. The rule is enforced on-chain by an immutable contract.</p>
+<p class="meta">2 November 2026 · falqbit.com · ASA ID 3760920399</p>
+
+<div class="box">
+  <ol class="toc">
+    <li><a href="#problem">The problem</a></li>
+    <li><a href="#solution">The solution</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#token">Token facts</a></li>
+    <li><a href="#supply">Supply and allocation</a></li>
+    <li><a href="#rewards">Rewards</a></li>
+    <li><a href="#trade">Joining and trading</a></li>
+    <li><a href="#security">Security and limits</a></li>
+    <li><a href="#roadmap">Roadmap and vision</a></li>
+    <li><a href="#risks">Risks and legal notice</a></li>
+  </ol>
+</div>
+
+<h2 id="problem"><span class="n">01</span>The problem</h2>
+<p>Almost every crypto wallet today is protected by elliptic-curve signatures such as Ed25519 or ECDSA. They are secure against today's computers. A large enough quantum computer running Shor's algorithm could derive a private key from a public key, and then sign transactions as the owner.</p>
+<p>Nobody knows when such a machine will exist. But public keys stay on-chain forever, and standards bodies are already moving: NIST selected Falcon as a post-quantum signature standard, and governments have set migration deadlines for critical systems around 2030. Assets that cannot move to post-quantum keys will be the easiest to attack.</p>
+<p>Algorand added Falcon-1024 accounts to its MainNet, and wallets such as Pera now let anyone create a <strong>Quantum Account</strong>. What was missing was a reason to use one.</p>
+
+<h2 id="solution"><span class="n">02</span>The solution</h2>
+<p>FALQBIT is the first token that <strong>only post-quantum accounts can hold</strong>. A classic account cannot receive it, hold it or trade it: the network itself refuses the transfer.</p>
+<ul>
+  <li><strong>For users</strong>, it is a simple, practical reason to move to a Quantum Account, with rewards for doing it.</li>
+  <li><strong>For Algorand</strong>, it is a live, public showcase of post-quantum accounts being used every day.</li>
+  <li><strong>For everyone</strong>, the rules are code: no admin, no clawback, no way to change them later.</li>
+</ul>
+
+<h2 id="how"><span class="n">03</span>How it works</h2>
+<h3>Frozen by default</h3>
+<p>FALQBIT was created with <em>default frozen</em> set. Every account that adds the token starts locked. The freeze role does not belong to a person: it belongs to the <strong>gate contract</strong> (application 3760919863). The token has no manager and no clawback, so these settings can never change.</p>
+
+<h3>Proving a Falcon key</h3>
+<p>An account is unlocked only if it proves that a Falcon-1024 key signs for it. Algorand derives a Quantum Account's address from its Falcon public key:</p>
+<div class="formula">address = SHA512-256("PQA" ‖ "f1" ‖ salt ‖ public_key)</div>
+<p>The user sends the public key and salt to the gate. The contract recomputes the address, checks that it matches the account (or the account's current signer, if it was rekeyed), and then unfreezes the holding. The unlock page at <a href="https://falqbit.com/unlock">falqbit.com/unlock</a> does all of this in one approval in Pera Wallet. A small deposit (about 0.03 ALGO) pays for the record the contract keeps.</p>
+
+<h3>Going back to classic gets you locked again</h3>
+<p>If an unlocked account later rekeys to a classic key, <strong>anyone</strong> can call the contract's relock method. The holding is frozen again and the caller receives the account's deposit as a reward. The tokens stay with their owner and unlock again once the account returns to a Falcon key.</p>
+
+<h3>Pools and contracts</h3>
+<p>Pools and other smart contracts have no signing key. They can hold FALQBIT only if the program that controls them is on the gate's approved list. <strong>Tinyman v2</strong> is the only approved program, so any Tinyman v2 pool can hold FALQBIT. The approver role has been <strong>renounced</strong>: the list can never grow or shrink.</p>
+
+<h2 id="token"><span class="n">04</span>Token facts</h2>
+<div class="tbl"><table>
+  <tr><th>Item</th><th>Value</th></tr>
+  <tr><td>Name / unit</td><td>FALQBIT / FALQBIT</td></tr>
+  <tr><td>Network</td><td>Algorand MainNet</td></tr>
+  <tr><td>Asset ID</td><td class="mono">3760920399</td></tr>
+  <tr><td>Total supply</td><td>10,000,000,000 (fixed, no minting)</td></tr>
+  <tr><td>Decimals</td><td>6</td></tr>
+  <tr><td>Manager / clawback</td><td>None / None</td></tr>
+  <tr><td>Freeze role</td><td>Gate contract, application <span class="mono">3760919863</span> (immutable)</td></tr>
+  <tr><td>Main pool</td><td>Tinyman v2 FALQBIT/ALGO, pool token <span class="mono">3760920578</span></td></tr>
+  <tr><td>Launch</td><td>2 November 2026</td></tr>
+  <tr><td>Compiled gate (SHA-256)</td><td class="mono">f14801163a468bc7e990531cd866dd21fe69a6f5d0b7bf0bd71cd8109e4f95a9</td></tr>
+</table></div>
+
+<h2 id="supply"><span class="n">05</span>Supply and allocation</h2>
+<p>The whole supply was minted once, at launch. Every allocation sits in a public account, so anyone can check the balances live on the <a href="https://falqbit.com/#supply">supply section</a> of the site or on any Algorand explorer.</p>
+<div class="bar" role="img" aria-label="63% liquidity pool, 25% hold-to-earn, 2% welcome drop, 5% project reserve, 5% team">
+  <span style="width:63%;background:#3FE0D0"></span><span style="width:25%;background:#22A397"></span><span style="width:2%;background:#9B8CFF"></span><span style="width:5%;background:#6B78A8"></span><span style="width:5%;background:#CDD3EA"></span>
+</div>
+<div class="tbl"><table>
+  <tr><th>Allocation</th><th>Share</th><th>Amount</th><th>Purpose</th></tr>
+  <tr><td><span class="sw" style="background:#3FE0D0"></span>Liquidity pool</td><td class="num">63%</td><td class="num">6.3B</td><td>5.5B at launch with 500 ALGO, plus 800M with 186.37 ALGO added on 2 November 2026. Tokens bought by users leave the pool.</td></tr>
+  <tr><td><span class="sw" style="background:#22A397"></span>Hold-to-earn</td><td class="num">25%</td><td class="num">2.5B</td><td>Monthly rewards for holders</td></tr>
+  <tr><td><span class="sw" style="background:#9B8CFF"></span>Welcome drop</td><td class="num">2%</td><td class="num">200M</td><td>1M for each of the first 200 accounts</td></tr>
+  <tr><td><span class="sw" style="background:#6B78A8"></span>Project reserve</td><td class="num">5%</td><td class="num">500M</td><td>Liquidity, contests and partners</td></tr>
+  <tr><td><span class="sw" style="background:#CDD3EA"></span>Team</td><td class="num">5%</td><td class="num">500M</td><td>Held in a quantum account</td></tr>
+</table></div>
+<h3>Public accounts</h3>
+<div class="tbl"><table>
+  <tr><th>Account</th><th>Address</th></tr>
+  <tr><td>Project (creator, reserve, liquidity)</td><td class="mono">OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU</td></tr>
+  <tr><td>Rewards (hold-to-earn + welcome)</td><td class="mono">V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q</td></tr>
+  <tr><td>Team</td><td class="mono">XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q</td></tr>
+  <tr><td>Tinyman v2 pool</td><td class="mono">CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA</td></tr>
+</table></div>
+<p class="muted">All project accounts are Falcon-1024 Quantum Accounts. There was no presale, no private sale and no token sale other than the public Tinyman pool.</p>
+
+<h2 id="rewards"><span class="n">06</span>Rewards</h2>
+<h3>Welcome drop</h3>
+<ul>
+  <li><strong>1,000,000 FALQBIT</strong> for each of the first <strong>200</strong> quantum accounts that unlock. No purchase needed.</li>
+  <li>One per person. The account must hold at least <strong>2 ALGO</strong> on payout day; accounts below that are skipped and can receive it in a later round.</li>
+  <li>Paid in rounds from the Rewards account, with the note <code>FALQBIT welcome</code>. Accounts that look like duplicates of the same person may be excluded.</li>
+</ul>
+<h3>Hold-to-earn</h3>
+<ul>
+  <li><strong>0.5% a month</strong> of each wallet's <strong>lowest balance since the 1st</strong> of the month, for wallets holding at least 1,000,000 FALQBIT.</li>
+  <li>Paid on the <strong>25th</strong> of every month, with the note <code>FALQBIT hold YYYY-MM</code>.</li>
+  <li>Maximum <strong>500,000 FALQBIT</strong> per wallet per month.</li>
+  <li>The monthly pool is <strong>15,000,000 FALQBIT</strong>, shared by all holders. If everyone's 0.5% adds up to more, every payout shrinks in the same proportion.</li>
+  <li>Launch month (November 2026): <strong>1%</strong> of the balance on the 25th, with the same cap and pool.</li>
+  <li>No staking and nothing to claim. Tokens never leave the holder's wallet. Project accounts and pools are excluded.</li>
+</ul>
+<div class="tbl"><table>
+  <tr><th>You hold</th><th>You get per month</th></tr>
+  <tr><td>1,000,000</td><td class="num">5,000</td></tr>
+  <tr><td>10,000,000</td><td class="num">50,000</td></tr>
+  <tr><td>100,000,000 or more</td><td class="num">500,000 (max)</td></tr>
+</table></div>
+<p><strong>How long it lasts.</strong> The Hold-to-earn allocation is 2.5B FALQBIT. Even if the full 15M pool is paid every month, it lasts 166 months, nearly 14 years. Months that pay less make it last longer.</p>
+<div class="box"><strong>Important:</strong> rewards are sent by the project from the public Rewards account. They are not enforced by a smart contract. Every payment is visible on-chain with its note, so anyone can check that the rules above were followed.</div>
+
+<h2 id="trade"><span class="n">07</span>Joining and trading</h2>
+<ol>
+  <li><strong>Create a Quantum Account</strong> in Pera Wallet (Add account → Add Quantum Account), or rekey an existing account to a Falcon-1024 key.</li>
+  <li><strong>Unlock</strong> it at <a href="https://falqbit.com/unlock">falqbit.com/unlock</a>. Adding the token and unlocking happen in one step.</li>
+  <li><strong>Buy, sell or hold</strong> on <a href="https://app.tinyman.org">Tinyman</a>. Price and charts are on <a href="https://www.vestige.fi/asset/3760920399">Vestige</a>.</li>
+</ol>
+<p><strong>Fees.</strong> A Falcon-1024 signature is larger than a classic one, so each transaction costs about three minimum fees, around 0.003 ALGO. Tinyman charges its usual 0.3% swap fee, which goes to liquidity providers.</p>
+<p><strong>From FALQBIT to euros.</strong> Swap FALQBIT to ALGO (or USDC) on Tinyman, send it to a regulated exchange that supports Algorand, sell, and withdraw to a bank by SEPA. FALQBIT itself is not converted to fiat by the project.</p>
+<p><strong>Exchanges.</strong> Pools on DEXs other than Tinyman v2 cannot hold FALQBIT. Centralized exchanges can list it by holding it in quantum accounts and unlocking them like any user.</p>
+
+<h2 id="security"><span class="n">08</span>Security and limits</h2>
+<h3>What the code guarantees</h3>
+<ul>
+  <li><strong>No clawback.</strong> Nobody can take tokens out of an account, not even the creator.</li>
+  <li><strong>No admin key.</strong> The freeze role is a public contract.</li>
+  <li><strong>Immutable.</strong> The gate cannot be updated or deleted, the token has no manager, and the approver role is renounced.</li>
+  <li><strong>Open source.</strong> The gate is under 200 lines of Algorand Python, published with its compiled program and ABI. An independent automated review found no way for a classic account to unlock. There has been <strong>no professional audit</strong> yet.</li>
+</ul>
+<h3>What FALQBIT does not solve</h3>
+<ul>
+  <li><strong>Consensus.</strong> Algorand's accounts can be post-quantum, but block voting still uses classical keys. Post-quantum consensus is on Algorand's own roadmap.</li>
+  <li><strong>Relocking is after the fact.</strong> An account that rekeys back to classic stays unlocked until someone calls relock.</li>
+  <li><strong>Code-controlled addresses.</strong> Pool and application addresses are hashes, not keys. Their long-term quantum safety depends on Algorand's protocol, not on this contract.</li>
+  <li><strong>One DEX family.</strong> The approved list is final: only Tinyman v2 pools can hold FALQBIT.</li>
+</ul>
+
+<h2 id="roadmap"><span class="n">09</span>Roadmap and vision</h2>
+<p>FALQBIT starts as a token. The goal is to become a simple way to <strong>use</strong> post-quantum money every day. The phases below are plans, not promises, and have no fixed dates.</p>
+<div class="tbl"><table>
+  <tr><th>Phase</th><th>Goal</th></tr>
+  <tr><td>Done</td><td>TestNet rehearsal, MainNet launch, gate contract, Tinyman pool, unlock page, rewards live, deeper liquidity.</td></tr>
+  <tr><td>Now</td><td>Verification on Pera, Tinyman and Vestige. This whitepaper. A guide from FALQBIT to euros.</td></tr>
+  <tr><td>Next</td><td><strong>FALQBIT mobile app</strong>: wallet, swaps, and QR payments between people and shops, with a shop mode that shows prices in euros.</td></tr>
+  <tr><td>Then</td><td>First shops and services accepting FALQBIT. Listings on trackers such as CoinGecko, and more wallets and explorers.</td></tr>
+  <tr><td>Future</td><td>Partnerships with <strong>licensed</strong> payment companies, so holders can convert to stable coins and spend anywhere cards are accepted. FALQBIT will not act as a payment institution itself.</td></tr>
+</table></div>
+
+<h2 id="risks"><span class="n">10</span>Risks and legal notice</h2>
+<div class="box warn">
+<p><strong>FALQBIT is not an investment product.</strong> It gives no right to profits, dividends, interest, governance or redemption, and nothing in this document is financial advice or a promise of returns.</p>
+<ul>
+  <li><strong>Price risk.</strong> The price is set only by the market and can fall to zero. Liquidity is small and prices can move sharply.</li>
+  <li><strong>Smart contract risk.</strong> The gate is immutable and has not been professionally audited. A bug could not be fixed.</li>
+  <li><strong>Reward risk.</strong> Rewards depend on the project continuing to send them. They can shrink when many people hold.</li>
+  <li><strong>Key risk.</strong> Losing a recovery phrase means losing the tokens. Nobody can recover them.</li>
+  <li><strong>Technology risk.</strong> Post-quantum cryptography and Algorand's Falcon accounts are new. Wallet or protocol changes could affect how FALQBIT works.</li>
+  <li><strong>Regulatory risk.</strong> Crypto-asset rules, including the EU's MiCA regulation, keep changing and could affect how FALQBIT can be offered, listed or used in some countries.</li>
+</ul>
+<p>Only acquire FALQBIT with money you can afford to lose. Always check the official asset ID <strong>3760920399</strong>: anyone can create a token with the same name.</p>
+</div>
+
+<footer>
+  FALQBIT Whitepaper v1.0 · 2 November 2026<br>
+  <a href="https://falqbit.com">falqbit.com</a> · <a href="https://x.com/FalQbit">@FalQbit on X</a> · <a href="mailto:contact@falqbit.com">contact@falqbit.com</a> · <a href="https://github.com/FalQbit/falqbit.github.io">Source code</a>
+</footer>
+</div>
+</body>
+</html>

@@ -298,9 +298,11 @@ body { overflow-x: clip; }
 .brand { text-decoration: none; color: var(--fg); }
 .brand svg { width: 34px; height: 34px; }
 .topnav { display: flex; gap: 4px; }
-.topnav a { color: var(--muted); text-decoration: none; font-size: 15px; padding: 8px 12px; border-radius: 10px; }
+.topnav a { color: var(--muted); text-decoration: none; font-size: 15px; padding: 8px 10px; border-radius: 10px; white-space: nowrap; }
 .topnav a:hover { color: var(--fg); background: rgba(255,255,255,.05); }
-.top-right { display: flex; align-items: center; gap: 10px; }
+.top-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.status-pill { white-space: nowrap; }
+@media (max-width: 1180px) { .top-right .status-pill { display: none; } }
 .status-pill i { background: var(--cyan); box-shadow: 0 0 0 0 rgba(63,224,208,.6); }
 .btn.small { min-height: 38px; padding: 0 16px; font-size: 15px; border-radius: 10px; }
 .btn { transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease; }
@@ -733,6 +735,7 @@ body { overflow-x: clip; }
       <a href="#holders">Holders</a>
       <a href="#proof">Proof</a>
       <a href="#faq">FAQ</a>
+      <a href="./whitepaper">Whitepaper</a>
     </nav>
     <div class="top-right">
       <span class="status-pill"><i aria-hidden="true"></i>Live on MainNet</span>
@@ -1242,7 +1245,7 @@ body { overflow-x: clip; }
     </div>
     <ul class="legend">
       <li><span class="sw" style="background: var(--cyan)"></span><span class="what">Liquidity pool</span><span class="pct">63%</span><span class="amt">6,300,000,000 · 5.5B paired with ALGO at launch + 800M added later</span></li>
-      <li><span class="sw" style="background: var(--teal)"></span><span class="what">Hold-to-earn</span><span class="pct">25%</span><span class="amt">2,500,000,000 · 0.5% a month to holders, 15M monthly pool, funded for 14+ years</span></li>
+      <li><span class="sw" style="background: var(--teal)"></span><span class="what">Hold-to-earn</span><span class="pct">25%</span><span class="amt">2,500,000,000 · 0.5% a month to holders, 15M monthly pool, funded for nearly 14 years</span></li>
       <li><span class="sw" style="background: var(--violet)"></span><span class="what">Welcome drop</span><span class="pct">2%</span><span class="amt">200,000,000 · 1M for each of the first 200 accounts</span></li>
       <li><span class="sw" style="background: var(--slate)"></span><span class="what">Project reserve</span><span class="pct">5%</span><span class="amt">500,000,000 · liquidity, contests and partners</span></li>
       <li><span class="sw" style="background: var(--pale)"></span><span class="what">Team</span><span class="pct">5%</span><span class="amt">500,000,000 · held in a quantum account</span></li>
@@ -1377,7 +1380,8 @@ body { overflow-x: clip; }
       <li class="done"><span class="state">Done</span><h3>TestNet</h3><p>Gate contract, Tinyman pool, swaps and the Pera unlock page, all tested.</p></li>
       <li class="done"><span class="state">Done</span><h3>Mainnet launch</h3><p>Token, gate contract and Tinyman pool, launched on 2 November 2026.</p></li>
       <li class="done"><span class="state">Done</span><h3>Rewards live</h3><p>Welcome drops for the first 200 accounts and 0.5% a month for holders, paid on-chain every 25th.</p></li>
-      <li class="now"><span class="state">Next</span><h3>Verified everywhere</h3><p>Pera verification, logo on Tinyman and Vestige, more wallets and explorers.</p></li>
+      <li class="now"><span class="state">In progress</span><h3>Verified everywhere</h3><p>Pera verification in review (all four checks passed), logo on Tinyman and Vestige, more wallets and explorers.</p></li>
+      <li><span class="state">Next</span><h3>Whitepaper and community</h3><p>The <a href="./whitepaper">whitepaper</a>, Algorand directories and the FALQBIT app for swaps and QR payments.</p></li>
     </ol>
   </section>
 
@@ -1392,7 +1396,7 @@ body { overflow-x: clip; }
       <details><summary>Can I lose my FALQBIT?</summary><p>Nobody can take them: there is no clawback. If you send to a classic account, the transfer is refused and the tokens stay with you. As with any crypto, losing your recovery phrase means losing access.</p></details>
       <details><summary>What happens if I switch back to a classic key?</summary><p>Anyone can relock your holding. Your tokens stay yours, and you can unlock again after switching back to a Falcon key.</p></details>
       <details><summary>Why are the fees higher?</summary><p>A Falcon-1024 signature is much larger than a classic one, so Algorand charges about three minimum fees for it: around 0.003 ALGO per transaction.</p></details>
-      <details><summary>Can FALQBIT be listed on other exchanges?</summary><p>Centralized exchanges can list it: they hold FALQBIT in quantum accounts and unlock them the same way you do. On-chain, it trades in Tinyman v2 pools, and aggregators such as Haystack route through them. Pools on other DEXs cannot hold it, because the gate's approved list is final.</p></details>
+      <details><summary>Can FALQBIT be listed on other exchanges?</summary><p>Centralized exchanges can list it: they hold FALQBIT in quantum accounts and unlock them the same way you do. On-chain, it trades in Tinyman v2 pools, and Tinyman is the place to trade it today: some aggregators do not yet set the higher fees that quantum accounts need. Pools on other DEXs cannot hold it, because the gate's approved list is final.</p></details>
     </div>
   </section>
 
@@ -1410,6 +1414,7 @@ body { overflow-x: clip; }
       <a href="https://x.com/FalQbit" target="_blank" rel="noopener">@FalQbit on X</a>
       <a href="https://github.com/FalQbit/falqbit.github.io" target="_blank" rel="noopener">GitHub</a>
       <a href="https://www.vestige.fi/asset/3760920399" target="_blank" rel="noopener">Vestige</a>
+      <a href="./whitepaper">Whitepaper</a>
       <a href="https://algorand.co/technology/post-quantum" target="_blank" rel="noopener">Algorand post-quantum</a>
     </nav>
   </footer>
