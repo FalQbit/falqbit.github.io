@@ -25,6 +25,13 @@
 .list li button.skip:hover, .skipped button.unskip:hover { color: var(--fg); border-color: var(--muted); }
 .skipped { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 0; }
 .list li.empty { color: var(--muted); font-family: var(--body); }
+.list li .who { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.list li .fund { color: var(--muted); font-size: 12px; }
+.list li .fund a { color: var(--muted); }
+.list li.dup { background: rgba(240,110,120,.07); }
+.list li.dup .fund { color: #F2A0A6; }
+.list li .flag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: rgba(240,110,120,.18); color: #F2A0A6; font-size: 11px; }
+.list li button.skipall { min-height: 28px; padding: 0 10px; font: 600 12px/1 var(--body); border-radius: 8px; background: rgba(240,110,120,.15); color: #F2A0A6; border: 1px solid rgba(240,110,120,.45); cursor: pointer; white-space: nowrap; }
 .log { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 </style>
 </head>
@@ -169,6 +176,27 @@ async function unlockedAccounts() {
 }
 
 // ---- building the lists -------------------------------------------------
+// Anti-farming: who sent each account its first ALGO. Several new accounts funded by the same wallet = likely one person.
+async function firstFunding(a) {
+  try {
+    const j = await c.getJSON(`${c.n.indexer}/v2/transactions?address=${a}&address-role=receiver&tx-type=pay&limit=1`);
+    const t = j?.transactions?.[0];
+    return t ? { from: t.sender, amt: Number(t["payment-transaction"]?.amount || 0), at: t["round-time"] } : null;
+  } catch { return null; }
+}
+async function annotateFunders(rows) {
+  for (let i = 0; i < rows.length; i += 8) {
+    const part = rows.slice(i, i + 8);
+    const res = await Promise.all(part.map((r) => firstFunding(r.to)));
+    part.forEach((r, k) => { r.fund = res[k]; });
+  }
+  const count = {};
+  rows.forEach((r) => { if (r.fund) count[r.fund.from] = (count[r.fund.from] || 0) + 1; });
+  rows.forEach((r) => { r.dup = r.fund ? count[r.fund.from] : 0; });
+  rows.sort((x, y) => (y.dup - x.dup) || String(x.fund?.from).localeCompare(String(y.fund?.from)));
+  return rows;
+}
+
 async function buildWelcome() {
   const [unlocked, hold, paid] = await Promise.all([unlockedAccounts(), holders(), paidWith(NOTE_WELCOME)]);
   const left = Math.max(0, WELCOME_CAP - paid.size);
@@ -180,7 +208,11 @@ async function buildWelcome() {
   const low = cand.length - ok.length;
   const lowList = cand.map((a, i) => [a, algo[i]]).filter(([, v]) => v < WELCOME_MIN_ALGO);
   const due = ok.slice(0, left).map((a) => ({ to: a, amount: WELCOME }));
+  say("Checking who funded each account…");
+  await annotateFunders(due);
+  const groups = new Set(due.filter((r) => r.dup > 1).map((r) => r.fund.from));
   $("p-summary").textContent = `${unlocked.length} unlocked accounts on chain · ${paid.size} of ${WELCOME_CAP} welcomed · ${left} left · ${due.length} to pay now (${fq(WELCOME * BigInt(due.length))} FALQBIT)` + (low ? ` · ${low} skipped automatically (under ${WELCOME_MIN_ALGO / 1e6} ALGO)` : "") + ".";
+  if (groups.size) $("p-summary").innerHTML += `<br><b style="color:#F2A0A6">⚠ ${due.filter((r) => r.dup > 1).length} accounts share a funding wallet with others (${groups.size} funder${groups.size > 1 ? "s" : ""}). One drop per person: review them before paying.</b>`;
   if (lowList.length) $("p-summary").innerHTML += "<br>Under " + (WELCOME_MIN_ALGO / 1e6) + " ALGO: " + lowList.map(([a, v]) => `<a href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)}</a> (${(v / 1e6).toFixed(3)} ALGO)`).join(", ");
   return due;
 }
@@ -259,10 +291,20 @@ function render() {
   if (!queue.length) { ul.innerHTML = `<li class="empty">Nobody to pay right now.</li>`; }
   for (const r of queue.slice(0, 500)) {
     const li = document.createElement("li");
-    li.innerHTML = `<a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a><span class="right"><span class="amt">${fq(r.amount)}</span><button type="button" class="skip">Skip</button></span>`;
+    const f = r.fund;
+    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
+    if (r.dup > 1) li.className = "dup";
+    li.innerHTML = `<span class="who"><a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a>${fundLine}</span><span class="right"><span class="amt">${fq(r.amount)}</span>${r.dup > 1 ? `<button type="button" class="skipall">Skip all ${r.dup}</button>` : ""}<button type="button" class="skip">Skip</button></span>`;
     li.querySelector(".skip").addEventListener("click", () => {
       SKIP.add(r.to); saveSkip();
       queue = queue.filter((q) => q.to !== r.to); render(); renderSkipped();
+    });
+    const sa = li.querySelector(".skipall");
+    if (sa) sa.addEventListener("click", () => {
+      const from = r.fund.from;
+      queue.filter((q) => q.fund && q.fund.from === from).forEach((q) => SKIP.add(q.to)); saveSkip();
+      queue = queue.filter((q) => !(q.fund && q.fund.from === from)); render(); renderSkipped();
+      say(`Skipped every account funded by ${short(from)}.`);
     });
     ul.append(li);
   }
