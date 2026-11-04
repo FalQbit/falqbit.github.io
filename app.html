@@ -76,9 +76,75 @@ nav.tabs button svg { width: 22px; height: 22px; fill: none; stroke: currentColo
 nav.tabs button[aria-selected="true"] { color: var(--cyan); background: rgba(63,224,208,.08); }
 .fine { font-size: 13px; color: var(--muted); }
 .install { border-style: dashed; }
+
+/* ---- futuristic layer ---- */
+[hidden] { display: none !important; }
+body { background: #070B16; background-image: none; }
+#lattice { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.glow1, .glow2 { position: fixed; z-index: 0; pointer-events: none; border-radius: 50%; filter: blur(90px); opacity: .5; }
+.glow1 { width: 420px; height: 420px; top: -140px; right: -140px; background: radial-gradient(circle, rgba(63,224,208,.55), transparent 65%); }
+.glow2 { width: 380px; height: 380px; bottom: 40px; left: -160px; background: radial-gradient(circle, rgba(156,144,255,.45), transparent 65%); }
+header, main { position: relative; z-index: 2; }
+header { background: rgba(7,11,22,.72); border-bottom: 1px solid rgba(63,224,208,.12); }
+.acct { background: rgba(63,224,208,.06); border-color: rgba(63,224,208,.35); color: var(--fg); }
+.acct.on::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px var(--cyan); margin-right: 6px; vertical-align: 1px; }
+h1 { font-size: 34px; }
+h1 em { background: linear-gradient(90deg, var(--cyan), var(--violet)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.card { background: linear-gradient(180deg, rgba(18,27,52,.82), rgba(11,17,34,.88)); border: 1px solid rgba(255,255,255,.07); border-radius: 22px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 20px 50px -30px rgba(0,0,0,.8); }
+#w-main { position: relative; overflow: hidden; border: 0; padding: 22px; background:
+  radial-gradient(120% 140% at 100% 0%, rgba(63,224,208,.22), transparent 55%),
+  radial-gradient(120% 140% at 0% 100%, rgba(156,144,255,.20), transparent 55%),
+  linear-gradient(180deg, rgba(18,27,52,.95), rgba(10,15,30,.95));
+  box-shadow: 0 0 0 1px rgba(63,224,208,.35), 0 24px 60px -24px rgba(63,224,208,.45); }
+#w-main::after { content: ""; position: absolute; right: -30px; top: -30px; width: 150px; height: 150px; background: url(./icon.png) center/cover; opacity: .12; border-radius: 50%; }
+#w-main .big { font-size: 42px; background: linear-gradient(90deg, #fff, #BFF7F1); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.row { padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.row:last-child { border-bottom: 0; }
+.row span:last-child { font-family: var(--mono); font-size: 14px; }
+.primary { background: linear-gradient(90deg, #3FE0D0, #7DE8DE 50%, #3FE0D0); background-size: 200% 100%; color: #06121A; box-shadow: 0 12px 30px -12px rgba(63,224,208,.7); }
+button.primary:disabled { background: #1A2440; color: #5B6788; box-shadow: none; opacity: 1; }
+.ghost { background: rgba(255,255,255,.03); border-color: rgba(255,255,255,.12); }
+input[type="text"], input[type="number"] { background: rgba(255,255,255,.035); border-color: rgba(255,255,255,.1); font-size: 22px; padding: 16px; }
+input[type="text"] { font-size: 15px; }
+input:focus { border-color: rgba(63,224,208,.6); box-shadow: 0 0 0 4px rgba(63,224,208,.08); outline: none; }
+.seg { background: rgba(255,255,255,.04); border-color: rgba(255,255,255,.08); }
+.seg button[aria-pressed="true"] { background: var(--cyan); color: #06121A; }
+.qr { box-shadow: 0 0 0 6px rgba(63,224,208,.15), 0 0 40px rgba(63,224,208,.35); }
+video { box-shadow: 0 0 0 2px rgba(63,224,208,.5), 0 0 40px rgba(63,224,208,.3); }
+nav.tabs { z-index: 6; margin: 0 12px calc(10px + env(safe-area-inset-bottom, 0px)); inset: auto 0 0 0; border-radius: 22px; border: 1px solid rgba(63,224,208,.18);
+  background: rgba(12,18,36,.78); padding: 6px; box-shadow: 0 20px 50px -20px rgba(0,0,0,.9); }
+nav.tabs button[aria-selected="true"] { color: var(--cyan); background: rgba(63,224,208,.12); box-shadow: inset 0 0 0 1px rgba(63,224,208,.35), 0 0 18px -4px rgba(63,224,208,.6); }
+nav.tabs button[aria-selected="true"] svg { filter: drop-shadow(0 0 6px rgba(63,224,208,.8)); }
+main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
+.pill.ok { box-shadow: 0 0 14px rgba(63,224,208,.5); }
+@media (prefers-reduced-motion: no-preference) {
+  .primary:not(:disabled) { animation: shine 3.5s linear infinite; }
+  @keyframes shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  section[data-view]:not([hidden]) > div { animation: rise .35s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+}
 </style>
 </head>
 <body>
+<canvas id="lattice" aria-hidden="true"></canvas>
+<div class="glow1"></div><div class="glow2"></div>
+<script>
+(function () {
+  var cv = document.getElementById("lattice"), ctx = cv.getContext("2d"), W, H, dpr, t = 0;
+  var still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function size() { dpr = Math.min(2, window.devicePixelRatio || 1); W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr; }
+  function draw() {
+    ctx.clearRect(0, 0, W, H); var gap = 30 * dpr;
+    for (var y = gap / 2; y < H; y += gap) for (var x = gap / 2; x < W; x += gap) {
+      var w = Math.sin(x * 0.006 + t) * Math.cos(y * 0.004 - t * 0.8), a = 0.07 + Math.max(0, w) * 0.3;
+      ctx.fillStyle = w > 0.55 ? "rgba(63,224,208," + a + ")" : "rgba(120,140,190," + a * 0.7 + ")";
+      ctx.beginPath(); ctx.arc(x, y, (0.9 + Math.max(0, w) * 1.1) * dpr, 0, 6.283); ctx.fill();
+    }
+    t += 0.006; if (!still) requestAnimationFrame(draw);
+  }
+  size(); addEventListener("resize", function () { size(); if (still) draw(); }); draw();
+})();
+</script>
 <header>
   <a class="brand" href="./"><img src="./icon.png" alt="" width="30" height="30">FALQBIT</a>
   <button class="acct" id="acct" type="button">Connect Pera</button>
@@ -137,7 +203,7 @@ nav.tabs button[aria-selected="true"] { color: var(--cyan); background: rgba(63,
       <h1>Get <em>paid</em>.</h1>
       <div class="card">
         <label class="f">Amount to request (FALQBIT, optional)<input type="number" id="r-amount" inputmode="decimal" min="0" step="any" placeholder="Any amount"></label>
-        <div class="qr" id="r-qr" aria-label="Payment QR code"></div>
+        <div class="qr" id="r-qr" aria-label="Payment QR code" hidden></div>
         <p class="addr" id="r-addr">Connect your wallet to show your QR code.</p>
         <button class="ghost" id="r-copy" type="button" disabled>Copy address</button>
         <p class="fine" style="margin:0">The payer scans this with the FALQBIT app or with Pera. Only unlocked quantum accounts can send or receive FALQBIT.</p>
