@@ -320,7 +320,7 @@ body { overflow-x: clip; }
 
 
 /* supply dashboard */
-.dash { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-areas: "total res" "circ res" "dist dist" "top top"; gap: 14px; }
+.dash { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-areas: "total res" "circ res" "dist dist" "top top" "lp lp"; gap: 14px; }
 .dpanel { background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.5)); border: 1px solid rgba(60,78,122,.55); border-radius: 16px; padding: 22px; min-width: 0; }
 .d-total { grid-area: total; } .d-circ { grid-area: circ; } .d-res { grid-area: res; } .d-dist { grid-area: dist; }
 .dk { font: 500 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); margin: 0 0 16px; }
@@ -366,7 +366,7 @@ body { overflow-x: clip; }
 .d-dist .htable-wrap { margin-top: 14px; }
 .dtip { position: absolute; pointer-events: none; background: #0B1120; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: 500 12px/1.5 var(--mono); color: var(--fg); white-space: nowrap; transform: translate(-50%, -100%); box-shadow: 0 10px 30px -10px rgba(0,0,0,.6); z-index: 5; }
 .dtip span { color: var(--muted); }
-@media (max-width: 860px) { .dash { grid-template-columns: minmax(0, 1fr); grid-template-areas: "total" "circ" "res" "dist" "top"; } }
+@media (max-width: 860px) { .dash { grid-template-columns: minmax(0, 1fr); grid-template-areas: "total" "circ" "res" "dist" "top" "lp"; } }
 @media (max-width: 520px) { .res { grid-template-columns: minmax(0, 1fr); } .donut-wrap { max-width: 210px; margin: 0 auto; } .flip span { width: 46px; height: 60px; font-size: 38px; } }
 /* live stats */
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: -40px; }
@@ -463,6 +463,10 @@ body { background-image: none; }
 .top-list .val b { display: block; font: 600 15px/1.2 var(--mono); }
 .top-list .val span { color: var(--muted); font-size: 12px; }
 @media (max-width: 600px) { .top-list li { grid-template-columns: 26px minmax(0, 1fr); } .top-list .val { grid-column: 2; text-align: left; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; } .top-list .val b { display: inline; } }
+.d-lp { grid-area: lp; }
+.lp-sum { display: flex; flex-wrap: wrap; gap: 10px 28px; margin: 14px 0 0; font: 500 14px/1.4 var(--mono); color: var(--muted); }
+.lp-sum b { color: var(--fg); font-weight: 600; }
+.top-list .tag { display: inline-block; margin-left: 8px; padding: 2px 7px; border-radius: 999px; font: 600 10px/1.4 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); border: 1px solid rgba(63,224,208,.45); vertical-align: 1px; }
 </style>
 </head><body id="top">
 <div class="glow" aria-hidden="true"></div>
@@ -1461,6 +1465,12 @@ body { background-image: none; }
         <p class="dsub">The 10 biggest community wallets. Project accounts and the pool are left out. Tap an address to check it on the explorer. Rewards shown are estimates from today's balance; the payout on the 25th uses each wallet's lowest balance since the 1st.</p>
         <ol class="top-list" id="top-list"><li><span></span><span class="muted">Reading the chain…</span></li></ol>
       </div>
+      <div class="dpanel d-lp">
+        <h3 class="dk">Liquidity providers</h3>
+        <p class="dsub">Who supplies the ALGO and FALQBIT in the Tinyman pool, and how much of it each one could withdraw today. Anyone can add liquidity and appear here.</p>
+        <div class="lp-sum" id="lp-sum">Reading the pool…</div>
+        <ol class="top-list" id="lp-list"></ol>
+      </div>
     </div>
   </section>
 
@@ -1817,6 +1827,31 @@ document.documentElement.classList.add("js");
     drawTop(); if (by === "al") loadAlgo();
   }
   if ($("top-fq")) { $("top-fq").addEventListener("click", function () { setTop("fq"); }); $("top-al").addEventListener("click", function () { setTop("al"); }); }
+  // ---- liquidity providers: holders of the Tinyman pool token ----
+  var LP_TOKEN = 3760920578, LP_POOL = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
+  var LP_NAMES = { "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU": "Project" };
+  function loadLP() {
+    var box = $("lp-list"); if (!box) return;
+    Promise.all([
+      get("/v2/accounts/" + LP_POOL + "/applications/1002541853"),
+      fetch(IDX + "/v2/assets/" + LP_TOKEN + "/balances?limit=1000&currency-greater-than=0").then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    ]).then(function (x) {
+      var r = {}; (x[0]["app-local-state"]["key-value"] || []).forEach(function (k) { r[atob(k.key)] = k.value.uint; });
+      var issued = r.issued_pool_tokens || 1, fq = r.asset_1_reserves / 1e6, al = r.asset_2_reserves / 1e6;
+      var rows = (x[1].balances || []).filter(function (b) { return b.address !== LP_POOL && !b.deleted && b.amount > 0; })
+        .sort(function (a, b) { return b.amount - a.amount; });
+      var proj = rows.filter(function (b) { return LP_NAMES[b.address]; }).reduce(function (t, b) { return t + b.amount; }, 0);
+      $("lp-sum").innerHTML = "<span>In the pool <b>" + fmt(al, 0) + " ALGO</b> + <b>" + (fq >= 1e9 ? fmt(fq / 1e9, 2) + "B" : fmt(fq / 1e6, 0) + "M") + " FALQBIT</b></span>" +
+        "<span>Providers <b>" + rows.length + "</b></span><span>Project share <b>" + fmt(proj / issued * 100, 1) + "%</b></span>";
+      box.innerHTML = rows.slice(0, 10).map(function (b, i) {
+        var sh = b.amount / issued, name = LP_NAMES[b.address];
+        return "<li><span class=\"fill\" style=\"width:" + Math.max(2, Math.round(100 * sh)) + "%\"></span><span class=\"rk\">" + (i + 1) + "</span>" +
+          "<span class=\"who\"><a href=\"https://lora.algokit.io/mainnet/account/" + b.address + "\" target=\"_blank\" rel=\"noopener\">" + shortA(b.address) + "</a>" + (name ? "<span class=\"tag\">" + name + "</span>" : "") +
+          "<small>" + fmt(sh * 100, 2) + "% of the pool</small></span>" +
+          "<span class=\"val\"><b>" + fmt(al * sh, 2) + " ALGO</b><span>+ " + fmt(fq * sh, 0) + " FALQBIT</span></span></li>";
+      }).join("") || "<li><span></span><span class=\"muted\">No providers yet.</span></li>";
+    }).catch(function () { $("lp-sum").textContent = "Could not read the pool right now."; });
+  }
   function loadHolders() {
     allBalances().then(withFounders).then(function (x) {
       var list = x.list, FOUNDER = x.founder;
@@ -1928,7 +1963,7 @@ document.documentElement.classList.add("js");
       h.addEventListener("mouseleave", function () { tip.hidden = true; });
     });
   }
-  load(); loadHeld(); loadHolders(); loadActivity(); setInterval(function () { load(); loadHeld(); loadHolders(); loadActivity(); }, 60000);
+  load(); loadHeld(); loadHolders(); loadActivity(); loadLP(); setInterval(function () { load(); loadHeld(); loadHolders(); loadActivity(); loadLP(); }, 60000);
 })();
 </script>
 <script src="./fx.js" defer></script>
