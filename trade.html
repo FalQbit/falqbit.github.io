@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FALQBIT Trade</title>
+<meta name="description" content="Swap FALQBIT with ALGO or USDC from your Pera Quantum Account. Trades run on Tinyman v2 pools, with the right fees for Falcon-1024 accounts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="./app.css">
+<link rel="icon" type="image/png" href="./icon.png">
+<style>
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1); margin: 0 0 14px; }
+  .seg button { min-height: 44px; border: 0; border-radius: 10px; background: transparent; color: #A9B4D0; font: 600 15px/1 "IBM Plex Sans", sans-serif; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: #3FE0D0; color: #08141C; }
+  .seg.small button[aria-pressed="true"] { background: rgba(63,224,208,.18); color: #E8ECF6; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 12px; }
+  .field .lab { font: 500 12px/1 "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase; color: #A9B4D0; display: flex; justify-content: space-between; gap: 8px; }
+  .field .lab button { background: none; border: 0; color: #3FE0D0; font: inherit; cursor: pointer; padding: 0; }
+  .field input { font: 500 24px/1.2 "IBM Plex Mono", monospace; padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.04); color: inherit; width: 100%; box-sizing: border-box; }
+  .quote { display: flex; flex-direction: column; gap: 6px; font: 500 14px/1.5 "IBM Plex Mono", monospace; color: #A9B4D0; }
+  .quote b { color: #3FE0D0; font-weight: 500; }
+  .quote .warn { color: #F5B942; }
+  .route { font: 500 12px/1.4 "IBM Plex Mono", monospace; color: #A9B4D0; margin-top: 4px; }
+  .note { font-size: 13px; color: #A9B4D0; margin: 18px 0 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./" style="display:inline-flex;align-items:center;gap:10px"><img src="./icon.png" alt="" width="34" height="34" style="width:34px;height:34px;border-radius:50%;box-shadow:0 0 18px rgba(63,224,208,.35)">FALQBIT</a>
+    <nav class="nets" aria-label="Network"><a href="?net=mainnet" id="n-mainnet" aria-current="true">MAINNET</a></nav>
+  </header>
+
+  <section>
+    <h1>Trade <em>FALQBIT</em>.</h1>
+    <p class="lede">Swap with ALGO or USDC from your Pera Quantum Account, in one approval. Trades run on Tinyman v2 pools with the higher fees quantum accounts need.</p>
+  </section>
+
+  <section class="panel" aria-live="polite">
+    <div class="row" id="r-wallet"><span class="dot"></span><div><div class="label">Wallet</div><div class="detail">Not connected</div></div></div>
+    <div class="row" id="r-price"><span class="dot"></span><div><div class="label">Price</div><div class="detail">Loading…</div></div></div>
+  </section>
+
+  <section class="panel">
+    <div class="seg" role="group" aria-label="Direction">
+      <button type="button" id="d-buy" aria-pressed="true">Buy FALQBIT</button>
+      <button type="button" id="d-sell" aria-pressed="false">Sell FALQBIT</button>
+    </div>
+    <div class="seg small" role="group" aria-label="Pay with">
+      <button type="button" id="c-algo" aria-pressed="true">ALGO</button>
+      <button type="button" id="c-usdc" aria-pressed="false">USDC</button>
+    </div>
+    <label class="field"><span class="lab"><span id="in-label">You pay (ALGO)</span><button type="button" id="b-max" hidden>Max</button></span>
+      <input id="in-amt" inputmode="decimal" placeholder="0.0" autocomplete="off"></label>
+    <div class="quote" id="quote"><span>Enter an amount to see the quote.</span></div>
+    <div class="route" id="route"></div>
+  </section>
+
+  <div class="actions">
+    <button class="primary" id="b-connect" type="button">Connect Pera Wallet</button>
+    <button class="primary" id="b-swap" type="button" hidden disabled>Swap</button>
+    <button class="ghost" id="b-disconnect" type="button" hidden>Disconnect</button>
+  </div>
+  <div id="msg" class="msg" hidden></div>
+
+  <p class="note">Your account must be a Pera Quantum Account unlocked at <a href="./unlock.html?net=mainnet">falqbit.com/unlock</a>. Swaps are atomic: if any step fails, nothing happens. Prices move with every trade. Not investment advice.</p>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script type="module">
+import { algosdk, FEE_PQ, FEE_CALL, client, loadConfig, short } from "./falqbit.js";
+
+const net = "mainnet";
+const cfg = (await loadConfig())[net];
+const c = client(net);
+const $ = (id) => document.getElementById(id);
+const T = 1002541853;
+const USDC = 31566704;
+const USDC_POOL = "2PIFZW53RHCSFSYMCFUBW4XOCXOMB7XOYQSQ6KGT3KVGJTL4HM6COZRNMM";
+const DEC = 1e6;
+const SLIP = 99n; // 1% slippage guard on each hop
+
+let account = null, dir = "buy", cur = "algo", R = null, U = null, bal = { algo: 0n, fq: 0n, usdc: 0n, usdcOpt: false, unlocked: false, minBal: 0n };
+const fmt = (n, d = 2) => Number(n).toLocaleString("en-US", { maximumFractionDigits: d });
+const lora = (id) => `<a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">View on Lora</a>`;
+function say(html, kind = "") { const m = $("msg"); m.hidden = !html; m.className = "msg " + kind; m.innerHTML = html; }
+function setRow(id, state, detail) { const r = $(id); r.dataset.s = state; r.querySelector(".detail").textContent = detail; }
+
+async function readPool(addr) {
+  const j = await c.algodGet(`/v2/accounts/${addr}/applications/${T}`);
+  const kv = {}; for (const x of j?.["app-local-state"]?.["key-value"] || []) kv[atob(x.key)] = x.value.uint;
+  return { a1: BigInt(kv.asset_1_reserves), a2: BigInt(kv.asset_2_reserves), fee: BigInt(kv.total_fee_share ?? 30) };
+}
+async function loadPools() {
+  const [p, u] = await Promise.all([readPool(cfg.pool), readPool(USDC_POOL)]);
+  R = { fq: p.a1, algo: p.a2, fee: p.fee };          // FALQBIT / ALGO
+  U = { usdc: u.a1, algo: u.a2, fee: u.fee };        // USDC / ALGO
+  const px = Number(R.algo) / Number(R.fq) * 1e6;
+  const usdPerAlgo = Number(U.usdc) / Number(U.algo);
+  setRow("r-price", "ok", `${fmt(px, 3)} ALGO per 1M FALQBIT · ≈ $${fmt(px * usdPerAlgo, 4)}`);
+}
+function swapOut(x, rIn, rOut, feeBps) {
+  const fee = (x * feeBps + 9999n) / 10000n; const y = x - fee;
+  return y <= 0n ? 0n : (rOut * y) / (rIn + y);
+}
+
+let Q = null;
+function quote() {
+  Q = null; $("b-swap").disabled = true;
+  const v = Number(($("in-amt").value || "").replace(",", "."));
+  if (!R || !U || !(v > 0)) { $("quote").innerHTML = "<span>Enter an amount to see the quote.</span>"; $("route").textContent = ""; return; }
+  const x = BigInt(Math.round(v * DEC));
+  const pre = Number(R.algo) / Number(R.fq);
+  let out, min, mid = 0n, midMin = 0n, impact, outTxt, route;
+  if (dir === "buy" && cur === "algo") {
+    out = swapOut(x, R.algo, R.fq, R.fee); min = out * SLIP / 100n;
+    impact = (Number(R.algo + x) / Number(R.fq - out)) / pre - 1;
+    outTxt = `${fmt(Number(out) / DEC, 0)} FALQBIT`; route = "ALGO → FALQBIT (Tinyman)";
+  } else if (dir === "sell" && cur === "algo") {
+    out = swapOut(x, R.fq, R.algo, R.fee); min = out * SLIP / 100n;
+    impact = 1 - (Number(R.algo - out) / Number(R.fq + x)) / pre;
+    outTxt = `${fmt(Number(out) / DEC, 4)} ALGO`; route = "FALQBIT → ALGO (Tinyman)";
+  } else if (dir === "buy" && cur === "usdc") {
+    mid = swapOut(x, U.usdc, U.algo, U.fee); midMin = mid * SLIP / 100n;
+    out = swapOut(midMin, R.algo, R.fq, R.fee); min = out * SLIP / 100n;
+    impact = (Number(R.algo + midMin) / Number(R.fq - out)) / pre - 1;
+    outTxt = `${fmt(Number(out) / DEC, 0)} FALQBIT`; route = `USDC → ${fmt(Number(midMin) / DEC, 4)} ALGO → FALQBIT (two Tinyman pools)`;
+  } else {
+    mid = swapOut(x, R.fq, R.algo, R.fee); midMin = mid * SLIP / 100n;
+    out = swapOut(midMin, U.algo, U.usdc, U.fee); min = out * SLIP / 100n;
+    impact = 1 - (Number(R.algo - mid) / Number(R.fq + x)) / pre;
+    outTxt = `${fmt(Number(out) / DEC, 4)} USDC`; route = `FALQBIT → ${fmt(Number(midMin) / DEC, 4)} ALGO → USDC (two Tinyman pools)`;
+  }
+  const pct = Math.abs(impact) * 100;
+  const minTxt = (dir === "buy" ? fmt(Number(min) / DEC, 0) + " FALQBIT" : fmt(Number(min) / DEC, 4) + (cur === "usdc" ? " USDC" : " ALGO"));
+  let html = `<span>You get about <b>${outTxt}</b></span><span>Minimum (1% slippage): ${minTxt}</span><span${pct > 5 ? ' class="warn"' : ""}>Price impact: ${pct < 0.01 ? "<0.01" : fmt(pct, 2)}%${pct > 5 ? " · large trade for this pool" : ""}</span>`;
+  let ok = out > 0n && !!account;
+  if (account) {
+    const fees = BigInt(FEE_PQ * 2 + FEE_CALL * 2 + 200000);
+    if (!bal.unlocked) { ok = false; html += `<span class="warn">This account can't hold FALQBIT yet. Unlock it first at <a href="./unlock.html?net=mainnet">falqbit.com/unlock</a>.</span>`; }
+    if (dir === "buy" && cur === "algo" && x + fees > bal.algo - bal.minBal) { ok = false; html += `<span class="warn">Not enough ALGO (keep some for fees).</span>`; }
+    if (dir === "buy" && cur === "usdc" && x > bal.usdc) { ok = false; html += `<span class="warn">You hold ${fmt(Number(bal.usdc) / DEC, 2)} USDC.</span>`; }
+    if (dir === "sell" && x > bal.fq) { ok = false; html += `<span class="warn">You hold ${fmt(Number(bal.fq) / DEC, 0)} FALQBIT.</span>`; }
+    if (cur === "usdc" && dir === "sell" && !bal.usdcOpt) html += `<span>USDC will be added to your account in the same approval (0.1 ALGO deposit).</span>`;
+  }
+  $("quote").innerHTML = html; $("route").textContent = "Route: " + route;
+  Q = { x, min, midMin }; $("b-swap").disabled = !ok;
+}
+
+function setDir(d) { dir = d; $("d-buy").setAttribute("aria-pressed", String(d === "buy")); $("d-sell").setAttribute("aria-pressed", String(d === "sell")); labels(); }
+function setCur(k) { cur = k; $("c-algo").setAttribute("aria-pressed", String(k === "algo")); $("c-usdc").setAttribute("aria-pressed", String(k === "usdc")); labels(); }
+function labels() {
+  const other = cur === "usdc" ? "USDC" : "ALGO";
+  $("in-label").textContent = dir === "buy" ? `You pay (${other})` : "You sell (FALQBIT)";
+  $("b-swap").textContent = dir === "buy" ? `Buy FALQBIT with ${other}` : `Sell FALQBIT for ${other}`;
+  $("b-max").hidden = !account; quote();
+}
+$("d-buy").onclick = () => setDir("buy"); $("d-sell").onclick = () => setDir("sell");
+$("c-algo").onclick = () => setCur("algo"); $("c-usdc").onclick = () => setCur("usdc");
+$("in-amt").addEventListener("input", quote);
+$("b-max").onclick = () => {
+  let v = 0;
+  if (dir === "sell") v = Number(bal.fq) / DEC;
+  else if (cur === "usdc") v = Number(bal.usdc) / DEC;
+  else v = Math.max(0, (Number(bal.algo - bal.minBal) - 300000) / DEC);
+  $("in-amt").value = String(Math.floor(v * 1e6) / 1e6); quote();
+};
+
+async function refresh() {
+  try { await loadPools(); } catch (e) { setRow("r-price", "warn", "Could not read the pools: " + e.message); }
+  if (!account) { quote(); return; }
+  const info = await c.algodGet(`/v2/accounts/${account}`);
+  const a = info?.assets || [];
+  const h = a.find((x) => x["asset-id"] === cfg.asset_id), u = a.find((x) => x["asset-id"] === USDC);
+  bal = { algo: BigInt(info?.amount || 0), minBal: BigInt(info?.["min-balance"] || 0), fq: h ? BigInt(h.amount) : 0n, unlocked: !!h && !h["is-frozen"], usdc: u ? BigInt(u.amount) : 0n, usdcOpt: !!u };
+  setRow("r-wallet", bal.unlocked ? "ok" : "warn", `${short(account)} · ${fmt(Number(bal.algo) / DEC, 3)} ALGO · ${fmt(Number(bal.fq) / DEC, 0)} FALQBIT${u ? " · " + fmt(Number(bal.usdc) / DEC, 2) + " USDC" : ""}`);
+  $("b-connect").hidden = true; $("b-disconnect").hidden = false; $("b-swap").hidden = false; labels();
+}
+
+$("b-swap").addEventListener("click", async () => {
+  if (!Q) return;
+  const btn = $("b-swap");
+  try {
+    btn.disabled = true; say("Approve the swap in Pera…");
+    await loadPools(); quote(); if (!Q) return;
+    const { x, min, midMin } = Q;
+    const sp = await c.params(FEE_PQ), spc = await c.params(FEE_CALL);
+    const pay = (to, amt) => algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: to, amount: amt, suggestedParams: sp });
+    const axf = (to, amt, asset) => algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({ sender: account, receiver: to, amount: amt, assetIndex: asset, suggestedParams: sp });
+    const call = (pool, asset, m) => algosdk.makeApplicationNoOpTxnFromObject({
+      sender: account, appIndex: T, suggestedParams: spc,
+      appArgs: [new TextEncoder().encode("swap"), new TextEncoder().encode("fixed-input"), algosdk.encodeUint64(m)],
+      accounts: [pool], foreignAssets: [asset, 0],
+    });
+    let txns;
+    if (dir === "buy" && cur === "algo") txns = [pay(cfg.pool, x), call(cfg.pool, cfg.asset_id, min)];
+    else if (dir === "sell" && cur === "algo") txns = [axf(cfg.pool, x, cfg.asset_id), call(cfg.pool, cfg.asset_id, min)];
+    else if (dir === "buy" && cur === "usdc") txns = [axf(USDC_POOL, x, USDC), call(USDC_POOL, USDC, midMin), pay(cfg.pool, midMin), call(cfg.pool, cfg.asset_id, min)];
+    else {
+      txns = [axf(cfg.pool, x, cfg.asset_id), call(cfg.pool, cfg.asset_id, midMin), pay(USDC_POOL, midMin), call(USDC_POOL, USDC, min)];
+      if (!bal.usdcOpt) txns.unshift(axf(account, 0, USDC));
+    }
+    const { id } = await c.signAndSend(txns, {}, txns.length - 1);
+    say(`Swap done. ${lora(id)}`, "ok");
+    $("in-amt").value = ""; await refresh();
+  } catch (e) { say(e.message || String(e), "err"); quote(); }
+  finally { btn.disabled = !Q; }
+});
+
+function disconnect() { c.pera.disconnect(); account = null; $("b-connect").hidden = false; $("b-disconnect").hidden = true; $("b-swap").hidden = true; setRow("r-wallet", "", "Not connected"); say(""); labels(); }
+$("b-connect").onclick = async () => {
+  try { const a = await c.connect(); c.pera.connector?.on("disconnect", disconnect); account = a[0]; say(""); await refresh(); }
+  catch (e) { if (e?.data?.type !== "CONNECT_MODAL_CLOSED") say(e.message || String(e), "err"); }
+};
+$("b-disconnect").onclick = disconnect;
+
+$("foot").innerHTML = `Pools: <a href="${c.n.lora}/account/${cfg.pool}" target="_blank" rel="noopener">FALQBIT/ALGO</a> · <a href="${c.n.lora}/account/${USDC_POOL}" target="_blank" rel="noopener">USDC/ALGO</a> · token <a href="${c.n.lora}/asset/${cfg.asset_id}" target="_blank" rel="noopener">${cfg.asset_id}</a>`;
+refresh().catch(() => {});
+c.reconnect().then((a) => { c.pera.connector?.on("disconnect", disconnect); if (a.length) { account = a[0]; refresh().catch((e) => say(e.message, "err")); } }).catch(() => {});
+setInterval(() => loadPools().then(quote).catch(() => {}), 30000);
+</script>
+</body>
+</html>
