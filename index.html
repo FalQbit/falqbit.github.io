@@ -159,7 +159,7 @@ a.venue:hover { color: var(--fg); }
 .venue:nth-child(even) .vicon svg { stroke: var(--violet); }
 
 /* roadmap: real order */
-.road { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 16px; }
+.road { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px 16px; }
 .road li { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 3px solid var(--line); min-width: 0; }
 .road li.done { border-top-color: var(--cyan); }
 .road li.now { border-top-color: var(--amber); }
@@ -1336,6 +1336,10 @@ body { overflow-x: clip; }
           <div><span>Total supply</span><b>10,000,000,000</b></div>
           <div><span>Held by the community</span><b id="d-circ-amt">…</b></div>
         </div>
+        <div class="cnums" id="d-founder" hidden>
+          <div><span>Founder wallets</span><b id="d-founder-amt">…</b></div>
+          <div><span>Not counted as community</span><b>excluded from rewards</b></div>
+        </div>
         <div class="cnums">
           <div><span>Holders</span><b id="h-count">…</b></div>
           <div><span>Earning (1M+)</span><b id="h-earn">…</b></div>
@@ -1358,7 +1362,7 @@ body { overflow-x: clip; }
       </div>
       <div class="dpanel d-dist">
         <div class="dist-head"><h3 class="dk">Holder distribution</h3><button type="button" class="ghost-btn" id="d-dist-toggle" aria-pressed="false">Show as table</button></div>
-        <p class="dsub">Community wallets by balance. Project accounts and the pool are left out.</p>
+        <p class="dsub">Community wallets by balance. Project accounts, founder wallets and the pool are left out.</p>
         <div class="dist-plot" id="d-dist-plot"><p class="muted">Reading the chain…</p></div>
         <div class="htable-wrap" id="d-dist-table" hidden>
           <table class="htable">
@@ -1470,7 +1474,8 @@ body { overflow-x: clip; }
       <li class="done"><span class="state">Done</span><h3>TestNet</h3><p>Gate contract, Tinyman pool, swaps and the Pera unlock page, all tested.</p></li>
       <li class="done"><span class="state">Done</span><h3>Mainnet launch</h3><p>Token, gate contract and Tinyman pool, launched on 2 November 2026.</p></li>
       <li class="done"><span class="state">Done</span><h3>Rewards live</h3><p>Welcome drops for the first 200 accounts and 0.5% a month for holders, paid on-chain every 25th.</p></li>
-      <li class="now"><span class="state">In progress</span><h3>Verified everywhere</h3><p>Pera verification in review (all four checks passed), logo on Tinyman and Vestige, more wallets and explorers.</p></li>
+      <li class="done"><span class="state">Done</span><h3>Verified on Pera</h3><p>FALQBIT is a verified ASA in Pera Wallet, approved on 4 November 2026.</p></li>
+      <li class="now"><span class="state">In progress</span><h3>Verified everywhere</h3><p>Logo on Tinyman and Vestige, Algorand project directories, more wallets and explorers.</p></li>
       <li><span class="state">Next</span><h3>Trade with ALGO and USDC</h3><p>Swap FALQBIT for ALGO or USDC right here, in one approval. Then the FALQBIT app with QR payments. <a href="./whitepaper#roadmap">Full roadmap</a></p></li>
     </ol>
   </section>
@@ -1665,9 +1670,23 @@ document.documentElement.classList.add("js");
     var on = this.getAttribute("aria-pressed") !== "true"; this.setAttribute("aria-pressed", String(on));
     this.textContent = on ? "Show as chart" : "Show as table"; $("d-dist-table").hidden = !on; $("d-dist-plot").hidden = on;
   });
+  // Founder wallets, stored as SHA-256 of the address so the list stays private. Counted apart from the community.
+  var FOUNDER_HASHES = [
+    // "paste-hash-here",
+  ];
+  function sha256hex(t) { return crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)).then(function (b) { return Array.prototype.map.call(new Uint8Array(b), function (x) { return x.toString(16).padStart(2, "0"); }).join(""); }); }
+  function withFounders(list) {
+    if (!FOUNDER_HASHES.length || !window.crypto || !crypto.subtle) return Promise.resolve({ list: list, founder: {} });
+    return Promise.all(list.map(function (b) { return sha256hex(b.address); })).then(function (hs) {
+      var f = {}; list.forEach(function (b, i) { if (FOUNDER_HASHES.indexOf(hs[i]) >= 0) f[b.address] = true; }); return { list: list, founder: f };
+    });
+  }
   function loadHolders() {
-    allBalances().then(function (list) {
-      var comm = list.filter(function (b) { return !PROJECT[b.address] && !b.deleted && b.amount > 0; });
+    allBalances().then(withFounders).then(function (x) {
+      var list = x.list, FOUNDER = x.founder;
+      var fsum = list.filter(function (b) { return FOUNDER[b.address]; }).reduce(function (s, b) { return s + b.amount / 1e6; }, 0);
+      var fn = list.filter(function (b) { return FOUNDER[b.address] && b.amount > 0; }).length;
+      var comm = list.filter(function (b) { return !PROJECT[b.address] && !FOUNDER[b.address] && !b.deleted && b.amount > 0; });
       var rows = RANGES.map(function (r) { return { label: r[2], n: 0, sum: 0, lo: r[0], hi: r[1] }; });
       var total = 0;
       comm.forEach(function (b) { var v = b.amount / 1e6; total += v; rows.forEach(function (r) { if (v >= r.lo && v < r.hi) { r.n++; r.sum += v; } }); });
@@ -1679,6 +1698,8 @@ document.documentElement.classList.add("js");
       var proj = list.filter(function (b) { return PROJECT[b.address]; });
       var psum = proj.reduce(function (s, b) { return s + b.amount / 1e6; }, 0);
       html += "<tr class=\"proj\"><td>Pool and project accounts</td><td>" + proj.length + "</td><td>" + fmt(psum, 0) + "</td><td>" + fmt(psum / SUPPLY * 100, 2) + "%</td></tr>";
+      if (fn) html += "<tr class=\"proj\"><td>Founder wallets</td><td>" + fn + "</td><td>" + fmt(fsum, 0) + "</td><td>" + fmt(fsum / SUPPLY * 100, 2) + "%</td></tr>";
+      var fr = $("d-founder"); if (fr) { fr.hidden = !fn; $("d-founder-amt").textContent = fmt(fsum, 0); }
       $("h-rows").innerHTML = html;
       $("h-count").textContent = fmt(comm.length, 0);
       $("h-earn").textContent = fmt(comm.filter(function (b) { return b.amount >= 1e12; }).length, 0);

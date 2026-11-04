@@ -122,6 +122,17 @@ if (!cfg || !cfg.rewards) {
   $("foot").innerHTML = `${NETWORKS[net].label}. Token <a href="${c.n.lora}/asset/${cfg.asset_id}" target="_blank" rel="noopener">${cfg.asset_id}</a> · Rewards <a href="${c.n.lora}/account/${cfg.rewards}" target="_blank" rel="noopener">${short(cfg.rewards)}</a>`;
 }
 const EXCLUDE = new Set([cfg?.pool, cfg?.rewards, cfg?.team, cfg?.project, cfg?.app_address].filter(Boolean));
+// Founder wallets: never paid, in any browser. Stored as SHA-256 of the address so the list stays private.
+const FOUNDER_HASHES = new Set([
+  // "paste-hash-here",
+]);
+async function sha256hex(t) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t)); return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join(""); }
+async function founderSet(addrs) {
+  const out = new Set(); if (!FOUNDER_HASHES.size) return out;
+  const hs = await Promise.all(addrs.map(sha256hex));
+  addrs.forEach((a, i) => { if (FOUNDER_HASHES.has(hs[i])) out.add(a); });
+  return out;
+}
 
 // ---- chain reads -------------------------------------------------------
 async function indexerAll(path, key) {
@@ -161,7 +172,8 @@ async function unlockedAccounts() {
 async function buildWelcome() {
   const [unlocked, hold, paid] = await Promise.all([unlockedAccounts(), holders(), paidWith(NOTE_WELCOME)]);
   const left = Math.max(0, WELCOME_CAP - paid.size);
-  const cand = unlocked.filter((a) => !EXCLUDE.has(a) && !SKIP.has(a) && !paid.has(a) && hold.has(a) && !hold.get(a).frozen);
+  const FOUNDER = await founderSet(unlocked);
+  const cand = unlocked.filter((a) => !EXCLUDE.has(a) && !FOUNDER.has(a) && !SKIP.has(a) && !paid.has(a) && hold.has(a) && !hold.get(a).frozen);
   // anti-farming: the account must hold at least 2 ALGO right now
   const algo = await Promise.all(cand.map((a) => c.algodGet(`/v2/accounts/${a}?exclude=all`).then((j) => Number(j?.amount || 0)).catch(() => 0)));
   const ok = cand.filter((a, i) => algo[i] >= WELCOME_MIN_ALGO);
@@ -223,7 +235,8 @@ async function buildHold() {
   const [hold, paid] = await Promise.all([holders(), paidWith(NOTE_HOLD)]);
   let snap = loadSnap();
   if (!snap) {
-    const cand = [...hold.entries()].filter(([a, h]) => !EXCLUDE.has(a) && !SKIP.has(a) && !h.frozen && h.amount >= MIN_HOLD);
+    const FOUNDER = await founderSet([...hold.keys()]);
+    const cand = [...hold.entries()].filter(([a, h]) => !EXCLUDE.has(a) && !FOUNDER.has(a) && !SKIP.has(a) && !h.frozen && h.amount >= MIN_HOLD);
     let base = new Map(cand.map(([a, h]) => [a, h.amount]));
     if (R.lowest) base = await lowestSinceFirst(base, [...base.keys()]);
     const eligible = [...base.entries()].filter(([, v]) => v >= MIN_HOLD);
