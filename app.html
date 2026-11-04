@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FALQBIT App</title>
+<meta name="theme-color" content="#0A0F1E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FALQBIT">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" href="./icon.png">
+<link rel="apple-touch-icon" href="./app-icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: phone-first single column; sticky header, content, fixed bottom tab bar. Single dark brand look. */
+:root {
+  --ground: #0A0F1E; --surface: #121A30; --raise: #18223E; --line: #24304F;
+  --fg: #E8ECF6; --muted: #A9B4D0; --cyan: #3FE0D0; --violet: #9C90FF; --amber: #F5B942; --red: #FF7A7A;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--ground); color: var(--fg); font: 400 16px/1.5 var(--body);
+  background-image: radial-gradient(var(--line) 1.1px, transparent 1.2px); background-size: 22px 22px; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--ground); }
+header { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: flex; align-items: center; gap: 10px; justify-content: space-between;
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px));
+  background: rgba(10,15,30,.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.brand { display: inline-flex; align-items: center; gap: 10px; font: 800 19px/1 var(--display); color: var(--fg); text-decoration: none; }
+.brand img { width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 16px rgba(63,224,208,.35); }
+.acct { font: 500 12px/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; background: var(--surface); cursor: pointer; }
+.acct.on { color: var(--fg); border-color: rgba(63,224,208,.5); }
+main { max-width: 560px; margin: 0 auto; padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(110px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 16px; }
+h1 { font: 800 30px/1.05 var(--display); margin: 0; letter-spacing: -.02em; }
+h1 em { font-style: normal; color: var(--cyan); }
+.muted { color: var(--muted); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.k { font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); }
+.big { font: 800 34px/1.05 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.row span:last-child { font-variant-numeric: tabular-nums; text-align: right; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font: 500 12px/1 var(--mono); padding: 6px 10px; border-radius: 999px; align-self: flex-start; }
+.pill.ok { background: var(--cyan); color: var(--ground); }
+.pill.warn { border: 1px solid var(--amber); color: var(--amber); }
+button, .btn { min-height: 50px; border: 0; border-radius: 14px; cursor: pointer; font: 600 16px/1 var(--body); padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; }
+.primary { background: var(--cyan); color: var(--ground); }
+.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+a { color: var(--cyan); }
+label.f { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }
+input[type="text"], input[type="number"] { width: 100%; background: var(--ground); color: var(--fg); border: 1px solid var(--line); border-radius: 12px; padding: 14px; font: 500 18px/1.2 var(--mono); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: var(--ground); border: 1px solid var(--line); border-radius: 14px; padding: 4px; }
+.seg button { min-height: 42px; background: transparent; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--raise); color: var(--fg); }
+.quote { font-size: 14px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.quote b { color: var(--fg); font-weight: 600; }
+.msg { font-size: 15px; padding: 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); overflow-wrap: anywhere; }
+.msg.err { border-color: var(--red); color: var(--red); }
+.msg.ok { border-color: var(--cyan); }
+.qr { background: #fff; border-radius: 16px; padding: 14px; align-self: center; width: min(280px, 100%); }
+.qr svg { display: block; width: 100%; height: auto; }
+.addr { font: 500 13px/1.5 var(--mono); color: var(--muted); overflow-wrap: anywhere; text-align: center; }
+video { width: 100%; border-radius: 14px; background: #000; aspect-ratio: 1; object-fit: cover; }
+nav.tabs { position: fixed; inset: auto 0 0 0; z-index: 6; display: grid; grid-template-columns: repeat(4, 1fr);
+  padding: 8px max(8px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
+  background: rgba(18,26,48,.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
+nav.tabs button { min-height: 56px; flex-direction: column; gap: 4px; background: transparent; color: var(--muted); font-size: 12px; border-radius: 12px; }
+nav.tabs button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+nav.tabs button[aria-selected="true"] { color: var(--cyan); background: rgba(63,224,208,.08); }
+.fine { font-size: 13px; color: var(--muted); }
+.install { border-style: dashed; }
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="./"><img src="./icon.png" alt="" width="30" height="30">FALQBIT</a>
+  <button class="acct" id="acct" type="button">Connect Pera</button>
+</header>
+
+<main>
+  <!-- WALLET -->
+  <section id="v-wallet" data-view>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h1>Your <em>quantum</em> wallet.</h1>
+      <div class="card" id="w-empty">
+        <p class="muted" style="margin:0">Connect a Pera Quantum Account to see your FALQBIT, trade, and pay with QR codes.</p>
+        <button class="primary" id="w-connect" type="button">Connect Pera Wallet</button>
+      </div>
+      <div class="card" id="w-main" hidden>
+        <span class="k">FALQBIT balance</span>
+        <span class="big" id="w-fq">…</span>
+        <span class="muted" id="w-fq-algo">…</span>
+        <span class="pill" id="w-status">…</span>
+        <a class="btn ghost" id="w-unlock" href="./unlock.html?net=mainnet" hidden>Unlock this account</a>
+      </div>
+      <div class="card" id="w-more" hidden>
+        <div class="row"><span class="muted">ALGO</span><span id="w-algo">…</span></div>
+        <div class="row"><span class="muted">Price</span><span id="w-price">…</span></div>
+        <div class="row"><span class="muted">Next hold reward (est.)</span><span id="w-reward">…</span></div>
+        <div class="row"><span class="muted">Payout day</span><span id="w-payday">…</span></div>
+      </div>
+      <div class="card install" id="w-install">
+        <span class="k">Install</span>
+        <p class="muted" style="margin:0" id="w-install-text">Add FALQBIT to your home screen: in your browser menu, tap "Add to Home Screen".</p>
+        <button class="ghost" id="w-install-btn" type="button" hidden>Install app</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TRADE -->
+  <section id="v-trade" data-view hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h1>Buy or sell <em>FALQBIT</em>.</h1>
+      <div class="card">
+        <div class="seg" role="group" aria-label="Direction">
+          <button type="button" id="t-buy" aria-pressed="true">Buy</button>
+          <button type="button" id="t-sell" aria-pressed="false">Sell</button>
+        </div>
+        <label class="f"><span id="t-in-label">You pay (ALGO)</span><input type="number" id="t-amount" inputmode="decimal" min="0" step="any" placeholder="0"></label>
+        <div class="quote" id="t-quote"><span>Enter an amount to see the quote.</span></div>
+        <button class="primary" id="t-go" type="button" disabled>Sign in Pera</button>
+        <p class="fine" style="margin:0">Swaps go straight to the FALQBIT/ALGO pool on Tinyman v2. Max 1% price slippage. Your account must be unlocked to receive FALQBIT. Paying with USDC? Use <a href="./trade.html">falqbit.com/trade</a>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- RECEIVE -->
+  <section id="v-receive" data-view hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h1>Get <em>paid</em>.</h1>
+      <div class="card">
+        <label class="f">Amount to request (FALQBIT, optional)<input type="number" id="r-amount" inputmode="decimal" min="0" step="any" placeholder="Any amount"></label>
+        <div class="qr" id="r-qr" aria-label="Payment QR code"></div>
+        <p class="addr" id="r-addr">Connect your wallet to show your QR code.</p>
+        <button class="ghost" id="r-copy" type="button" disabled>Copy address</button>
+        <p class="fine" style="margin:0">The payer scans this with the FALQBIT app or with Pera. Only unlocked quantum accounts can send or receive FALQBIT.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PAY -->
+  <section id="v-pay" data-view hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h1>Pay with <em>QR</em>.</h1>
+      <div class="card">
+        <button class="ghost" id="p-scan" type="button">Scan a QR code</button>
+        <video id="p-video" playsinline muted hidden></video>
+        <label class="f">Pay to<input type="text" id="p-to" placeholder="ADDRESS…" autocomplete="off" spellcheck="false"></label>
+        <label class="f">Amount (FALQBIT)<input type="number" id="p-amount" inputmode="decimal" min="0" step="any" placeholder="0"></label>
+        <div class="quote" id="p-check"><span>Paste an address or scan a code.</span></div>
+        <button class="primary" id="p-go" type="button" disabled>Sign in Pera</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="msg" class="msg" hidden></div>
+</main>
+
+<nav class="tabs" role="tablist" aria-label="App sections">
+  <button role="tab" type="button" id="tab-wallet" aria-selected="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.3"/></svg>Wallet</button>
+  <button role="tab" type="button" id="tab-trade" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3.5-3.5"/><path d="M20 16H6l3.5 3.5"/></svg>Trade</button>
+  <button role="tab" type="button" id="tab-receive" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg>Receive</button>
+  <button role="tab" type="button" id="tab-pay" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M4 12h16"/></svg>Pay</button>
+</nav>
+
+<script type="module">
+import { algosdk, NETWORKS, FEE_PQ, FEE_CALL, client, loadConfig, short } from "./falqbit.js";
+import qrcode from "https://esm.sh/qrcode-generator@1.4.4";
+import jsQR from "https://esm.sh/jsqr@1.4.0";
+
+const net = "mainnet";
+const cfg = (await loadConfig())[net];
+const c = client(net);
+const T = NETWORKS[net].tinyman;
+const DEC = 1e6;
+const $ = (id) => document.getElementById(id);
+let account = null, fqBal = 0n, unlocked = false, reserves = null, dir = "buy";
+
+const say = (html, kind = "") => { const m = $("msg"); m.hidden = !html; m.className = "msg " + kind; m.innerHTML = html; if (html) m.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
+const fmt = (n, d = 0) => Number(n).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: 0 });
+const lora = (id) => `<a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">View on Lora</a>`;
+
+// ---------- tabs ----------
+const views = ["wallet", "trade", "receive", "pay"];
+function show(v) {
+  views.forEach((x) => { $("v-" + x).hidden = x !== v; $("tab-" + x).setAttribute("aria-selected", String(x === v)); });
+  if (v !== "pay") stopScan();
+  say("");
+  try { history.replaceState(null, "", "#" + v); } catch {}
+}
+views.forEach((v) => $("tab-" + v).addEventListener("click", () => show(v)));
+const start = (location.hash || "").slice(1);
+if (views.includes(start)) show(start);
+
+// ---------- chain reads ----------
+async function loadReserves() {
+  const j = await c.algodGet(`/v2/accounts/${cfg.pool}/applications/${T}`);
+  const kv = {}; for (const x of j?.["app-local-state"]?.["key-value"] || []) kv[atob(x.key)] = x.value.uint;
+  reserves = { fq: BigInt(kv.asset_1_reserves), algo: BigInt(kv.asset_2_reserves), fee: BigInt(kv.total_fee_share ?? 30) };
+  return reserves;
+}
+const priceAlgoPerFq = () => reserves ? Number(reserves.algo) / Number(reserves.fq) : 0;
+
+async function refresh() {
+  try { await loadReserves(); } catch {}
+  if (!account) return;
+  const info = await c.algodGet(`/v2/accounts/${account}`);
+  const algo = info ? Number(info.amount) / DEC : 0;
+  const h = (info?.assets || []).find((a) => a["asset-id"] === cfg.asset_id);
+  fqBal = h ? BigInt(h.amount) : 0n;
+  unlocked = !!h && !h["is-frozen"];
+  $("w-empty").hidden = true; $("w-main").hidden = false; $("w-more").hidden = false;
+  $("w-fq").textContent = fmt(Number(fqBal) / DEC);
+  const p = priceAlgoPerFq();
+  $("w-fq-algo").textContent = p ? `≈ ${fmt(Number(fqBal) / DEC * p, 3)} ALGO` : "";
+  $("w-algo").textContent = fmt(algo, 3);
+  $("w-price").textContent = p ? `${fmt(p * 1e6, 3)} ALGO / 1M` : "–";
+  const st = $("w-status");
+  if (!h) { st.className = "pill warn"; st.textContent = "Not added yet"; }
+  else if (h["is-frozen"]) { st.className = "pill warn"; st.textContent = "Locked"; }
+  else { st.className = "pill ok"; st.textContent = "Unlocked"; }
+  $("w-unlock").hidden = unlocked;
+  // estimate this month's hold reward from today's balance (from December the lowest balance since the 1st counts)
+  const now = new Date(); const ym = now.toISOString().slice(0, 7);
+  const rate = ym <= "2026-11" ? 0.01 : 0.005; const cap = 500000; // max 500,000 per wallet; 15M monthly pool shared by all
+  const fq = Number(fqBal) / DEC;
+  $("w-reward").textContent = fq >= 1_000_000 ? `${fmt(Math.min(fq * rate, cap))} FALQBIT` : "Hold 1M+ to earn";
+  const pay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + (now.getUTCDate() > 25 ? 1 : 0), 25));
+  const days = Math.ceil((pay - now) / 86400000);
+  $("w-payday").textContent = days <= 0 ? "Today" : `${pay.toLocaleDateString(undefined, { day: "numeric", month: "short" })} · in ${days} day${days === 1 ? "" : "s"}`;
+  renderReceive(); quote(); checkPay();
+}
+
+// ---------- connect ----------
+function setAccount(a) {
+  account = a;
+  $("acct").textContent = a ? short(a) : "Connect Pera";
+  $("acct").classList.toggle("on", !!a);
+  $("r-copy").disabled = !a;
+  if (!a) { $("w-empty").hidden = false; $("w-main").hidden = true; $("w-more").hidden = true; renderReceive(); }
+}
+async function connect() {
+  try { const a = await c.connect(); c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); await refresh(); }
+  catch (e) { if (e?.data?.type !== "CONNECT_MODAL_CLOSED") say(e.message || String(e), "err"); }
+}
+$("w-connect").addEventListener("click", connect);
+$("acct").addEventListener("click", () => {
+  if (!account) return connect();
+  c.pera.disconnect(); setAccount(null);
+});
+
+// ---------- trade ----------
+function setDir(d) {
+  dir = d;
+  $("t-buy").setAttribute("aria-pressed", String(d === "buy"));
+  $("t-sell").setAttribute("aria-pressed", String(d === "sell"));
+  $("t-in-label").textContent = d === "buy" ? "You pay (ALGO)" : "You sell (FALQBIT)";
+  quote();
+}
+$("t-buy").addEventListener("click", () => setDir("buy"));
+$("t-sell").addEventListener("click", () => setDir("sell"));
+$("t-amount").addEventListener("input", quote);
+
+function swapOut(amountIn, rIn, rOut, feeBps) {
+  // Tinyman v2 fixed-input: the fee is taken from the input, the rest trades against the reserves
+  const fee = (amountIn * feeBps + 9999n) / 10000n;
+  const x = amountIn - fee;
+  return x <= 0n ? 0n : (rOut * x) / (rIn + x);
+}
+let lastQuote = null;
+function quote() {
+  const v = Number($("t-amount").value);
+  lastQuote = null; $("t-go").disabled = true;
+  if (!reserves || !(v > 0)) { $("t-quote").innerHTML = "<span>Enter an amount to see the quote.</span>"; return; }
+  const inBase = BigInt(Math.round(v * DEC));
+  const buy = dir === "buy";
+  const out = buy ? swapOut(inBase, reserves.algo, reserves.fq, reserves.fee) : swapOut(inBase, reserves.fq, reserves.algo, reserves.fee);
+  const min = (out * 99n) / 100n;
+  const before = Number(reserves.algo) / Number(reserves.fq);
+  const after = buy ? Number(reserves.algo + inBase) / Number(reserves.fq - out) : Number(reserves.algo - out) / Number(reserves.fq + inBase);
+  const impact = Math.abs(after / before - 1) * 100;
+  const outTxt = buy ? `${fmt(Number(out) / DEC)} FALQBIT` : `${fmt(Number(out) / DEC, 4)} ALGO`;
+  const minTxt = buy ? `${fmt(Number(min) / DEC)} FALQBIT` : `${fmt(Number(min) / DEC, 4)} ALGO`;
+  $("t-quote").innerHTML = `<span>You get about <b>${outTxt}</b></span><span>Minimum after 1% slippage: ${minTxt}</span><span>Price impact: ${impact < 0.01 ? "<0.01" : fmt(impact, 2)}%${impact > 10 ? " · large trade, the price moves a lot" : ""}</span>`;
+  lastQuote = { inBase, min, buy };
+  $("t-go").disabled = !account || out <= 0n || (buy && !unlocked) || (!buy && inBase > fqBal);
+  if (account && buy && !unlocked) $("t-quote").innerHTML += `<span>Unlock this account first: <a href="./unlock.html?net=mainnet">unlock page</a>.</span>`;
+  if (account && !buy && inBase > fqBal) $("t-quote").innerHTML += `<span>You hold ${fmt(Number(fqBal) / DEC)} FALQBIT.</span>`;
+}
+$("t-go").addEventListener("click", async () => {
+  if (!lastQuote) return;
+  try {
+    $("t-go").disabled = true; say("Approve the swap in Pera…");
+    await loadReserves(); quote(); if (!lastQuote) return;
+    const { inBase, min, buy } = lastQuote;
+    const first = buy
+      ? algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: cfg.pool, amount: inBase, suggestedParams: await c.params(FEE_PQ) })
+      : algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({ sender: account, receiver: cfg.pool, amount: inBase, assetIndex: cfg.asset_id, suggestedParams: await c.params(FEE_PQ) });
+    const call = algosdk.makeApplicationNoOpTxnFromObject({
+      sender: account, appIndex: T, suggestedParams: await c.params(FEE_CALL),
+      appArgs: [new TextEncoder().encode("swap"), new TextEncoder().encode("fixed-input"), algosdk.encodeUint64(min)],
+      accounts: [cfg.pool], foreignAssets: [cfg.asset_id, 0],
+    });
+    const { id } = await c.signAndSend([first, call], {}, 1);
+    say(`Swap done. ${lora(id)}`, "ok");
+    $("t-amount").value = ""; await refresh();
+  } catch (e) { say(e.message || String(e), "err"); quote(); }
+});
+
+// ---------- receive ----------
+function payUri(addr, amountFq) {
+  const q = new URLSearchParams({ asset: String(cfg.asset_id) });
+  if (amountFq > 0) q.set("amount", String(Math.round(amountFq * DEC)));
+  return `algorand://${addr}?${q.toString()}`;
+}
+function renderReceive() {
+  const box = $("r-qr");
+  if (!account) { box.innerHTML = ""; box.hidden = true; $("r-addr").textContent = "Connect your wallet to show your QR code."; return; }
+  const qr = qrcode(0, "M"); qr.addData(payUri(account, Number($("r-amount").value) || 0)); qr.make();
+  box.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true }); box.hidden = false;
+  const amt = Number($("r-amount").value);
+  $("r-addr").textContent = (amt > 0 ? `Request: ${fmt(amt, 6)} FALQBIT · ` : "") + account;
+}
+$("r-amount").addEventListener("input", renderReceive);
+$("r-copy").addEventListener("click", async (e) => {
+  try { await navigator.clipboard.writeText(account); e.currentTarget.textContent = "Copied"; setTimeout(() => ($("r-copy").textContent = "Copy address"), 1400); }
+  catch { say(account); }
+});
+
+// ---------- pay ----------
+function parsePayload(text) {
+  text = (text || "").trim();
+  let addr = text, amount = null, asset = null;
+  const m = text.match(/^(?:algorand|perawallet):\/\/([A-Z2-7]{58})(?:\?(.*))?$/i);
+  if (m) {
+    addr = m[1].toUpperCase();
+    const q = new URLSearchParams(m[2] || "");
+    if (q.get("asset")) asset = Number(q.get("asset"));
+    if (q.get("amount")) amount = Number(q.get("amount")) / DEC;
+  }
+  return { addr, amount, asset };
+}
+let payReady = false;
+async function checkPay() {
+  payReady = false; $("p-go").disabled = true;
+  const to = $("p-to").value.trim(), amt = Number($("p-amount").value);
+  const box = $("p-check");
+  if (!to) { box.innerHTML = "<span>Paste an address or scan a code.</span>"; return; }
+  if (!algosdk.isValidAddress(to)) { box.innerHTML = "<span>This is not a valid Algorand address.</span>"; return; }
+  box.innerHTML = "<span>Checking the address…</span>";
+  const h = await c.algodGet(`/v2/accounts/${to}/assets/${cfg.asset_id}`).catch(() => null);
+  if (!h || h["asset-holding"]["is-frozen"]) {
+    box.innerHTML = `<span><b>${short(to)}</b> can't receive FALQBIT yet. It must be a quantum account unlocked at <a href="./unlock.html?net=mainnet">falqbit.com/unlock</a>.</span>`;
+    return;
+  }
+  if (!(amt > 0)) { box.innerHTML = `<span><b>${short(to)}</b> can receive FALQBIT. Enter an amount.</span>`; return; }
+  const base = BigInt(Math.round(amt * DEC));
+  if (!account) { box.innerHTML = "<span>Connect your wallet to pay.</span>"; return; }
+  if (!unlocked) { box.innerHTML = `<span>Your account is not unlocked yet: <a href="./unlock.html?net=mainnet">unlock page</a>.</span>`; return; }
+  if (base > fqBal) { box.innerHTML = `<span>You hold ${fmt(Number(fqBal) / DEC)} FALQBIT.</span>`; return; }
+  box.innerHTML = `<span>Send <b>${fmt(amt, 6)} FALQBIT</b> to <b>${short(to)}</b></span><span>Network fee ≈ 0.006 ALGO</span>`;
+  payReady = true; $("p-go").disabled = false;
+}
+let t = null;
+for (const id of ["p-to", "p-amount"]) $(id).addEventListener("input", () => { clearTimeout(t); t = setTimeout(checkPay, 350); });
+$("p-go").addEventListener("click", async () => {
+  if (!payReady) return;
+  try {
+    $("p-go").disabled = true; say("Approve the payment in Pera…");
+    const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+      sender: account, receiver: $("p-to").value.trim(), amount: BigInt(Math.round(Number($("p-amount").value) * DEC)),
+      assetIndex: cfg.asset_id, suggestedParams: await c.params(FEE_PQ),
+    });
+    const { id } = await c.signAndSend([txn]);
+    say(`Paid. ${lora(id)}`, "ok");
+    $("p-amount").value = ""; await refresh();
+  } catch (e) { say(e.message || String(e), "err"); checkPay(); }
+});
+
+// QR scanning: BarcodeDetector where available, jsQR otherwise
+let stream = null, scanning = false;
+function stopScan() {
+  scanning = false;
+  if (stream) { stream.getTracks().forEach((tr) => tr.stop()); stream = null; }
+  $("p-video").hidden = true; $("p-scan").textContent = "Scan a QR code";
+}
+function applyScan(text) {
+  const p = parsePayload(text);
+  if (p.asset && p.asset !== cfg.asset_id) { say("This QR code asks for a different asset, not FALQBIT.", "err"); return; }
+  $("p-to").value = p.addr;
+  if (p.amount) $("p-amount").value = String(p.amount);
+  stopScan(); checkPay();
+}
+$("p-scan").addEventListener("click", async () => {
+  if (scanning) return stopScan();
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+  } catch { say("The camera is not available. Paste the address instead, or allow camera access for this site.", "err"); return; }
+  const v = $("p-video"); v.srcObject = stream; v.hidden = false; await v.play();
+  scanning = true; $("p-scan").textContent = "Stop scanning";
+  const det = "BarcodeDetector" in window ? new window.BarcodeDetector({ formats: ["qr_code"] }) : null;
+  const cv = document.createElement("canvas"), ctx = cv.getContext("2d", { willReadFrequently: true });
+  const tick = async () => {
+    if (!scanning) return;
+    try {
+      if (det) { const r = await det.detect(v); if (r[0]) return applyScan(r[0].rawValue); }
+      else if (v.videoWidth) {
+        cv.width = v.videoWidth; cv.height = v.videoHeight; ctx.drawImage(v, 0, 0);
+        const r = jsQR(ctx.getImageData(0, 0, cv.width, cv.height).data, cv.width, cv.height);
+        if (r) return applyScan(r.data);
+      }
+    } catch {}
+    requestAnimationFrame(tick);
+  };
+  tick();
+});
+
+// ---------- install prompt + service worker ----------
+let deferred = null;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("w-install-btn").hidden = false; $("w-install-text").textContent = "Install FALQBIT on this device for quick access."; });
+$("w-install-btn").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("w-install-btn").hidden = true; });
+if (window.matchMedia("(display-mode: standalone)").matches) $("w-install").hidden = true;
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+
+// ---------- start ----------
+loadReserves().then(quote).catch(() => {});
+c.reconnect().then((a) => { if (a.length) { c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); refresh(); } }).catch(() => {});
+setInterval(() => { refresh().catch(() => {}); }, 60000);
+</script>
+</body>
+</html>
