@@ -179,8 +179,10 @@ async function unlockedAccounts() {
 // Anti-farming: who sent each account its first ALGO. Several new accounts funded by the same wallet = likely one person.
 async function firstFunding(a) {
   try {
-    const j = await c.getJSON(`${c.n.indexer}/v2/transactions?address=${a}&address-role=receiver&tx-type=pay&limit=1`);
-    const t = j?.transactions?.[0];
+    const j = await c.getJSON(`${c.n.indexer}/v2/transactions?address=${a}&address-role=receiver&tx-type=pay&limit=100`);
+    // ignore the account's own 0 ALGO self-payments; the first real deposit from another wallet is the funder
+    const ins = (j?.transactions || []).filter((t) => t.sender !== a && Number(t["payment-transaction"]?.amount || 0) > 0);
+    const t = ins.sort((x, y) => (x["confirmed-round"] || 0) - (y["confirmed-round"] || 0))[0];
     return t ? { from: t.sender, amt: Number(t["payment-transaction"]?.amount || 0), at: t["round-time"] } : null;
   } catch { return null; }
 }
