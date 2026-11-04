@@ -159,7 +159,7 @@ a.venue:hover { color: var(--fg); }
 .venue:nth-child(even) .vicon svg { stroke: var(--violet); }
 
 /* roadmap: real order */
-.road { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px; }
+.road { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px 16px; }
 .road li { display: flex; flex-direction: column; gap: 8px; padding-top: 16px; border-top: 3px solid var(--line); min-width: 0; }
 .road li.done { border-top-color: var(--cyan); }
 .road li.now { border-top-color: var(--amber); }
@@ -318,6 +318,56 @@ body { overflow-x: clip; }
 .warn { background: linear-gradient(180deg, rgba(245,185,66,.06), rgba(245,185,66,.02)); }
 .bar { box-shadow: 0 0 30px -6px rgba(63,224,208,.35); }
 
+
+/* supply dashboard */
+.dash { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); grid-template-areas: "total res" "circ res" "dist dist"; gap: 14px; }
+.dpanel { background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.5)); border: 1px solid rgba(60,78,122,.55); border-radius: 16px; padding: 22px; min-width: 0; }
+.d-total { grid-area: total; } .d-circ { grid-area: circ; } .d-res { grid-area: res; } .d-dist { grid-area: dist; }
+.dk { font: 500 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); margin: 0 0 16px; }
+.dsub { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+.flip { display: flex; align-items: center; gap: 6px; }
+.flip span { display: grid; place-items: center; width: 54px; height: 70px; border-radius: 10px; background: linear-gradient(180deg, #1B2643 50%, #16203A 50%); border: 1px solid var(--line); font: 800 44px/1 var(--display); color: var(--fg); font-variant-numeric: tabular-nums; position: relative; }
+.flip span::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: rgba(0,0,0,.45); }
+.flip em { font-style: normal; font: 500 15px/1 var(--mono); color: var(--muted); margin-left: 10px; }
+.cbar-row { display: flex; align-items: center; gap: 14px; }
+.cbar { flex: 1; height: 12px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+.cbar span { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--cyan), #8B7CFF); transition: width 1.4s cubic-bezier(.2,.8,.2,1); }
+.cbar-row b { font: 600 16px/1 var(--mono); font-variant-numeric: tabular-nums; min-width: 56px; text-align: right; }
+.cnums { display: flex; justify-content: space-between; gap: 16px; margin-top: 16px; }
+.cnums div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cnums div:last-child { text-align: right; }
+.cnums span { font: 500 11px/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.cnums b { font: 600 16px/1.2 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+@media (max-width: 520px) { .cnums b { font-size: 14px; } .cnums span { font-size: 10px; } }
+.res { display: grid; grid-template-columns: minmax(150px, 210px) minmax(0, 1fr); gap: 24px; align-items: center; }
+.donut-wrap { position: relative; }
+.donut-wrap svg { width: 100%; height: auto; display: block; overflow: visible; }
+.donut-wrap path { transition: opacity .2s ease, transform .2s ease; transform-origin: 100px 100px; cursor: default; }
+.donut-wrap svg.hl path { opacity: .35; } .donut-wrap svg.hl path.on { opacity: 1; transform: scale(1.04); }
+.donut-c { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+.donut-c b { font: 800 26px/1 var(--display); } .donut-c span { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.res-total span { display: block; font: 500 11px/1.2 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.res-total b { font: 800 30px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.res-list { list-style: none; margin: 14px 0 0; padding: 0; }
+.res-list li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.res-list li.on { background: rgba(255,255,255,.03); }
+.res-list i { width: 12px; height: 12px; border-radius: 3px; }
+.res-list .nm { font-weight: 600; font-size: 15px; display: flex; flex-direction: column; min-width: 0; }
+.res-list .nm a { font: 500 12px/1.3 var(--mono); font-weight: 500; }
+.res-list b { font: 600 14px/1.2 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.dist-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.dist-head .dk { margin: 0; }
+.ghost-btn { font: 500 13px/1 var(--text, inherit); color: var(--cyan); background: transparent; border: 1px solid rgba(63,224,208,.4); border-radius: 999px; padding: 8px 14px; cursor: pointer; white-space: nowrap; flex: none; }
+.ghost-btn:hover { background: rgba(63,224,208,.08); }
+.dist-plot { position: relative; margin-top: 14px; }
+.dist-plot svg { width: 100%; height: 220px; display: block; overflow: visible; }
+.dist-plot .bar-r { fill: #1F9E94; transition: fill .15s ease; }
+.dist-plot g.on .bar-r { fill: #3FE0D0; }
+.d-dist .htable-wrap { margin-top: 14px; }
+.dtip { position: absolute; pointer-events: none; background: #0B1120; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: 500 12px/1.5 var(--mono); color: var(--fg); white-space: nowrap; transform: translate(-50%, -100%); box-shadow: 0 10px 30px -10px rgba(0,0,0,.6); z-index: 5; }
+.dtip span { color: var(--muted); }
+@media (max-width: 860px) { .dash { grid-template-columns: minmax(0, 1fr); grid-template-areas: "total" "circ" "res" "dist"; } }
+@media (max-width: 520px) { .res { grid-template-columns: minmax(0, 1fr); } .donut-wrap { max-width: 210px; margin: 0 auto; } .flip span { width: 46px; height: 60px; font-size: 38px; } }
 /* live stats */
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: -40px; }
 .stat { display: flex; flex-direction: column; gap: 6px; padding: 20px; border-radius: 16px; min-width: 0;
@@ -327,6 +377,13 @@ body { overflow-x: clip; }
 .stat .s { color: var(--muted); font-size: 13px; }
 .stats-note { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; color: var(--muted); font: 500 12px/1.4 var(--mono); }
 .stats-note i { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); flex: none; }
+.stat { position: relative; overflow: hidden; transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
+.stat::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); opacity: .7; }
+.stat:hover { transform: translateY(-3px); border-color: rgba(63,224,208,.5); box-shadow: 0 18px 40px -22px rgba(63,224,208,.55); }
+.stat .v.loading { color: transparent; width: 70%; border-radius: 8px; background: linear-gradient(90deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,.05) 100%); background-size: 200% 100%; min-height: 1em; }
+.stat .meter { height: 6px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; margin-top: 4px; }
+.stat .meter span { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--cyan), #8B7CFF); transition: width 1.4s cubic-bezier(.2,.8,.2,1); }
+.stat .v.flash { animation: flash 1s ease; }
 
 @media (max-width: 860px) { .topnav { display: none; } .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: -24px; } }
 @media (max-width: 420px) { .status-pill { display: none; } }
@@ -336,6 +393,17 @@ body { overflow-x: clip; }
   @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(63,224,208,.55); } 80%, 100% { box-shadow: 0 0 0 8px rgba(63,224,208,0); } }
   .js .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
   .js .reveal.in { opacity: 1; transform: none; }
+  .stat::before { background-size: 200% 100%; animation: sweep 4s linear infinite; background-image: linear-gradient(90deg, transparent 0%, var(--cyan) 50%, transparent 100%); }
+  @keyframes sweep { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+  .stat .v.loading { animation: shimmer 1.3s ease-in-out infinite; }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+  @keyframes flash { 0% { color: var(--cyan); text-shadow: 0 0 18px rgba(63,224,208,.6); } 100% { color: inherit; text-shadow: none; } }
+  .js .stats.reveal .stat { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease, border-color .25s ease, box-shadow .25s ease; }
+  .js .stats.reveal.in .stat { opacity: 1; transform: none; }
+  .js .stats.reveal.in .stat:nth-child(2) { transition-delay: .08s; }
+  .js .stats.reveal.in .stat:nth-child(3) { transition-delay: .16s; }
+  .js .stats.reveal.in .stat:nth-child(4) { transition-delay: .24s; }
+  .js .stats.reveal.in .stat:hover { transform: translateY(-3px); transition-delay: 0s; }
 }
 </style>
 </head><body id="top">
@@ -1144,10 +1212,10 @@ body { overflow-x: clip; }
   </section>
 
   <section class="stats reveal" aria-label="Live on-chain numbers">
-    <div class="stat"><span class="k">Price</span><span class="v" id="st-price">…</span><span class="s">ALGO per 1M FALQBIT</span></div>
-    <div class="stat"><span class="k">Pool liquidity</span><span class="v" id="st-pool">…</span><span class="s">ALGO in the Tinyman pool</span></div>
-    <div class="stat"><span class="k">Market value</span><span class="v" id="st-mcap">…</span><span class="s">ALGO, all 10B at pool price</span></div>
-    <div class="stat"><span class="k">Unlocked accounts</span><span class="v" id="st-unlocked">…</span><span class="s">accounts approved by the gate</span></div>
+    <div class="stat"><span class="k">Price</span><span class="v loading" id="st-price">&nbsp;</span><span class="s">ALGO per 1M FALQBIT</span></div>
+    <div class="stat"><span class="k">Pool liquidity</span><span class="v loading" id="st-pool">&nbsp;</span><span class="s" id="st-pool-s">ALGO in the Tinyman pool</span></div>
+    <div class="stat"><span class="k">Circulating</span><span class="v loading" id="st-circ">&nbsp;</span><span class="meter" aria-hidden="true"><span id="st-circ-bar"></span></span><span class="s" id="st-circ-s">FALQBIT held by the community</span></div>
+    <div class="stat"><span class="k">Holders</span><span class="v loading" id="st-holders">&nbsp;</span><span class="s">community wallets holding FALQBIT</span></div>
     <p class="stats-note"><i aria-hidden="true"></i><span id="st-note">Reading Algorand MainNet…</span></p>
   </section>
 
@@ -1217,13 +1285,13 @@ body { overflow-x: clip; }
   <section class="sec reveal" aria-labelledby="h-trade">
     <div class="sec-head">
       <p class="eyebrow">Where it trades</p>
-      <h2 id="h-trade">One pool, found everywhere on Algorand.</h2>
-      <p class="muted">The FALQBIT/ALGO pool is live on Tinyman. Aggregators and wallets pick it up from there.</p>
+      <h2 id="h-trade">Where to trade, hold and track it.</h2>
+      <p class="muted">Trade on Tinyman: it sets the higher fees that quantum accounts need. Some aggregators do not yet, so their swaps can fail.</p>
     </div>
     <div class="venues">
-      <a class="venue" href="https://app.tinyman.org/swap?asset_in=0&amp;asset_out=3760920399" target="_blank" rel="noopener"><span class="vicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15c2 0 2-1.5 4.5-1.5S9.5 15 12 15s2.5-1.5 4.5-1.5S19 15 21 15"/><path d="M3 19c2 0 2-1.5 4.5-1.5S9.5 19 12 19s2.5-1.5 4.5-1.5S19 19 21 19"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="7" r="2.5"/></svg></span><span class="role">Pool</span><span class="name">Tinyman ↗</span><p>FALQBIT / ALGO pool. Any Tinyman v2 pool works.</p></a>
-      <a class="venue" href="https://hay.app/" target="_blank" rel="noopener"><span class="vicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14l-3.5-3.5"/><path d="M20 16H6l3.5 3.5"/></svg></span><span class="role">Swaps</span><span class="name">Haystack ↗</span><p>Routes to the best price</p></a>
-      <a class="venue" href="https://perawallet.app/" target="_blank" rel="noopener"><span class="vicon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.3"/></svg></span><span class="role">Wallet</span><span class="name">Pera ↗</span><p>Swap without leaving the app</p></a>
+      <a class="venue" href="https://app.tinyman.org/swap?asset_in=0&amp;asset_out=3760920399" target="_blank" rel="noopener"><span class="vicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15c2 0 2-1.5 4.5-1.5S9.5 15 12 15s2.5-1.5 4.5-1.5S19 15 21 15"/><path d="M3 19c2 0 2-1.5 4.5-1.5S9.5 19 12 19s2.5-1.5 4.5-1.5S19 19 21 19"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="7" r="2.5"/></svg></span><span class="role">Pool</span><span class="name">Tinyman ↗</span><p>Buy and sell: the FALQBIT / ALGO pool</p></a>
+      <a class="venue" href="./unlock.html?net=mainnet"><span class="vicon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 7.5-2"/></svg></span><span class="role">Unlock</span><span class="name">falqbit.com/unlock</span><p>Unlock your quantum account in one approval</p></a>
+      <a class="venue" href="https://perawallet.app/" target="_blank" rel="noopener"><span class="vicon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.3"/></svg></span><span class="role">Wallet</span><span class="name">Pera ↗</span><p>Create a Quantum Account, hold and send</p></a>
       <a class="venue" href="https://www.vestige.fi/asset/3760920399" target="_blank" rel="noopener"><span class="vicon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="M7 15l4-4 3 3 5-6"/></svg></span><span class="role">Charts</span><span class="name">Vestige ↗</span><p>Price, volume and holders</p></a>
     </div>
   </section>
@@ -1232,9 +1300,6 @@ body { overflow-x: clip; }
     <div class="sec-head">
       <p class="eyebrow">Supply</p>
       <h2 id="h-supply">Ten billion FALQBIT, split in the open.</h2>
-    </div>
-    <div class="supply-top">
-      <div><div class="big">10,000,000,000</div><p class="muted mono">total supply · 6 decimals · fixed</p></div>
     </div>
     <div class="bar" role="img" aria-label="Allocation: 63% liquidity pool, 25% hold-to-earn, 2% welcome drop, 5% project reserve, 5% team">
       <span style="width:63%; background: var(--cyan)"></span>
@@ -1250,33 +1315,58 @@ body { overflow-x: clip; }
       <li><span class="sw" style="background: var(--slate)"></span><span class="what">Project reserve</span><span class="pct">5%</span><span class="amt">500,000,000 · liquidity, contests and partners</span></li>
       <li><span class="sw" style="background: var(--pale)"></span><span class="what">Team</span><span class="pct">5%</span><span class="amt">500,000,000 · held in a quantum account</span></li>
     </ul>
-    <h3 class="held-h">Where it is held</h3>
-    <p class="muted" style="margin:0">Every allocation sits in its own Falcon-1024 account or in the pool. Balances below are live from the chain; tap an address to check it on the explorer.</p>
-    <ul class="proof held">
-      <li><div class="what">Liquidity pool<span>Tinyman v2 pool, controlled by Tinyman's code. Changes with every trade.</span></div><span class="bal" data-addr="CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA">…</span><a href="https://lora.algokit.io/mainnet/account/CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA" target="_blank" rel="noopener">CEQH5W…M7VCIA</a></li>
-      <li><div class="what">Rewards<span>Hold-to-earn and welcome drops (25% + 2%). Every payout leaves from here.</span></div><span class="bal" data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q">…</span><a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">V4J46S…CPTC2Q</a></li>
-      <li><div class="what">Team<span>Team allocation (5%)</span></div><span class="bal" data-addr="XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q">…</span><a href="https://lora.algokit.io/mainnet/account/XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q" target="_blank" rel="noopener">XMKDQF…GBDT7Q</a></li>
-      <li><div class="what">Project<span>Creator account and project reserve (5%)</span></div><span class="bal" data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU">…</span><a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></li>
-          <li><div class="what">Held by the community<span>Everyone else: buyers, welcome drops and rewards paid out.</span></div><span class="bal" id="bal-community">…</span><a href="#holders">See holders</a></li>
-    </ul>
   </section>
 
   <section class="sec reveal" id="holders" aria-labelledby="h-holders">
     <div class="sec-head">
-      <p class="eyebrow">Holders</p>
-      <h2 id="h-holders">Who holds FALQBIT.</h2>
-      <p class="muted">Every wallet that holds FALQBIT, grouped by size. Live from the chain. Project accounts and the pool are counted apart.</p>
+      <p class="eyebrow">Supply dashboard</p>
+      <h2 id="h-holders">Where every FALQBIT is.</h2>
+      <p class="muted">Live from Algorand MainNet. Every project account is a public Falcon-1024 account; tap an address to check it on the explorer.</p>
     </div>
-    <div class="hstats">
-      <div class="stat"><span class="k">Holders</span><span class="v" id="h-count">…</span><span class="s">community wallets with FALQBIT</span></div>
-      <div class="stat"><span class="k">Earning</span><span class="v" id="h-earn">…</span><span class="s">wallets with 1M+ (hold-to-earn)</span></div>
-      <div class="stat"><span class="k">Community share</span><span class="v" id="h-share">…</span><span class="s">of the 10B supply</span></div>
-    </div>
-    <div class="htable-wrap">
-      <table class="htable">
-        <thead><tr><th scope="col">Range (FALQBIT)</th><th scope="col">Wallets</th><th scope="col">Total FALQBIT</th><th scope="col">% of supply</th></tr></thead>
-        <tbody id="h-rows"><tr><td colspan="4" class="muted">Reading the chain…</td></tr></tbody>
-      </table>
+    <div class="dash">
+      <div class="dpanel d-total">
+        <h3 class="dk">Total supply</h3>
+        <div class="flip" aria-label="10 billion FALQBIT"><span>1</span><span>0</span><span>B</span><em>FALQBIT</em></div>
+        <p class="dsub">Fixed forever: no manager, no minting, no clawback. 6 decimals.</p>
+      </div>
+      <div class="dpanel d-circ">
+        <h3 class="dk">Circulating supply</h3>
+        <div class="cbar-row"><div class="cbar" role="img" aria-label="Share of supply held by the community"><span id="d-circ-bar"></span></div><b id="d-circ-pct">…</b></div>
+        <div class="cnums">
+          <div><span>Total supply</span><b>10,000,000,000</b></div>
+          <div><span>Held by the community</span><b id="d-circ-amt">…</b></div>
+        </div>
+        <div class="cnums">
+          <div><span>Holders</span><b id="h-count">…</b></div>
+          <div><span>Earning (1M+)</span><b id="h-earn">…</b></div>
+        </div>
+      </div>
+      <div class="dpanel d-res">
+        <h3 class="dk">Reserved supply</h3>
+        <div class="res">
+          <div class="donut-wrap"><svg id="d-donut" viewBox="0 0 200 200" role="img" aria-label="Reserved supply by account"></svg><div class="donut-c"><b id="d-res-pct">…</b><span>of supply</span></div></div>
+          <div class="res-side">
+            <div class="res-total"><span>Total reserved</span><b id="d-res-amt">…</b></div>
+            <ul class="res-list" id="d-res-list">
+              <li data-addr="CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA"><i style="background:#1F9E94"></i><span class="nm">Liquidity pool<a href="https://lora.algokit.io/mainnet/account/CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA" target="_blank" rel="noopener">CEQH5W…M7VCIA</a></span><b class="bal" data-addr="CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA">…</b></li>
+              <li data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q"><i style="background:#7A6EE6"></i><span class="nm">Rewards<a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">V4J46S…CPTC2Q</a></span><b class="bal" data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q">…</b></li>
+              <li data-addr="XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q"><i style="background:#D55181"></i><span class="nm">Team<a href="https://lora.algokit.io/mainnet/account/XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q" target="_blank" rel="noopener">XMKDQF…GBDT7Q</a></span><b class="bal" data-addr="XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q">…</b></li>
+              <li data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU"><i style="background:#C98500"></i><span class="nm">Project reserve<a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></span><b class="bal" data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU">…</b></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="dpanel d-dist">
+        <div class="dist-head"><h3 class="dk">Holder distribution</h3><button type="button" class="ghost-btn" id="d-dist-toggle" aria-pressed="false">Show as table</button></div>
+        <p class="dsub">Community wallets by balance. Project accounts and the pool are left out.</p>
+        <div class="dist-plot" id="d-dist-plot"><p class="muted">Reading the chain…</p></div>
+        <div class="htable-wrap" id="d-dist-table" hidden>
+          <table class="htable">
+            <thead><tr><th scope="col">Range (FALQBIT)</th><th scope="col">Wallets</th><th scope="col">Total FALQBIT</th><th scope="col">% of supply</th></tr></thead>
+            <tbody id="h-rows"><tr><td colspan="4" class="muted">Reading the chain…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -1435,6 +1525,20 @@ document.documentElement.classList.add("js");
   var TINYMAN = 1002541853, GATE = 3760919863, ASSET = 3760920399, SUPPLY = 10000000000;
   function $(id) { return document.getElementById(id); }
   function fmt(n, d) { return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+  var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function countUp(id, to, show) {
+    var el = $(id); if (!el) return;
+    var from = parseFloat(el.dataset.val || "0"); el.dataset.val = to;
+    el.classList.remove("loading");
+    if (REDUCED || from === to) { el.textContent = show(to); return; }
+    var t0 = performance.now(), dur = from ? 800 : 1400;
+    (function step(t) {
+      var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = show(from + (to - from) * e);
+      if (k < 1) requestAnimationFrame(step); else if (from) { el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash"); }
+    })(t0);
+  }
+  function failStat(id) { var el = $(id); if (el) { el.classList.remove("loading"); el.textContent = "–"; } }
   function get(p) { return fetch(ALGOD + p).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
   var USDC_POOL = "2PIFZW53RHCSFSYMCFUBW4XOCXOMB7XOYQSQ6KGT3KVGJTL4HM6COZRNMM";
   var PX = { algoPerFq: 0, usdPerAlgo: 0 }, cvCur = "fq";
@@ -1481,20 +1585,19 @@ document.documentElement.classList.add("js");
     Promise.all([reserves, usdp]).then(function (x) {
       var r = x[0], u = x[1], p = r.algo / r.fq;
       PX.algoPerFq = p; PX.usdPerAlgo = u;
-      $("st-price").textContent = fmt(p * 1e6, 3);
-      $("st-pool").textContent = fmt(r.algo, 1);
-      $("st-mcap").textContent = fmt(p * SUPPLY, 0);
+      countUp("st-price", p * 1e6, function (v) { return fmt(v, 3); });
+      countUp("st-pool", r.algo, function (v) { return fmt(v, 1); });
+      $("st-pool-s").textContent = "ALGO + " + fmt(r.fq / 1e9, 2) + "B FALQBIT on Tinyman";
       renderPx();
-    }).catch(function () { ["st-price", "st-pool", "st-mcap"].forEach(function (id) { $(id).textContent = "–"; }); });
-    unlocked.then(function (n) { $("st-unlocked").textContent = fmt(n, 0); }).catch(function () { $("st-unlocked").textContent = "–"; });
+    }).catch(function () { ["st-price", "st-pool"].forEach(failStat); });
     Promise.allSettled([reserves, unlocked, usdp]).then(function () {
       $("st-note").textContent = "Live from Algorand MainNet · updated " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     });
   }
   function loadHeld() {
-    document.querySelectorAll(".held .bal[data-addr]").forEach(function (el) {
+    document.querySelectorAll(".res-list .bal[data-addr]").forEach(function (el) {
       get("/v2/accounts/" + el.dataset.addr + "/assets/" + ASSET).then(function (j) {
-        el.textContent = fmt(j["asset-holding"].amount / 1e6, 0) + " FALQBIT";
+        el.textContent = fmt(j["asset-holding"].amount / 1e6, 0);
       }).catch(function () { el.textContent = "–"; });
     });
   }
@@ -1507,6 +1610,61 @@ document.documentElement.classList.add("js");
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (j) { acc = acc.concat(j.balances || []); return j["next-token"] && (j.balances || []).length ? allBalances(j["next-token"], acc) : acc; });
   }
+  var RES = [["CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", "Liquidity pool", "#1F9E94"], ["V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", "Rewards", "#7A6EE6"], ["XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q", "Team", "#D55181"], ["OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU", "Project reserve", "#C98500"]];
+  function arc(cx, cy, r0, r1, a0, a1) {
+    var big = a1 - a0 > Math.PI ? 1 : 0, c0 = Math.cos(a0), s0 = Math.sin(a0), c1 = Math.cos(a1), s1 = Math.sin(a1);
+    return "M" + (cx + r1 * c0) + " " + (cy + r1 * s0) + "A" + r1 + " " + r1 + " 0 " + big + " 1 " + (cx + r1 * c1) + " " + (cy + r1 * s1) +
+      "L" + (cx + r0 * c1) + " " + (cy + r0 * s1) + "A" + r0 + " " + r0 + " 0 " + big + " 0 " + (cx + r0 * c0) + " " + (cy + r0 * s0) + "Z";
+  }
+  function drawDonut(proj, psum) {
+    var by = {}; proj.forEach(function (b) { by[b.address] = b.amount / 1e6; });
+    var svg = $("d-donut"); if (!svg) return;
+    var a = -Math.PI / 2, html = "", gap = 0.012;
+    RES.forEach(function (r, i) {
+      var v = by[r[0]] || 0; if (!v) return;
+      var sweep = v / psum * Math.PI * 2, a0 = a + gap, a1 = a + sweep - gap;
+      html += "<path data-i=\"" + i + "\" d=\"" + arc(100, 100, 62, 96, a0, Math.max(a0 + 0.001, a1)) + "\" fill=\"" + r[2] + "\"><title>" + r[1] + ": " + fmt(v, 0) + " FALQBIT (" + fmt(v / SUPPLY * 100, 1) + "% of supply)</title></path>";
+      a += sweep;
+    });
+    svg.innerHTML = html;
+    $("d-res-pct").textContent = fmt(psum / SUPPLY * 100, 1) + "%";
+    $("d-res-amt").textContent = psum >= 1e9 ? fmt(psum / 1e9, 2) + "B" : fmt(psum / 1e6, 0) + "M";
+    var items = document.querySelectorAll("#d-res-list li");
+    function hl(i) { svg.classList.toggle("hl", i !== null); svg.querySelectorAll("path").forEach(function (p) { p.classList.toggle("on", +p.dataset.i === i); }); items.forEach(function (li, k) { li.classList.toggle("on", k === i); }); }
+    svg.querySelectorAll("path").forEach(function (p) { p.addEventListener("mouseenter", function () { hl(+p.dataset.i); }); p.addEventListener("mouseleave", function () { hl(null); }); });
+    items.forEach(function (li, k) { li.onmouseenter = function () { hl(k); }; li.onmouseleave = function () { hl(null); }; });
+  }
+  var DIST = null, SHORT = ["<1M", "1–10M", "10–100M", "100M–1B", "1B+"];
+  function drawDist(rows) {
+    if (rows) DIST = rows; rows = DIST; if (!rows) return;
+    var box = $("d-dist-plot"); if (!box) return;
+    var W = Math.max(280, box.clientWidth), H = 220, L = 30, B = 30, T = 24;
+    var maxN = Math.max(1, Math.max.apply(null, rows.map(function (r) { return r.n; })));
+    var step = Math.max(1, Math.ceil(maxN / 4)), top = step * Math.ceil(maxN / step) || 1;
+    var bw = (W - L) / rows.length, svg = "<svg viewBox=\"0 0 " + W + " " + H + "\" role=\"img\" aria-label=\"Community wallets by balance range\">";
+    for (var t = 0; t <= top; t += step) { var y = T + (H - T - B) * (1 - t / top); svg += "<line x1=\"" + L + "\" x2=\"" + W + "\" y1=\"" + y + "\" y2=\"" + y + "\" stroke=\"#24304F\" stroke-width=\"1\"/><text x=\"" + (L - 8) + "\" y=\"" + (y + 4) + "\" text-anchor=\"end\" fill=\"#A9B4D0\" font-size=\"11\" font-family=\"IBM Plex Mono, monospace\">" + t + "</text>"; }
+    rows.forEach(function (r, i) {
+      var w = Math.min(bw * 0.5, 48), h = (H - T - B) * r.n / top, x = L + i * bw + (bw - w) / 2, y = H - B - h;
+      var rr = Math.min(4, w / 2, h);
+      var d = h > 0 ? "M" + x + " " + (H - B) + "V" + (y + rr) + "Q" + x + " " + y + " " + (x + rr) + " " + y + "H" + (x + w - rr) + "Q" + (x + w) + " " + y + " " + (x + w) + " " + (y + rr) + "V" + (H - B) + "Z" : "";
+      svg += "<g data-i=\"" + i + "\"><rect x=\"" + (L + i * bw) + "\" y=\"" + T + "\" width=\"" + bw + "\" height=\"" + (H - T - B) + "\" fill=\"transparent\"/>" + (d ? "<path class=\"bar-r\" d=\"" + d + "\"/>" : "") +
+        (r.n ? "<text x=\"" + (x + w / 2) + "\" y=\"" + (y - 8) + "\" text-anchor=\"middle\" fill=\"#E8ECF6\" font-size=\"12\" font-weight=\"600\" font-family=\"IBM Plex Mono, monospace\">" + r.n + "</text>" : "") + "<text x=\"" + (L + i * bw + bw / 2) + "\" y=\"" + (H - 10) + "\" text-anchor=\"middle\" fill=\"#A9B4D0\" font-size=\"11\" font-family=\"IBM Plex Mono, monospace\">" + SHORT[i] + "</text></g>";
+    });
+    svg += "<line x1=\"" + L + "\" x2=\"" + W + "\" y1=\"" + (H - B) + "\" y2=\"" + (H - B) + "\" stroke=\"#3A4870\" stroke-width=\"1\"/></svg><div class=\"dtip\" hidden></div>";
+    box.innerHTML = svg;
+    var tip = box.querySelector(".dtip");
+    box.querySelectorAll("g[data-i]").forEach(function (g) {
+      var r = rows[+g.dataset.i];
+      g.addEventListener("mouseenter", function () { g.classList.add("on"); tip.hidden = false; tip.innerHTML = "<b>" + r.label + " FALQBIT</b><br><span>Wallets</span> " + fmt(r.n, 0) + "<br><span>Holding</span> " + fmt(r.sum, 0); });
+      g.addEventListener("mousemove", function (e) { var b = box.getBoundingClientRect(); tip.style.left = Math.min(b.width - 80, Math.max(80, e.clientX - b.left)) + "px"; tip.style.top = (e.clientY - b.top - 12) + "px"; });
+      g.addEventListener("mouseleave", function () { g.classList.remove("on"); tip.hidden = true; });
+    });
+  }
+  window.addEventListener("resize", function () { drawDist(); });
+  if ($("d-dist-toggle")) $("d-dist-toggle").addEventListener("click", function () {
+    var on = this.getAttribute("aria-pressed") !== "true"; this.setAttribute("aria-pressed", String(on));
+    this.textContent = on ? "Show as chart" : "Show as table"; $("d-dist-table").hidden = !on; $("d-dist-plot").hidden = on;
+  });
   function loadHolders() {
     allBalances().then(function (list) {
       var comm = list.filter(function (b) { return !PROJECT[b.address] && !b.deleted && b.amount > 0; });
@@ -1524,9 +1682,17 @@ document.documentElement.classList.add("js");
       $("h-rows").innerHTML = html;
       $("h-count").textContent = fmt(comm.length, 0);
       $("h-earn").textContent = fmt(comm.filter(function (b) { return b.amount >= 1e12; }).length, 0);
-      $("h-share").textContent = fmt(total / SUPPLY * 100, 1) + "%";
-      var cb = $("bal-community"); if (cb) cb.textContent = fmt(total, 0) + " FALQBIT";
-    }).catch(function () { $("h-rows").innerHTML = "<tr><td colspan=\"4\" class=\"muted\">Could not read the chain right now. Try again in a minute.</td></tr>"; });
+      var pc = total / SUPPLY * 100;
+      $("d-circ-pct").textContent = fmt(pc, 2) + "%";
+      $("d-circ-amt").textContent = fmt(total, 0);
+      $("d-circ-bar").style.width = Math.min(100, pc).toFixed(2) + "%";
+      drawDonut(proj, psum);
+      drawDist(rows);
+      countUp("st-circ", total, function (v) { return v >= 1e9 ? fmt(v / 1e9, 2) + "B" : fmt(v / 1e6, 0) + "M"; });
+      var bar = $("st-circ-bar"); if (bar) bar.style.width = Math.min(100, total / SUPPLY * 100).toFixed(1) + "%";
+      $("st-circ-s").textContent = fmt(total / SUPPLY * 100, 1) + "% of supply, held by the community";
+      countUp("st-holders", comm.length, function (v) { return fmt(Math.round(v), 0); });
+    }).catch(function () { ["st-circ", "st-holders"].forEach(failStat); $("d-dist-plot").innerHTML = "<p class=\"muted\">Could not read the chain right now.</p>"; $("h-rows").innerHTML = "<tr><td colspan=\"4\" class=\"muted\">Could not read the chain right now. Try again in a minute.</td></tr>"; });
   }
   // ---- activity: last 14 days of FALQBIT actions ----
   var POOL_ADDR = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
