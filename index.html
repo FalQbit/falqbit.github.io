@@ -302,7 +302,7 @@ body { overflow-x: clip; }
 .topnav a:hover { color: var(--fg); background: rgba(255,255,255,.05); }
 .top-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .status-pill { white-space: nowrap; }
-@media (max-width: 1180px) { .top-right .status-pill { display: none; } }
+@media (max-width: 1360px) { .top-right .status-pill { display: none; } }
 .status-pill i { background: var(--cyan); box-shadow: 0 0 0 0 rgba(63,224,208,.6); }
 .btn.small { min-height: 38px; padding: 0 16px; font-size: 15px; border-radius: 10px; }
 .btn { transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease; }
@@ -466,6 +466,7 @@ body { background-image: none; }
 .d-lp { grid-area: lp; }
 #lp-list li:nth-child(1) .rk { color: #FFD66B; } #lp-list li:nth-child(2) .rk { color: #D7E0F2; } #lp-list li:nth-child(3) .rk { color: #E8A06A; }
 .pager { display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin-top: 14px; }
+.top-list .under { color: #F5B942; }
 .pg-info { font: 500 13px/1 var(--mono); color: var(--muted); }
 .pg-btns { display: flex; gap: 6px; flex-wrap: wrap; }
 .pager button { min-width: 38px; height: 38px; padding: 0 10px; border-radius: 10px; border: 1px solid rgba(60,78,122,.6); background: rgba(255,255,255,.03); color: var(--fg); font: 600 14px/1 var(--mono); cursor: pointer; transition: border-color .2s, background .2s; }
@@ -937,6 +938,7 @@ body { background-image: none; }
       <a href="#holders">Holders</a>
       <a href="#proof">Proof</a>
       <a href="./trade.html">Trade</a>
+      <a href="#value">Value</a>
       <a href="#app">App</a>
       <a href="#faq">FAQ</a>
       <a href="./whitepaper">Whitepaper</a>
@@ -1357,6 +1359,37 @@ body { background-image: none; }
     <p class="stats-note"><i aria-hidden="true"></i><span id="st-note">Reading Algorand MainNet…</span></p>
   </section>
 
+  <section class="sec reveal" id="value" aria-labelledby="h-value">
+    <div class="sec-head">
+      <p class="eyebrow">Live value</p>
+      <h2 id="h-value">What FALQBIT is worth right now.</h2>
+      <p class="muted">Straight from the Tinyman pools: FALQBIT/ALGO for the price, USDC/ALGO for the dollar rate. Updated every minute.</p>
+    </div>
+    <div class="conv" style="margin-top:0">
+      <div class="conv-rates" id="conv-rates">
+        <div class="rate"><span class="tk fq"><img src="./icon.png" alt="" width="22" height="22">1M FALQBIT</span><span class="eq">=</span><span class="val" id="r-fq-algo">…</span><span class="val muted" id="r-fq-usd"></span></div>
+        <div class="rate"><span class="tk algo">1 ALGO</span><span class="eq">=</span><span class="val" id="r-algo-fq">…</span><span class="val muted" id="r-algo-usd"></span></div>
+        <div class="rate"><span class="tk usdc">1 USDC</span><span class="eq">=</span><span class="val" id="r-usdc-fq">…</span><span class="val muted" id="r-usdc-algo"></span></div>
+        <div class="rate"><span class="tk algo">Pool value</span><span class="eq">≈</span><span class="val" id="r-pool-usd">…</span><span class="val muted">both sides, in USD</span></div>
+      </div>
+      <div class="conv-box">
+        <h3 class="conv-h">How much is my FALQBIT worth?</h3>
+        <div class="conv-in">
+          <label class="sr" for="cv-amount">Amount</label>
+          <input id="cv-amount" type="number" inputmode="decimal" min="0" value="1000000">
+          <div class="seg3" role="group" aria-label="Currency"><button type="button" data-c="fq" aria-pressed="true">FALQBIT</button><button type="button" data-c="algo" aria-pressed="false">ALGO</button><button type="button" data-c="usd" aria-pressed="false">USD</button></div>
+        </div>
+        <div class="conv-out">
+          <div><span class="muted">FALQBIT</span><b id="cv-fq">–</b></div>
+          <div><span class="muted">ALGO</span><b id="cv-algo">–</b></div>
+          <div><span class="muted">USD</span><b id="cv-usd">–</b></div>
+        </div>
+        <p class="fine-s">At today's pool price. Selling a large amount moves the price, so you would get less. Not financial advice.</p>
+        <a class="btn primary small" href="./trade.html" style="align-self:flex-start">Trade on falqbit.com</a>
+      </div>
+    </div>
+  </section>
+
   <section class="sec reveal" id="how" aria-labelledby="h-how">
     <div class="sec-head">
       <p class="eyebrow">How it works</p>
@@ -1741,6 +1774,8 @@ document.documentElement.classList.add("js");
     if (cvCur === "fq") { fq = v; al = v * a; us = al * u; }
     else if (cvCur === "algo") { al = v; fq = v / a; us = v * u; }
     else { us = v; al = u ? v / u : 0; fq = al / a; }
+    if ($("r-pool-usd")) $("r-pool-usd").textContent = u && PX.poolAlgo ? usd(PX.poolAlgo * u * 2) : "–";
+    if (typeof TOP !== "undefined" && TOP.comm) drawTop();
     $("cv-fq").textContent = amt(fq); $("cv-algo").textContent = amt(al); $("cv-usd").textContent = u ? usd(us) : "–";
   }
   if ($("cv-amount")) document.querySelectorAll(".seg3 button").forEach(function (b) {
@@ -1771,7 +1806,9 @@ document.documentElement.classList.add("js");
       PX.algoPerFq = p; PX.usdPerAlgo = u;
       countUp("st-price", p * 1e6, function (v) { return fmt(v, 3); });
       countUp("st-pool", r.algo, function (v) { return fmt(v, 1); });
-      $("st-pool-s").textContent = "ALGO + " + fmt(r.fq / 1e9, 2) + "B FALQBIT on Tinyman";
+      $("st-pool-s").textContent = "ALGO + " + fmt(r.fq / 1e9, 2) + "B FALQBIT on Tinyman" + (u ? " · ≈ " + usd(r.algo * u * 2) : "");
+      PX.poolAlgo = r.algo;
+      if (u) { var ps = document.querySelector("#st-price + .s"); if (ps) ps.textContent = "ALGO per 1M FALQBIT · ≈ " + usd(p * 1e6 * u); }
       renderPx();
     }).catch(function () { ["st-price", "st-pool"].forEach(failStat); });
     Promise.allSettled([reserves, unlocked, usdp]).then(function () {
@@ -1878,13 +1915,15 @@ document.documentElement.classList.add("js");
     box.innerHTML = rows.map(function (b, i) {
       var fq = b.amount / 1e6, al = TOP.algo[b.address], main = by === "al" ? (al || 0) : b.amount;
       var big = by === "al" ? fmt(al || 0, 2) + " ALGO" : fmt(fq, 0) + " FALQBIT";
+      var worth = PX.usdPerAlgo && PX.algoPerFq ? (fq * PX.algoPerFq + (al || 0)) * PX.usdPerAlgo : 0;
       var small = by === "al" ? fmt(fq, 0) + " FALQBIT" : (al === undefined ? fmt(fq / SUPPLY * 100, 2) + "% of supply" : fmt(al, 2) + " ALGO");
       var rw = estReward(fq);
       return "<li><span class=\"fill\" style=\"width:" + Math.max(2, Math.round(100 * main / (maxV || 1))) + "%\"></span><span class=\"rk" + (off + i < 3 ? " m" + (off + i + 1) : "") + "\">" + (off + i + 1) + "</span>" +
-        "<span class=\"who\"><a href=\"https://lora.algokit.io/mainnet/account/" + b.address + "\" target=\"_blank\" rel=\"noopener\">" + shortA(b.address) + "</a><small>" + fmt(fq / SUPPLY * 100, 2) + "% of supply" + (rw ? " · next reward ≈ " + fmt(rw, 0) : "") + "</small></span>" +
-        "<span class=\"val\"><b>" + big + "</b><span>" + small + "</span></span></li>";
+        "<span class=\"who\"><a href=\"https://lora.algokit.io/mainnet/account/" + b.address + "\" target=\"_blank\" rel=\"noopener\">" + shortA(b.address) + "</a><small>" + pctS(fq) + " of supply" + (rw ? " · next reward ≈ " + fmt(rw, 0) : " · <span class=\"under\">under 1M, no reward yet</span>") + "</small></span>" +
+        "<span class=\"val\"><b>" + big + "</b><span>" + small + (worth ? " · ≈ " + usd(worth) + " total" : "") + "</span></span></li>";
     }).join("") || "<li><span></span><span class=\"muted\">No community wallets yet.</span></li>";
   }
+  function pctS(v) { var p = v / SUPPLY * 100; return p > 0 && p < 0.01 ? "<0.01%" : fmt(p, 2) + "%"; }
   function drawPager(n, pages) {
     var el = $("top-pager"); if (!el) return;
     if (pages <= 1) { el.hidden = true; return; } el.hidden = false;
@@ -1943,7 +1982,7 @@ document.documentElement.classList.add("js");
         return "<li><span class=\"fill\" style=\"width:" + Math.max(2, Math.round(100 * sh)) + "%\"></span><span class=\"rk\">" + (i + 1) + "</span>" +
           "<span class=\"who\"><a href=\"https://lora.algokit.io/mainnet/account/" + b.address + "\" target=\"_blank\" rel=\"noopener\">" + shortA(b.address) + "</a>" + (name ? "<span class=\"tag\">" + name + "</span>" : "") +
           "<small>" + fmt(sh * 100, 2) + "% of the pool</small></span>" +
-          "<span class=\"val\"><b>" + fmt(al * sh, 2) + " ALGO</b><span>+ " + fmt(fq * sh, 0) + " FALQBIT</span></span></li>";
+          "<span class=\"val\"><b>" + fmt(al * sh, 2) + " ALGO</b><span>+ " + fmt(fq * sh, 0) + " FALQBIT" + (PX.usdPerAlgo ? " · ≈ " + usd(al * sh * 2 * PX.usdPerAlgo) : "") + "</span></span></li>";
       }).join("") || "<li><span></span><span class=\"muted\">No providers yet.</span></li>";
     }).catch(function () { $("lp-sum").textContent = "Could not read the pool right now."; });
   }
