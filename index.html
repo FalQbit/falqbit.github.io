@@ -1735,19 +1735,17 @@ body { background-image: none; }
         <div class="res">
           <div class="donut-wrap"><svg id="d-donut" viewBox="0 0 200 200" role="img" aria-label="Supply breakdown by category"></svg><div class="donut-c"><b id="d-res-pct">…</b><span>reserved</span></div></div>
           <div class="res-side">
-            <div class="res-total"><span>Total supply</span><b>10B FALQBIT</b></div>
             <ul class="res-list" id="d-res-list">
               <li data-addr="CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA"><i style="background:#1F9E94"></i><span class="nm">Liquidity pool<a href="https://lora.algokit.io/mainnet/account/CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA" target="_blank" rel="noopener">CEQH5W…M7VCIA</a></span><b class="bal" data-addr="CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA">…</b></li>
               <li data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q"><i style="background:#7A6EE6"></i><span class="nm">Rewards<a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">V4J46S…CPTC2Q</a></span><b class="bal" data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q">…</b></li>
               <li data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU"><i style="background:#C98500"></i><span class="nm">Project reserve<a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></span><b class="bal" data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU">…</b></li>
-              <li data-addr="__community__"><i style="background:#3FE0D0"></i><span class="nm">Community<a>in <span id="d-comm-n">…</span> wallets</a></span><b class="bal" id="d-comm-bal">…</b></li>
             </ul>
           </div>
         </div>
       </div>
       <div class="dpanel d-dist">
         <div class="dist-head"><h3 class="dk">Holder distribution</h3><button type="button" class="ghost-btn" id="d-dist-toggle" aria-pressed="false">Show as table</button></div>
-        <p class="dsub">Community wallets by balance. Project accounts, founder wallets and the pool are left out.</p>
+        <p class="dsub">Every wallet holding FALQBIT, grouped by balance.</p>
         <div class="dist-plot" id="d-dist-plot"><p class="muted">Reading the chain…</p></div>
         <div class="htable-wrap" id="d-dist-table" hidden>
           <table class="htable">
@@ -2031,31 +2029,29 @@ document.documentElement.classList.add("js");
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (j) { acc = acc.concat(j.balances || []); return j["next-token"] && (j.balances || []).length ? allBalances(j["next-token"], acc) : acc; });
   }
-  var RES = [["CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", "Liquidity pool", "#1F9E94"], ["V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", "Rewards", "#7A6EE6"], ["OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU", "Project reserve", "#C98500"], ["__community__", "Community", "#3FE0D0"]];
+  var RES = [["CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", "Liquidity pool", "#1F9E94"], ["V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", "Rewards", "#7A6EE6"], ["OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU", "Project reserve", "#C98500"]];
   function arc(cx, cy, r0, r1, a0, a1) {
     var big = a1 - a0 > Math.PI ? 1 : 0, c0 = Math.cos(a0), s0 = Math.sin(a0), c1 = Math.cos(a1), s1 = Math.sin(a1);
     return "M" + (cx + r1 * c0) + " " + (cy + r1 * s0) + "A" + r1 + " " + r1 + " 0 " + big + " 1 " + (cx + r1 * c1) + " " + (cy + r1 * s1) +
       "L" + (cx + r0 * c1) + " " + (cy + r0 * s1) + "A" + r0 + " " + r0 + " 0 " + big + " 0 " + (cx + r0 * c0) + " " + (cy + r0 * s0) + "Z";
   }
-  function drawDonut(proj, psum, commSum, commN) {
+  function drawDonut(proj, psum) {
     var by = {}; proj.forEach(function (b) { by[b.address] = b.amount / 1e6; });
-    // the Team wallet is folded into the Project reserve slice so the breakdown shows four clean categories and sums to the full supply
+    // the Team wallet is folded into the Project reserve slice so the breakdown shows three clean categories summing to the reserved total
     var TEAM = "XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q", PROJ = "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU";
     if (by[TEAM]) { by[PROJ] = (by[PROJ] || 0) + by[TEAM]; delete by[TEAM]; }
-    by["__community__"] = commSum || 0;
-    var total = SUPPLY;
     var svg = $("d-donut"); if (!svg) return;
     var a = -Math.PI / 2, html = "", gap = 0.012;
+    // the slices are sized against the full supply, so the circulating share stays visually empty — the ring reads as "reserved vs the rest"
+    html += "<path d=\"" + arc(100, 100, 62, 96, 0, Math.PI * 2 - 0.0001) + "\" fill=\"rgba(255,255,255,0.045)\"/>";
     RES.forEach(function (r, i) {
       var v = by[r[0]] || 0; if (!v) return;
-      var sweep = v / total * Math.PI * 2, a0 = a + gap, a1 = a + sweep - gap;
+      var sweep = v / SUPPLY * Math.PI * 2, a0 = a + gap, a1 = a + sweep - gap;
       html += "<path data-i=\"" + i + "\" d=\"" + arc(100, 100, 62, 96, a0, Math.max(a0 + 0.001, a1)) + "\" fill=\"" + r[2] + "\"><title>" + r[1] + ": " + fmt(v, 0) + " FALQBIT (" + fmt(v / SUPPLY * 100, 1) + "% of supply)</title></path>";
       a += sweep;
     });
     svg.innerHTML = html;
     $("d-res-pct").textContent = fmt(psum / SUPPLY * 100, 1) + "%";
-    var cb = $("d-comm-bal"); if (cb) cb.textContent = fmt(commSum || 0, 0);
-    var cn = $("d-comm-n"); if (cn) cn.textContent = fmt(commN || 0, 0);
     var items = document.querySelectorAll("#d-res-list li");
     function hl(i) { svg.classList.toggle("hl", i !== null); svg.querySelectorAll("path").forEach(function (p) { p.classList.toggle("on", +p.dataset.i === i); }); items.forEach(function (li, k) { li.classList.toggle("on", k === i); }); }
     svg.querySelectorAll("path").forEach(function (p) { p.addEventListener("mouseenter", function () { hl(+p.dataset.i); }); p.addEventListener("mouseleave", function () { hl(null); }); });
@@ -2259,7 +2255,9 @@ document.documentElement.classList.add("js");
       var allHolders = list.filter(function (b) { return !b.deleted && b.amount > 0; });
       var rows = RANGES.map(function (r) { return { label: r[2], n: 0, sum: 0, lo: r[0], hi: r[1] }; });
       var total = 0;
-      comm.forEach(function (b) { var v = b.amount / 1e6; total += v; rows.forEach(function (r) { if (v >= r.lo && v < r.hi) { r.n++; r.sum += v; } }); });
+      // distribution counts every wallet, same as the ranking above (project and founder wallets included)
+      allHolders.forEach(function (b) { var v = b.amount / 1e6; rows.forEach(function (r) { if (v >= r.lo && v < r.hi) { r.n++; r.sum += v; } }); });
+      comm.forEach(function (b) { total += b.amount / 1e6; });
       var max = Math.max.apply(null, rows.map(function (r) { return r.sum; }).concat([1]));
       var html = rows.map(function (r) {
         var pct = r.sum / SUPPLY * 100;
@@ -2267,8 +2265,7 @@ document.documentElement.classList.add("js");
       }).join("");
       var proj = list.filter(function (b) { return PROJECT[b.address]; });
       var psum = proj.reduce(function (s, b) { return s + b.amount / 1e6; }, 0);
-      html += "<tr class=\"proj\"><td>Pool and project accounts</td><td>" + proj.length + "</td><td>" + fmt(psum, 0) + "</td><td>" + fmt(psum / SUPPLY * 100, 2) + "%</td></tr>";
-      if (fn) html += "<tr class=\"proj\"><td>Founder wallets</td><td>" + fn + "</td><td>" + fmt(fsum, 0) + "</td><td>" + fmt(fsum / SUPPLY * 100, 2) + "%</td></tr>";
+      // project and founder wallets are already inside the ranges above, so no extra row needed
       $("h-rows").innerHTML = html;
       var hc = $("h-count-comm"); if (hc) hc.textContent = fmt(comm.length, 0);
       $("h-earn").textContent = fmt(comm.filter(function (b) { return b.amount >= 1e12; }).length, 0);
@@ -2276,7 +2273,7 @@ document.documentElement.classList.add("js");
       $("d-circ-pct").textContent = fmt(pc, 2) + "%";
       $("d-circ-amt").textContent = fmt(total, 0);
       $("d-circ-bar").style.width = Math.min(100, pc).toFixed(2) + "%";
-      drawDonut(proj, psum, total, comm.length);
+      drawDonut(proj, psum);
       drawDist(rows);
       TOP.comm = allHolders; TOP.scale = undefined; drawTop(); loadAlgo();
       countUp("st-circ", total, function (v) { return v >= 1e9 ? fmt(v / 1e9, 2) + "B" : fmt(v / 1e6, 0) + "M"; });
