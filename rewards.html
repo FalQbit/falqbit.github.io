@@ -387,24 +387,31 @@ async function buildWelcome() {
   const hubExch = new Set();
   await Promise.all(hubFunders.map((f) => c.algodGet(`/v2/accounts/${f}?exclude=all`).then((j) => { if (Number(j?.amount || 0) >= EXCHANGE_MIN) hubExch.add(f); }).catch(() => {})));
   due.forEach((r) => { if (r.fund && !r.exch && hubs.has(r.fund.from) && !hubExch.has(r.fund.from)) r.hub = hubs.get(r.fund.from); });
-  // 3. exchange twins: same exchange, near-identical amount, minutes apart (one person withdrawing several times)
+  // 3. exchange burst: same exchange hot wallet funding several accounts in a short window (one person withdrawing several times)
+  // amounts can differ — amount alone is a weak signal, time + same hot wallet is strong.
   const exRows = due.filter((r) => r.exch && r.fund?.at);
   const paidEx = [...paid].map((a) => FUND_CACHE[a]).filter((f) => f && f.at && big.has(f.from));
   for (const r of exRows) {
-    const near = (f) => f.from === r.fund.from && Math.abs(f.amt - r.fund.amt) <= 20000 && Math.abs(f.at - r.fund.at) <= 20 * 60;
-    const tw = exRows.filter((o) => o !== r && near(o.fund)).length + paidEx.filter(near).length;
-    if (tw) r.twin = tw;
+    // close burst: same hot wallet within 30 minutes (regardless of amount)
+    const burst = (f) => f.from === r.fund.from && Math.abs(f.at - r.fund.at) <= 30 * 60;
+    // tight twin: same hot wallet, near-identical amount, within 20 minutes (stronger signal)
+    const tight = (f) => f.from === r.fund.from && Math.abs(f.amt - r.fund.amt) <= 20000 && Math.abs(f.at - r.fund.at) <= 20 * 60;
+    const bursts = exRows.filter((o) => o !== r && burst(o.fund)).length + paidEx.filter(burst).length;
+    const twins = exRows.filter((o) => o !== r && tight(o.fund)).length + paidEx.filter(tight).length;
+    if (twins) r.twin = twins;
+    if (bursts) r.burst = bursts;
   }
   // the other side of a sibling pair: this account funded another account on the list
   const feeds = new Map(); due.forEach((r) => { if (r.sib) feeds.set(r.fund.from, (feeds.get(r.fund.from) || 0) + 1); });
   due.forEach((r) => { if (feeds.has(r.to)) r.feeds = feeds.get(r.to); });
-  const red = (r) => (r.chain || r.prior > 0 || r.dup > 1 || r.sib || r.hub) ? 1 : 0;
-  const amber = (r) => (r.twin || r.feeds) ? 1 : 0;
+  // a burst of 4+ accounts from the same exchange hot wallet in 30 minutes is almost certainly one person, not a coincidence
+  const red = (r) => (r.chain || r.prior > 0 || r.dup > 1 || r.sib || r.hub || (r.burst && r.burst >= 4)) ? 1 : 0;
+  const amber = (r) => (r.twin || (r.burst && r.burst < 4) || r.feeds) ? 1 : 0;
   // fairness: clean accounts in the order they were funded (earliest joins get the higher tier); flagged ones on top for review
   due.sort((x, y) => (red(y) - red(x)) || (amber(y) - amber(x)) || ((x.fund?.at || 9e9) - (y.fund?.at || 9e9)));
   PAIDN = paid.size;
-  const flagged = due.filter((r) => r.chain || r.prior > 0 || r.sib || r.hub).length;
-  const twins = due.filter((r) => r.twin || r.feeds).length;
+  const flagged = due.filter((r) => r.chain || r.prior > 0 || r.sib || r.hub || (r.burst && r.burst >= 4)).length;
+  const twins = due.filter((r) => r.twin || (r.burst && r.burst < 4) || r.feeds).length;
   const groups = new Set(due.filter((r) => r.dup > 1).map((r) => r.fund.from));
   $("p-summary").innerHTML = statGrid([
     ["Unlocked on chain", unlocked.length.toLocaleString()],
@@ -415,7 +422,7 @@ async function buildWelcome() {
     ["Under 2 ALGO", low.toLocaleString()],
   ]);
   if (flagged) $("p-summary").innerHTML += `<b class="warnline">⚠ ${flagged} account${flagged > 1 ? "s were" : " was"} funded by a wallet that already got a drop, already funded welcomed accounts, collects from welcomed accounts, or is itself a FALQBIT account. Likely the same person: review before paying.</b>`;
-  if (twins) $("p-summary").innerHTML += `<b class="warnline amber">◐ ${twins} account${twins > 1 ? "s need" : " needs"} a look: exchange twins (same exchange, almost the same amount, minutes apart) or an account that funded another one on this list. Could be one person. Check before paying.</b>`;
+  if (twins) $("p-summary").innerHTML += `<b class="warnline amber">◐ ${twins} account${twins > 1 ? "s need" : " needs"} a look: accounts funded by the same exchange hot wallet within 30 minutes, exchange twins with near-identical amount, or an account that funded another one on this list. Could be one person. Check before paying.</b>`;
   if (groups.size) $("p-summary").innerHTML += `<b class="warnline">⚠ ${due.filter((r) => r.dup > 1).length} accounts share a funding wallet with others (${groups.size} funder${groups.size > 1 ? "s" : ""}). One drop per person: review them before paying.</b>`;
   if (lowList.length) $("p-summary").innerHTML += `<details class="lowlist"><summary>Waiting for 2 ALGO (${lowList.length})</summary><div class="chips">` + lowList.map(([a, v]) => `<a class="chip" href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)} <span>${(v / 1e6).toFixed(2)} ALGO</span></a>`).join("") + `</div></details>`;
   return due;
@@ -499,7 +506,7 @@ function render() {
   for (const r of queue.slice(0, 500)) {
     const li = document.createElement("li");
     const f = r.fund;
-    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}${r.chain ? `<span class="flag">funder got a drop</span>` : ""}${r.prior ? `<span class="flag">funder used before ×${r.prior}</span>` : ""}${r.sib ? `<span class="flag">funder is a FALQBIT account</span>` : ""}${r.hub ? `<span class="flag">funder collects from ${r.hub} welcomed</span>` : ""}${r.exch ? `<span class="flag ok">exchange</span>` : ""}${r.twin ? `<span class="flag amber">twin ×${r.twin}</span>` : ""}${r.feeds ? `<span class="flag amber">funded ${r.feeds} other on this list</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
+    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}${r.chain ? `<span class="flag">funder got a drop</span>` : ""}${r.prior ? `<span class="flag">funder used before ×${r.prior}</span>` : ""}${r.sib ? `<span class="flag">funder is a FALQBIT account</span>` : ""}${r.hub ? `<span class="flag">funder collects from ${r.hub} welcomed</span>` : ""}${r.exch ? `<span class="flag ok">exchange</span>` : ""}${r.twin ? `<span class="flag amber">twin ×${r.twin}</span>` : ""}${r.burst && !r.twin ? `<span class="flag ${r.burst >= 4 ? '' : 'amber'}">same exchange ×${r.burst} within 30 min</span>` : ""}${r.feeds ? `<span class="flag amber">funded ${r.feeds} other on this list</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
     if (r.dup > 1 || r.chain || r.prior || r.sib || r.hub) li.className = "dup";
     else if (r.twin || r.feeds) li.className = "warn";
     li.innerHTML = `<span class="who"><a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a>${fundLine}</span><span class="right"><span class="amt">${fq(r.amount)}</span>${r.dup > 1 ? `<button type="button" class="skipall">Skip all ${r.dup}</button>` : ""}<button type="button" class="skip">Skip</button></span>`;
