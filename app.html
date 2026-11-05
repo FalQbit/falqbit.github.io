@@ -211,6 +211,7 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
 button.sm { min-height: 34px !important; padding: 0 14px !important; font-size: 13px !important; }
 html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden; }
 </style>
+<link rel="stylesheet" href="./fxu.css">
 </head>
 <body>
 <script>try { if (localStorage.getItem("fq-pin-v1")) document.documentElement.classList.add("locked"); } catch (e) {}</script>
@@ -829,5 +830,7 @@ setDir("buy");
 c.reconnect().then((a) => { if (a.length) { c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); refresh(); } }).catch(() => {});
 setInterval(() => { refresh().catch(() => {}); }, 60000);
 </script>
+<script src="./fx.js" defer></script>
+<script src="./fx3.js" defer></script>
 </body>
 </html>

@@ -50,13 +50,28 @@
     el.addEventListener("mouseleave", function () { el.style.transform = ""; });
   });
 
-  // 4. hero logo follows the mouse in 3D
+  // 4. hero logo follows the mouse in 3D, with quantum particles orbiting around it
   var art = document.querySelector(".hero-art"), svg = art && art.querySelector("svg");
   if (art && svg) {
     document.querySelector(".hero").addEventListener("mousemove", function (e) {
       var r = art.getBoundingClientRect(), x = (e.clientX - (r.left + r.width / 2)) / innerWidth, y = (e.clientY - (r.top + r.height / 2)) / innerHeight;
       svg.style.transform = "perspective(800px) rotateY(" + (x * 22) + "deg) rotateX(" + (-y * 22) + "deg)";
     });
+    // 7 particles: 3 close, 2 mid, 2 wide, each a bit different speed and start angle
+    var qp = [[150, 7, 0], [155, 8, 90], [160, 9, 200], [195, 11, 40], [200, 12, 160], [240, 14, 70], [245, 15, 240]];
+    qp.forEach(function (o) {
+      var d = document.createElement("div"); d.className = "qp"; d.setAttribute("aria-hidden", "true");
+      d.style.setProperty("--qr", o[0] + "px"); d.style.animationDuration = o[1] + "s"; d.style.animationDelay = (-o[2] / 360 * o[1]) + "s";
+      art.appendChild(d);
+    });
+  }
+
+  // 8. roadmap progress line width = share of steps that are done (plus half credit for the current one)
+  var road = document.querySelector(".road");
+  if (road) {
+    var items = road.querySelectorAll("li"), done = road.querySelectorAll("li.done").length, now = road.querySelectorAll("li.now").length;
+    var pct = items.length ? Math.round(((done + now * 0.5) / items.length) * 100) : 0;
+    road.style.setProperty("--roadp", pct + "%");
   }
 
   // 5. magnetic primary buttons

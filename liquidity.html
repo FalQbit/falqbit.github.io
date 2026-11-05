@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>FALQBIT Liquidity</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="./app.css">
+<link rel="icon" type="image/png" href="./icon.png">
+<style>
+  .field { display: flex; flex-direction: column; gap: 6px; margin: 14px 0; }
+  .field input { font: 500 20px/1.2 "IBM Plex Mono", monospace; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.15); background: rgba(255,255,255,.04); color: inherit; width: 100%; box-sizing: border-box; }
+  .sum { font: 500 15px/1.7 "IBM Plex Mono", monospace; }
+  .sum b { color: #3EE0D0; font-weight: 500; }
+</style>
+<link rel="stylesheet" href="./fxu.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./" style="display:inline-flex;align-items:center;gap:10px"><img src="./icon.png" alt="" width="34" height="34" style="width:34px;height:34px;border-radius:50%;box-shadow:0 0 18px rgba(63,224,208,.35)">FALQBIT</a>
+    <nav class="nets" aria-label="Network">
+      <a href="?net=mainnet" id="n-mainnet">MAINNET</a>
+      <a href="?net=testnet" id="n-testnet" class="test">TESTNET</a>
+    </nav>
+  </header>
+
+  <section>
+    <h1>Add <em>liquidity</em>.</h1>
+    <p class="lede">Adds FALQBIT and ALGO to the official Tinyman v2 pool at the current price. You get Tinyman pool tokens back as your receipt.</p>
+  </section>
+
+  <section class="panel" aria-live="polite">
+    <div class="row" id="r-pool"><span class="dot"></span><div><div class="label">Pool</div><div class="detail">Loading…</div></div></div>
+    <div class="row" id="r-wallet"><span class="dot"></span><div><div class="label">Wallet</div><div class="detail">Not connected</div></div></div>
+  </section>
+
+  <section class="panel" id="form" hidden>
+    <label class="field"><span class="label">FALQBIT to add</span>
+      <input id="in-fq" inputmode="numeric" value="800000000"></label>
+    <div class="sum" id="sum"></div>
+  </section>
+
+  <div class="actions">
+    <button class="primary" id="b-connect" type="button">Connect Pera Wallet</button>
+    <button class="primary" id="b-add" type="button" hidden>Add liquidity</button>
+    <button class="ghost" id="b-disconnect" type="button" hidden>Disconnect</button>
+  </div>
+  <div id="msg" class="msg" hidden></div>
+  <p class="foot" id="foot"></p>
+</div>
+
+<script type="module">
+import { algosdk, NETWORKS, FEE_PQ, client, loadConfig, pickNetwork, short } from "./falqbit.js";
+
+const cfgAll = await loadConfig();
+const net = pickNetwork() || (cfgAll.mainnet ? "mainnet" : "testnet");
+const cfg = cfgAll[net];
+const c = client(net);
+const T = NETWORKS[net].tinyman;
+const $ = (id) => document.getElementById(id);
+$("n-" + net).setAttribute("aria-current", "true");
+
+let account = null, pool = null, bal = { algo: 0n, fq: 0n, lpOpt: false };
+const fmt = (v, d = 2) => (Number(v) / 1e6).toLocaleString("en-US", { maximumFractionDigits: d });
+
+function setRow(id, state, detail) { const r = $(id); r.dataset.s = state; r.querySelector(".detail").textContent = detail; }
+function say(html, kind = "") { const m = $("msg"); m.hidden = !html; m.className = "msg " + kind; m.innerHTML = html; }
+
+async function loadPool() {
+  const j = await c.algodGet(`/v2/accounts/${cfg.pool}/applications/${T}`);
+  const r = {};
+  for (const x of j["app-local-state"]["key-value"]) r[atob(x.key)] = BigInt(x.value.uint);
+  pool = { r1: r.asset_1_reserves, r2: r.asset_2_reserves, issued: r.issued_pool_tokens };
+  setRow("r-pool", "ok", `${fmt(pool.r1, 0)} FALQBIT · ${fmt(pool.r2)} ALGO · ${(Number(pool.r2) / Number(pool.r1) * 1e6).toFixed(4)} ALGO per 1M`);
+}
+
+function quote() {
+  const fq = BigInt(Math.max(0, Math.floor(Number(($("in-fq").value || "0").replace(/[^\d.]/g, ""))))) * 1000000n;
+  if (!pool || fq <= 0n) return null;
+  const al = (fq * pool.r2 + pool.r1 - 1n) / pool.r1;            // ALGO at the current price (rounded up)
+  const lp1 = fq * pool.issued / pool.r1, lp2 = al * pool.issued / pool.r2;
+  const lp = lp1 < lp2 ? lp1 : lp2;
+  const minLp = lp * 99n / 100n;                                   // 1% slippage guard
+  const fee = BigInt(FEE_PQ * 2 + FEE_PQ + 2000);
+  return { fq, al, lp, minLp, fee };
+}
+
+function render() {
+  const q = quote();
+  if (!q) { $("sum").innerHTML = "Enter an amount."; $("b-add").hidden = true; return; }
+  const left = bal.algo - q.al - q.fee;
+  let warn = "";
+  if (account && q.fq > bal.fq) warn = `<br>⚠ This account only has ${fmt(bal.fq, 0)} FALQBIT.`;
+  else if (account && left < 1000000n) warn = `<br>⚠ Not enough ALGO: keep at least 1 ALGO after adding.`;
+  else if (account && !bal.lpOpt) warn = `<br>⚠ This account is not opted in to the pool token ${cfg.pool_token}.`;
+  $("sum").innerHTML =
+    `You add: <b>${fmt(q.fq, 0)} FALQBIT</b> + <b>${fmt(q.al, 4)} ALGO</b><br>` +
+    `You get: about <b>${fmt(q.lp, 2)}</b> pool tokens (at least ${fmt(q.minLp, 2)})<br>` +
+    `Network fees: ${fmt(q.fee, 3)} ALGO` +
+    (account ? `<br>ALGO left after: ${fmt(left, 2)}` : "") + warn;
+  $("b-add").hidden = !account || !!warn;
+}
+
+async function refresh() {
+  if (!account) return;
+  $("b-connect").hidden = true; $("b-disconnect").hidden = false;
+  const info = await c.algodGet(`/v2/accounts/${account}`);
+  const a = (info.assets || []);
+  const h = a.find((x) => x["asset-id"] === cfg.asset_id);
+  bal = { algo: BigInt(info.amount) - BigInt(info["min-balance"] || 0), fq: h ? BigInt(h.amount) : 0n, lpOpt: a.some((x) => x["asset-id"] === cfg.pool_token) };
+  const isProject = account === cfg.project;
+  setRow("r-wallet", isProject ? "ok" : "warn", `${short(account)}${isProject ? " · Project account" : " · not the Project account"} · ${fmt(bal.fq, 0)} FALQBIT · ${fmt(bal.algo)} ALGO spendable`);
+  await loadPool();
+  render();
+}
+
+$("in-fq").addEventListener("input", render);
+
+$("b-add").addEventListener("click", async () => {
+  const b = $("b-add");
+  try {
+    b.disabled = true;
+    await loadPool();
+    const q = quote();
+    say("Approve the 3 transactions in Pera…");
+    const t1 = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({ sender: account, receiver: cfg.pool, amount: q.fq, assetIndex: cfg.asset_id, suggestedParams: await c.params(FEE_PQ) });
+    const t2 = algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: cfg.pool, amount: q.al, suggestedParams: await c.params(FEE_PQ) });
+    const t3 = algosdk.makeApplicationNoOpTxnFromObject({
+      sender: account, appIndex: T, suggestedParams: await c.params(FEE_PQ + 2000),
+      appArgs: [new TextEncoder().encode("add_liquidity"), new TextEncoder().encode("flexible"), algosdk.encodeUint64(q.minLp)],
+      foreignAssets: [cfg.pool_token], accounts: [cfg.pool],
+    });
+    const { id } = await c.signAndSend([t1, t2, t3], {}, 2);
+    say(`Liquidity added. <a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">View on Lora</a>`, "ok");
+    await refresh();
+  } catch (e) { say(e.message || String(e), "err"); }
+  finally { b.disabled = false; }
+});
+
+function disconnect() {
+  c.pera.disconnect(); account = null;
+  $("b-connect").hidden = false; $("b-disconnect").hidden = true; $("b-add").hidden = true;
+  setRow("r-wallet", "", "Not connected"); say(""); render();
+}
+$("b-connect").addEventListener("click", async () => {
+  try { const acc = await c.connect(); c.pera.connector?.on("disconnect", disconnect); account = acc[0]; say(""); await refresh(); }
+  catch (e) { if (e?.data?.type !== "CONNECT_MODAL_CLOSED") say(e.message || String(e), "err"); }
+});
+$("b-disconnect").addEventListener("click", disconnect);
+
+if (!cfg) { say(`Not live on ${NETWORKS[net].label}.`, "err"); }
+else {
+  $("form").hidden = false;
+  $("foot").innerHTML = `${NETWORKS[net].label} · pool <a href="${c.n.lora}/account/${cfg.pool}" target="_blank" rel="noopener" class="mono">${short(cfg.pool)}</a> · pool token <a href="${c.n.lora}/asset/${cfg.pool_token}" target="_blank" rel="noopener" class="mono">${cfg.pool_token}</a>`;
+  loadPool().then(render).catch((e) => setRow("r-pool", "warn", "Could not read the pool: " + e.message));
+  c.reconnect().then((acc) => { c.pera.connector?.on("disconnect", disconnect); if (acc.length) { account = acc[0]; refresh().catch((e) => say(e.message, "err")); } }).catch(() => {});
+}
+</script>
+<script src="./fx.js" defer></script>
+<script src="./fx3.js" defer></script>
+</body>
+</html>

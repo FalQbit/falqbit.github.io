@@ -91,6 +91,7 @@
   }
   @media (max-width: 420px) { .leg input, .leg .out { font-size: 24px; } .swap-in { padding: 14px; } }
 </style>
+<link rel="stylesheet" href="./fxu.css">
 </head>
 <body>
 <canvas id="lattice" aria-hidden="true"></canvas>
@@ -349,5 +350,7 @@ refresh().catch(() => {});
 c.reconnect().then((a) => { c.pera.connector?.on("disconnect", disconnect); if (a.length) { account = a[0]; refresh().catch((e) => say(e.message, "err")); } }).catch(() => {});
 setInterval(() => loadPools().then(quote).catch(() => {}), 30000);
 </script>
+<script src="./fx.js" defer></script>
+<script src="./fx3.js" defer></script>
 </body>
 </html>

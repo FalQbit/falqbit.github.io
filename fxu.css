@@ -1,0 +1,47 @@
+/* FALQBIT universal futurist layer: subtle hex grid overlay, scan sweeps on cards,
+   holographic headings, animated section dividers, data-stream edges.
+   Shared by every page so the whole site feels like one system. */
+
+/* 1. hexagonal grid overlay — low opacity, drawn as an inline SVG, never blocks input */
+body::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1; opacity: .18;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='56' height='64' viewBox='0 0 56 64'><g fill='none' stroke='%233FE0D0' stroke-width='0.55' stroke-opacity='0.35'><polygon points='28,2 54,16 54,48 28,62 2,48 2,16'/></g></svg>");
+  background-size: 56px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,0,0,.8), rgba(0,0,0,.1) 70%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,0,0,.8), rgba(0,0,0,.1) 70%, transparent 100%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  body::after { animation: hexDrift 90s linear infinite; }
+}
+@keyframes hexDrift { to { background-position: 56px 64px; } }
+
+/* 2. data-stream edges: two very narrow columns of falling chars on far left/right.
+      Drawn once in a fixed element injected by fx3.js; styles here, JS fills the chars. */
+.fx-stream { position: fixed; top: 0; bottom: 0; width: 14px; overflow: hidden; pointer-events: none; z-index: -1; font: 500 10px/1.2 "IBM Plex Mono", monospace; color: rgba(63,224,208,.55); opacity: .55; text-shadow: 0 0 6px rgba(63,224,208,.5); }
+.fx-stream.l { left: 2px; } .fx-stream.r { right: 2px; }
+.fx-stream span { display: block; opacity: var(--o, 1); }
+@media (max-width: 900px) { .fx-stream { display: none; } }
+@media (prefers-reduced-motion: reduce) { .fx-stream { display: none; } }
+
+/* 3. universal scan sweep for cards — any element with class .fxscan
+      gets a periodic diagonal light pass */
+.fxscan { position: relative; overflow: hidden; }
+.fxscan::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 38%, rgba(169,255,246,.08) 48%, rgba(156,144,255,.06) 52%, transparent 62%); transform: translateX(-120%); pointer-events: none; animation: fxScanSweep 7s linear infinite; animation-delay: var(--sd, 0s); }
+@keyframes fxScanSweep { 0%, 72% { transform: translateX(-120%); } 88% { transform: translateX(120%); } 100% { transform: translateX(120%); } }
+@media (prefers-reduced-motion: reduce) { .fxscan::after { animation: none; display: none; } }
+
+/* 4. holographic heading helper — gradient fill + soft glow */
+.fxholo { background: linear-gradient(100deg, #E8ECF6 30%, #A9FFF6 45%, #C9C2FF 55%, #E8ECF6 70%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: fxHolo 7s ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(63,224,208,.25)); }
+@keyframes fxHolo { 0%, 100% { background-position: 0% 0; } 50% { background-position: 100% 0; } }
+@media (prefers-reduced-motion: reduce) { .fxholo { animation: none; } }
+
+/* 5. corner brackets on cards with .fxframe — gives a HUD feel */
+.fxframe { position: relative; }
+.fxframe::before, .fxframe::after { content: ""; position: absolute; width: 14px; height: 14px; border: 1.5px solid rgba(63,224,208,.6); pointer-events: none; }
+.fxframe::before { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+.fxframe::after  { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+
+/* 6. subtle pulsing border on primary buttons across the site */
+.fxpulse { box-shadow: 0 0 0 0 rgba(63,224,208,.6); animation: fxPulse 2.8s ease-out infinite; }
+@keyframes fxPulse { 50% { box-shadow: 0 0 0 10px rgba(63,224,208,0); } }
+@media (prefers-reduced-motion: reduce) { .fxpulse { animation: none; } }

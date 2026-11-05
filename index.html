@@ -626,9 +626,34 @@ body { background-image: none; }
 .fx2 .hero h1 em { position: relative; }
 .fx2 .hero h1 em::after { content: attr(data-g); position: absolute; left: 0; top: 0; color: transparent; background: inherit; -webkit-background-clip: text; background-clip: text; clip-path: inset(0 0 100% 0); animation: glitch 7s steps(1) infinite 3s; text-shadow: none; }
 @keyframes glitch { 0%, 96%, 100% { clip-path: inset(0 0 100% 0); transform: none; } 96.5% { clip-path: inset(10% 0 55% 0); transform: translate(-4px, 0); } 97.5% { clip-path: inset(60% 0 8% 0); transform: translate(4px, 0); } 98.5% { clip-path: inset(30% 0 40% 0); transform: translate(-2px, 0); } }
-@media (prefers-reduced-motion: reduce) { .stat .v, .sec.scan::before, .fx2 .hero h1 em::after { animation: none; } .stat .v { color: var(--fg); background: none; } }
-@media (max-width: 860px) { #constel { display: none; } }
+
+/* scan light that passes periodically across every stat number */
+.fx2 .stat { position: relative; overflow: hidden; }
+.fx2 .stat::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 38%, rgba(169,255,246,.09) 48%, rgba(156,144,255,.07) 52%, transparent 62%); transform: translateX(-100%); pointer-events: none; animation: statScan 6s linear infinite; animation-delay: var(--sd, 0s); }
+.fx2 .stat:nth-child(2)::after { --sd: 1.5s; }
+.fx2 .stat:nth-child(3)::after { --sd: 3s; }
+.fx2 .stat:nth-child(4)::after { --sd: 4.5s; }
+@keyframes statScan { 0%, 70% { transform: translateX(-120%); } 85% { transform: translateX(120%); } 100% { transform: translateX(120%); } }
+
+/* roadmap: animated connecting line that shows the project's progress */
+.fx2 .road { position: relative; }
+.fx2 .road::before { content: ""; position: absolute; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, rgba(63,224,208,0) 0%, rgba(63,224,208,.9) 20%, rgba(156,144,255,.8) 60%, rgba(245,185,66,.85) 100%); border-radius: 2px; width: var(--roadp, 85%); box-shadow: 0 0 18px rgba(63,224,208,.45); animation: roadGrow 1.6s ease-out both; }
+.fx2 .road li { position: relative; }
+.fx2 .road li::before { content: ""; position: absolute; top: -5px; left: 0; width: 9px; height: 9px; border-radius: 50%; background: var(--line); box-shadow: 0 0 0 3px #0A0F1E; }
+.fx2 .road li.done::before { background: var(--cyan); box-shadow: 0 0 0 3px #0A0F1E, 0 0 12px rgba(63,224,208,.9); }
+.fx2 .road li.now::before { background: var(--amber); box-shadow: 0 0 0 3px #0A0F1E, 0 0 14px rgba(245,185,66,.9); animation: nodePulse 2.2s ease-in-out infinite; }
+@keyframes roadGrow { from { width: 0; } }
+@keyframes nodePulse { 50% { transform: scale(1.35); box-shadow: 0 0 0 3px #0A0F1E, 0 0 22px rgba(245,185,66,1); } }
+
+/* quantum particles that orbit the hero logo */
+.fx2 .hero-art { position: relative; }
+.qp { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px 0 0 -3px; border-radius: 50%; background: radial-gradient(circle, rgba(169,255,246,1) 0%, rgba(63,224,208,.6) 45%, transparent 70%); pointer-events: none; animation: qorbit linear infinite; filter: drop-shadow(0 0 6px rgba(63,224,208,.8)); }
+@keyframes qorbit { from { transform: rotate(0deg) translateX(var(--qr, 170px)) rotate(0deg); } to { transform: rotate(360deg) translateX(var(--qr, 170px)) rotate(-360deg); } }
+
+@media (prefers-reduced-motion: reduce) { .stat .v, .sec.scan::before, .fx2 .hero h1 em::after, .fx2 .stat::after, .fx2 .road::before, .fx2 .road li.now::before, .qp { animation: none; } .stat .v { color: var(--fg); background: none; } }
+@media (max-width: 860px) { #constel { display: none; } .qp { display: none; } }
 </style>
+<link rel="stylesheet" href="./fxu.css">
 </head><body id="top">
 <div class="glow" aria-hidden="true"></div>
 
@@ -2264,5 +2289,6 @@ document.documentElement.classList.add("js");
 })();
 </script>
 <script src="./fx.js" defer></script>
+<script src="./fx3.js" defer></script>
 <script src="./fx2.js" defer></script>
 </body></html>
