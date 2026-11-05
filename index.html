@@ -350,7 +350,7 @@ body { overflow-x: clip; }
 
 
 /* supply dashboard */
-.dash { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-areas: "total circ" "dist dist" "top top" "lp lp"; gap: 14px; }
+.dash { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "total" "dist" "top" "lp"; gap: 14px; }
 .dpanel { background: linear-gradient(180deg, rgba(24,34,62,.72), rgba(18,26,48,.5)); border: 1px solid rgba(60,78,122,.55); border-radius: 16px; padding: 22px; min-width: 0; }
 .d-total { grid-area: total; } .d-circ { grid-area: circ; } .d-res { grid-area: res; } .d-dist { grid-area: dist; }
 .dk { font: 500 12px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--cyan); margin: 0 0 16px; }
@@ -398,7 +398,6 @@ body { overflow-x: clip; }
 .d-dist .htable-wrap { margin-top: 14px; }
 .dtip { position: absolute; pointer-events: none; background: #0B1120; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font: 500 12px/1.5 var(--mono); color: var(--fg); white-space: nowrap; transform: translate(-50%, -100%); box-shadow: 0 10px 30px -10px rgba(0,0,0,.6); z-index: 5; }
 .dtip span { color: var(--muted); }
-@media (max-width: 860px) { .dash { grid-template-columns: minmax(0, 1fr); grid-template-areas: "total" "circ" "dist" "top" "lp"; } }
 @media (max-width: 520px) { .res { grid-template-columns: minmax(0, 1fr); } .donut-wrap { max-width: 210px; margin: 0 auto; } .flip span { width: 46px; height: 60px; font-size: 38px; } }
 /* live stats */
 .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: -40px; }
@@ -654,6 +653,29 @@ body { background-image: none; }
 .stat .v.loading { filter: none; }
 .stat:nth-child(2) .v { animation-delay: -1.5s; } .stat:nth-child(3) .v { animation-delay: -3s; } .stat:nth-child(4) .v { animation-delay: -4.5s; }
 @keyframes holo { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0% 0; } }
+/* --- Supply hero (total supply + circulating stats in one panel) --- */
+.d-hero { padding: 36px 36px; }
+.hero-wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 36px; align-items: center; }
+.hero-left .flip { margin-top: 10px; }
+.hero-right { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 28px; align-items: center; }
+.hero-ring { position: relative; width: 180px; height: 180px; }
+.hero-ring svg { width: 100%; height: 100%; filter: drop-shadow(0 0 20px rgba(63,224,208,.35)); }
+.hero-ring-c { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+.hero-ring-c b { font: 800 34px/1 var(--display); color: #E8ECF6; text-shadow: 0 0 14px rgba(63,224,208,.5); display: block; }
+.hero-ring-c span { font: 500 11px/1.2 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-top: 6px; display: block; }
+.hero-stats { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.hero-stats li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: baseline; padding: 14px 0; border-top: 1px solid rgba(63,224,208,.14); }
+.hero-stats li:first-child { border-top: none; padding-top: 0; }
+.hero-stats .k { font: 600 11px/1.2 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.hero-stats .k small { font: 500 10px/1 var(--mono); opacity: .7; letter-spacing: .08em; }
+.hero-stats b { font: 700 22px/1 var(--display); color: #E8ECF6; font-variant-numeric: tabular-nums; text-shadow: 0 0 10px rgba(63,224,208,.35); }
+@media (max-width: 860px) { .hero-wrap { grid-template-columns: minmax(0, 1fr); } .hero-right { grid-template-columns: minmax(0, 1fr); justify-items: center; } .hero-ring { width: 160px; height: 160px; } .hero-stats { width: 100%; } }
+@media (max-width: 520px) { .hero-stats b { font-size: 18px; } }
+
+/* --- modern bars in Holder distribution --- */
+.fx2 .dist-plot svg .bar-r { fill: url(#dist-grad); transition: all .25s; filter: drop-shadow(0 0 8px rgba(63,224,208,.35)); }
+.fx2 .dist-plot svg .bar-r:hover { filter: drop-shadow(0 0 16px rgba(63,224,208,.7)); transform: translateY(-2px); }
+
 /* --- futurist layer on the Supply dashboard --- */
 .fx2 .dpanel { position: relative; background: linear-gradient(180deg, rgba(24,34,62,.78), rgba(18,26,48,.4)); backdrop-filter: blur(8px); border: 1px solid rgba(63,224,208,.18); box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 24px 60px -40px rgba(63,224,208,.35); overflow: hidden; }
 .fx2 .dpanel::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; background: conic-gradient(from var(--ang), transparent 0 55%, rgba(63,224,208,.5) 68%, rgba(156,144,255,.4) 82%, transparent 100%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; animation: dRotate 14s linear infinite; }
@@ -1715,20 +1737,30 @@ body { background-image: none; }
       <p class="muted">Live from Algorand MainNet. Every project account is a public Falcon-1024 account; tap an address to check it on the explorer.</p>
     </div>
     <div class="dash">
-      <div class="dpanel d-total">
-        <h3 class="dk">Total supply</h3>
-        <div class="flip" aria-label="10 billion FALQBIT"><span>1</span><span>0</span><span>B</span><em>FALQBIT</em></div>
-        <p class="dsub">Fixed forever: no manager, no minting, no clawback. 6 decimals.</p>
-      </div>
-      <div class="dpanel d-circ">
-        <h3 class="dk">Circulating supply</h3>
-        <div class="cbar-row"><div class="cbar" role="img" aria-label="Share of supply held by the community"><span id="d-circ-bar"></span></div><b id="d-circ-pct">…</b></div>
-        <div class="cnums">
-          <div><span>Held by the community</span><b id="d-circ-amt">…</b></div>
-          <div><span>Holders</span><b id="h-count-comm">…</b></div>
-        </div>
-        <div class="cnums">
-          <div><span>Earning rewards (1M+)</span><b id="h-earn">…</b></div>
+      <div class="dpanel d-total d-hero">
+        <div class="hero-wrap">
+          <div class="hero-left">
+            <h3 class="dk">Total supply</h3>
+            <div class="flip" aria-label="10 billion FALQBIT"><span>1</span><span>0</span><span>B</span><em>FALQBIT</em></div>
+            <p class="dsub">Fixed forever: no manager, no minting, no clawback. 6 decimals.</p>
+          </div>
+          <div class="hero-right">
+            <div class="hero-ring" role="img" aria-label="Share in circulation">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <defs>
+                  <linearGradient id="ring-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#3FE0D0"/><stop offset="100%" stop-color="#8B7CFF"/></linearGradient>
+                </defs>
+                <circle cx="60" cy="60" r="50" stroke="rgba(255,255,255,.07)" stroke-width="10" fill="none"/>
+                <circle id="ring-arc" cx="60" cy="60" r="50" stroke="url(#ring-grad)" stroke-width="10" stroke-linecap="round" fill="none" stroke-dasharray="314.16" stroke-dashoffset="314.16" transform="rotate(-90 60 60)"/>
+              </svg>
+              <div class="hero-ring-c"><b id="d-circ-pct">…</b><span>circulating</span></div>
+            </div>
+            <ul class="hero-stats">
+              <li><span class="k">Held by the community</span><b id="d-circ-amt">…</b></li>
+              <li><span class="k">Holders</span><b id="h-count-comm">…</b></li>
+              <li><span class="k">Earning rewards <small>(1M+)</small></span><b id="h-earn">…</b></li>
+            </ul>
+          </div>
         </div>
       </div>
       <div class="dpanel d-dist">
@@ -2033,7 +2065,7 @@ document.documentElement.classList.add("js");
     var W = Math.max(280, box.clientWidth), H = 220, L = 30, B = 30, T = 24;
     var maxN = Math.max(1, Math.max.apply(null, rows.map(function (r) { return r.n; })));
     var step = Math.max(1, Math.ceil(maxN / 4)), top = step * Math.ceil(maxN / step) || 1;
-    var bw = (W - L) / rows.length, svg = "<svg viewBox=\"0 0 " + W + " " + H + "\" role=\"img\" aria-label=\"Community wallets by balance range\">";
+    var bw = (W - L) / rows.length, svg = "<svg viewBox=\"0 0 " + W + " " + H + "\" role=\"img\" aria-label=\"Community wallets by balance range\"><defs><linearGradient id=\"dist-grad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#A9FFF6\"/><stop offset=\"55%\" stop-color=\"#3FE0D0\"/><stop offset=\"100%\" stop-color=\"#8B7CFF\"/></linearGradient></defs>";
     for (var t = 0; t <= top; t += step) { var y = T + (H - T - B) * (1 - t / top); svg += "<line x1=\"" + L + "\" x2=\"" + W + "\" y1=\"" + y + "\" y2=\"" + y + "\" stroke=\"#24304F\" stroke-width=\"1\"/><text x=\"" + (L - 8) + "\" y=\"" + (y + 4) + "\" text-anchor=\"end\" fill=\"#A9B4D0\" font-size=\"11\" font-family=\"IBM Plex Mono, monospace\">" + t + "</text>"; }
     rows.forEach(function (r, i) {
       var w = Math.min(bw * 0.5, 48), h = (H - T - B) * r.n / top, x = L + i * bw + (bw - w) / 2, y = H - B - h;
@@ -2241,7 +2273,8 @@ document.documentElement.classList.add("js");
       var pc = total / SUPPLY * 100;
       $("d-circ-pct").textContent = fmt(pc, 2) + "%";
       $("d-circ-amt").textContent = fmt(total, 0);
-      $("d-circ-bar").style.width = Math.min(100, pc).toFixed(2) + "%";
+      var ringArc = document.getElementById("ring-arc");
+      if (ringArc) { var C = 2 * Math.PI * 50; ringArc.style.strokeDashoffset = (C * (1 - Math.min(100, pc) / 100)).toFixed(2); ringArc.style.transition = "stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1)"; }
       drawDonut(proj, psum);
       drawDist(rows);
       TOP.comm = allHolders; TOP.scale = undefined; drawTop(); loadAlgo();
