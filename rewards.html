@@ -33,9 +33,45 @@
 .list li .flag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: rgba(240,110,120,.18); color: #F2A0A6; font-size: 11px; }
 .list li button.skipall { min-height: 28px; padding: 0 10px; font: 600 12px/1 var(--body); border-radius: 8px; background: rgba(240,110,120,.15); color: #F2A0A6; border: 1px solid rgba(240,110,120,.45); cursor: pointer; white-space: nowrap; }
 .log { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.kf { display: inline-flex; gap: 4px; padding: 3px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); }
+.kf button { background: none; border: 0; color: inherit; opacity: .7; padding: 6px 10px; border-radius: 8px; font: 600 12px/1 "IBM Plex Mono", monospace; cursor: pointer; }
+.kf button[aria-pressed="true"] { background: #3FE0D0; color: #06121A; opacity: 1; }
+.list li .st { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 6px; font-size: 11px; }
+.st.kept { background: rgba(63,224,208,.16); color: #3FE0D0; } .st.part { background: rgba(245,185,66,.16); color: #F5B942; } .st.sold { background: rgba(240,110,120,.16); color: #F2A0A6; }
+/* ---- futuristic layer ---- */
+body { background-image: none; }
+.glowfx { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: radial-gradient(520px 380px at 90% 0%, rgba(63,224,208,.14), transparent 70%), radial-gradient(480px 360px at 0% 90%, rgba(156,144,255,.12), transparent 70%); }
+h1 em { background: linear-gradient(100deg, #3FE0D0, #8FF3EA 45%, #9C90FF); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.panel { background: linear-gradient(180deg, rgba(24,34,62,.78), rgba(16,23,44,.72)); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-color: rgba(63,224,208,.22); box-shadow: 0 24px 60px -30px rgba(63,224,208,.35); }
+.tabs { padding: 4px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(63,224,208,.18); }
+.tabs button { border-radius: 10px; }
+.tabs button[aria-pressed="false"] { border: 0; }
+.tabs button[aria-pressed="true"] { box-shadow: 0 0 18px -4px rgba(63,224,208,.8); }
+.sgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 6px; }
+.sbox { padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(63,224,208,.15); display: flex; flex-direction: column; gap: 6px; }
+.sbox span { font: 500 10.5px/1 "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.sbox b { font: 700 20px/1.1 "Bricolage Grotesque", sans-serif; color: var(--fg); }
+.sbox b small { font: 500 12px/1 "IBM Plex Mono", monospace; color: var(--muted); }
+.sbox.hi { border-color: rgba(63,224,208,.55); box-shadow: 0 0 20px -6px rgba(63,224,208,.6); }
+.sbox.hi b { color: var(--cyan); }
+@media (max-width: 560px) { .sgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.warnline { display: block; margin-top: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(240,110,120,.1); border: 1px solid rgba(240,110,120,.4); color: #F2A0A6; font-weight: 600; font-size: 13.5px; }
+details.lowlist, .skipped details { margin-top: 8px; }
+details.lowlist summary, .skipped summary { cursor: pointer; font: 600 12px/1.4 "IBM Plex Mono", monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip { display: inline-flex; gap: 6px; align-items: center; padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(245,185,66,.4); background: rgba(245,185,66,.08); color: #F5D08A; font: 500 12px/1 "IBM Plex Mono", monospace; text-decoration: none; }
+.chip span { opacity: .75; }
+.skipped .unskip { border-radius: 999px !important; background: rgba(255,255,255,.03) !important; }
+.skipped .unskip:hover { border-color: rgba(240,110,120,.6) !important; color: #F2A0A6 !important; }
+.list { background: rgba(255,255,255,.02); border-color: rgba(63,224,208,.15); }
+.list li { transition: background .2s; }
+.list li:hover { background: rgba(63,224,208,.05); }
+.list li.dup:hover { background: rgba(240,110,120,.1); }
+.primary { box-shadow: 0 10px 28px -10px rgba(63,224,208,.75); }
 </style>
 </head>
 <body>
+<div class="glowfx" aria-hidden="true"></div>
 <div class="wrap">
   <header class="top">
     <a class="brand" href="./" style="display:inline-flex;align-items:center;gap:10px"><img src="./icon.png" alt="" width="34" height="34" style="width:34px;height:34px;border-radius:50%;box-shadow:0 0 18px rgba(63,224,208,.35)">FALQBIT</a>
@@ -74,12 +110,25 @@
       <button class="ghost small" id="b-scan" type="button">Check the chain</button>
       <button class="ghost small" id="b-reset" type="button" hidden>Take a new snapshot</button>
     </div>
-    <p class="detail" id="p-summary">Press "Check the chain" to build the list.</p>
+    <div class="detail" id="p-summary">Press "Check the chain" to build the list.</div>
     <ul class="list" id="p-list"><li class="empty">No list yet.</li></ul>
-    <p class="detail skipped" id="skipped" hidden></p>
+    <div class="skipped" id="skipped" hidden></div>
     <button class="primary" id="b-pay" type="button" disabled>Sign next batch in Pera</button>
   </section>
 
+
+  <section class="panel" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
+    <h2>Who kept their drop</h2>
+    <p class="detail">Every account that got a welcome drop, with what it holds today. Read-only: nothing is signed here.</p>
+    <div class="actions" style="flex-direction:row; flex-wrap:wrap; align-items:center;">
+      <button class="ghost small" id="b-kept" type="button">Check who kept it</button>
+      <span class="kf" role="group" aria-label="Filter">
+        <button type="button" data-k="all" aria-pressed="true">All</button><button type="button" data-k="kept" aria-pressed="false">Kept</button><button type="button" data-k="part" aria-pressed="false">Sold part</button><button type="button" data-k="sold" aria-pressed="false">Sold all</button>
+      </span>
+    </div>
+    <p class="detail" id="k-summary"></p>
+    <ul class="list" id="k-list"></ul>
+  </section>
   <div id="msg" class="msg" hidden></div>
   <div class="log" id="log"></div>
   <p class="foot" id="foot"></p>
@@ -239,6 +288,9 @@ async function annotateFunders(rows) {
   return rows;
 }
 
+function statGrid(items) {
+  return `<div class="sgrid">` + items.map(([k, v, hi]) => `<div class="sbox${hi ? " hi" : ""}"><span>${k}</span><b>${v}</b></div>`).join("") + `</div>`;
+}
 async function buildWelcome() {
   const [unlocked, hold, paid] = await Promise.all([unlockedAccounts(), holders(), paidWelcome()]);
   const left = Math.max(0, WELCOME_CAP - paid.size);
@@ -260,10 +312,17 @@ async function buildWelcome() {
   PAIDN = paid.size;
   const flagged = due.filter((r) => r.chain || r.prior > 0).length;
   const groups = new Set(due.filter((r) => r.dup > 1).map((r) => r.fund.from));
-  $("p-summary").textContent = `${unlocked.length} unlocked accounts on chain · ${paid.size} of ${WELCOME_CAP} welcomed · ${left} left · ${due.length} to pay now (${fq(due.reduce((s, d) => s + d.amount, 0n))} FALQBIT) · current tier ${fq(tierAmount(paid.size))} each` + (low ? ` · ${low} skipped automatically (under ${WELCOME_MIN_ALGO / 1e6} ALGO)` : "") + ".";
-  if (flagged) $("p-summary").innerHTML += `<br><b style="color:#F2A0A6">⚠ ${flagged} account${flagged > 1 ? "s were" : " was"} funded by a wallet that already got a drop, or that already funded welcomed accounts. Likely the same person: review before paying.</b>`;
-  if (groups.size) $("p-summary").innerHTML += `<br><b style="color:#F2A0A6">⚠ ${due.filter((r) => r.dup > 1).length} accounts share a funding wallet with others (${groups.size} funder${groups.size > 1 ? "s" : ""}). One drop per person: review them before paying.</b>`;
-  if (lowList.length) $("p-summary").innerHTML += "<br>Under " + (WELCOME_MIN_ALGO / 1e6) + " ALGO: " + lowList.map(([a, v]) => `<a href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)}</a> (${(v / 1e6).toFixed(3)} ALGO)`).join(", ");
+  $("p-summary").innerHTML = statGrid([
+    ["Unlocked on chain", unlocked.length.toLocaleString()],
+    ["Welcomed", `${paid.size.toLocaleString()} <small>/ ${WELCOME_CAP.toLocaleString()}</small>`],
+    ["Spots left", left.toLocaleString()],
+    ["Current tier", `${fq(tierAmount(paid.size))}`, true],
+    ["To pay now", `${due.length} <small>· ${fq(due.reduce((s, d) => s + d.amount, 0n))}</small>`, due.length > 0],
+    ["Under 2 ALGO", low.toLocaleString()],
+  ]);
+  if (flagged) $("p-summary").innerHTML += `<b class="warnline">⚠ ${flagged} account${flagged > 1 ? "s were" : " was"} funded by a wallet that already got a drop, or that already funded welcomed accounts. Likely the same person: review before paying.</b>`;
+  if (groups.size) $("p-summary").innerHTML += `<b class="warnline">⚠ ${due.filter((r) => r.dup > 1).length} accounts share a funding wallet with others (${groups.size} funder${groups.size > 1 ? "s" : ""}). One drop per person: review them before paying.</b>`;
+  if (lowList.length) $("p-summary").innerHTML += `<details class="lowlist"><summary>Waiting for 2 ALGO (${lowList.length})</summary><div class="chips">` + lowList.map(([a, v]) => `<a class="chip" href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)} <span>${(v / 1e6).toFixed(2)} ALGO</span></a>`).join("") + `</div></details>`;
   return due;
 }
 
@@ -369,8 +428,8 @@ function render() {
 function renderSkipped() {
   const box = $("skipped");
   box.hidden = !SKIP.size;
-  box.innerHTML = SKIP.size ? `<span>Skipped in this browser: </span>` + [...SKIP].map((a) =>
-    `<button type="button" class="unskip" data-a="${a}" title="Put back on the list">${short(a)} ✕</button>`).join(" ") : "";
+  box.innerHTML = SKIP.size ? `<details><summary>Skipped in this browser (${SKIP.size})</summary><div class="chips">` + [...SKIP].map((a) =>
+    `<button type="button" class="unskip" data-a="${a}" title="Put back on the list">${short(a)} ✕</button>`).join("") + `</div></details>` : "";
   box.querySelectorAll(".unskip").forEach((b) => b.addEventListener("click", () => {
     SKIP.delete(b.dataset.a); saveSkip(); renderSkipped();
     say("Put back. Press \"Check the chain\" to refresh the list.");
@@ -472,6 +531,57 @@ $("b-pay").addEventListener("click", payBatch);
 
 setMode("welcome");
 if (cfg?.rewards) c.reconnect().then((a) => { if (a.length) { account = a[0]; c.pera.connector?.on("disconnect", disconnect); refreshWallet(); } }).catch(() => {});
+
+// ---- who kept their welcome drop (read-only) ---------------------------------
+let KEPT = [], KF = "all";
+async function welcomeReceipts() {
+  // first welcome amount each account received, by the same rules as paidWelcome()
+  const TIER_SIZES = new Set(TIERS.map(([, v]) => (v * DEC).toString()));
+  const notHold = (t) => { let n = ""; try { n = t.note ? atob(t.note) : ""; } catch {} return !n.startsWith("FALQBIT hold"); };
+  const [a, b] = await Promise.all([
+    indexerAll(`/v2/accounts/${cfg.rewards}/transactions?asset-id=${cfg.asset_id}&tx-type=axfer`, "transactions"),
+    cfg.project ? indexerAll(`/v2/accounts/${cfg.project}/transactions?asset-id=${cfg.asset_id}&tx-type=axfer`, "transactions") : [],
+  ]);
+  const m = new Map();
+  const add = (t) => { const x = t["asset-transfer-transaction"]; if (!m.has(x.receiver) && !EXCLUDE.has(x.receiver)) m.set(x.receiver, { got: BigInt(x.amount), at: t["round-time"] || 0 }); };
+  [...a, ...b].sort((x, y) => (x["confirmed-round"] || 0) - (y["confirmed-round"] || 0)).forEach((t) => {
+    const x = t["asset-transfer-transaction"]; if (!x || !(x.amount > 0) || !notHold(t)) return;
+    if (t.sender === cfg.rewards) add(t);
+    else if (t.sender === cfg.project && TIER_SIZES.has(String(x.amount))) add(t);
+  });
+  return m;
+}
+function renderKept() {
+  const ul = $("k-list"); ul.innerHTML = "";
+  const rows = KEPT.filter((r) => KF === "all" || r.st === KF);
+  if (!rows.length) { ul.innerHTML = `<li class="empty">${KEPT.length ? "Nobody in this filter." : "Press “Check who kept it”."}</li>`; return; }
+  for (const r of rows) {
+    const li = document.createElement("li");
+    const label = r.st === "kept" ? "kept" : r.st === "part" ? "sold part" : "sold all";
+    li.innerHTML = `<span class="who"><a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a><span class="st ${r.st}">${label}</span><span class="fund">got ${fq(r.got)} · ${r.at ? new Date(r.at * 1000).toLocaleDateString([], { day: "2-digit", month: "2-digit" }) : ""}</span></span><span class="right"><span class="amt">${fq(r.now)}</span></span>`;
+    ul.appendChild(li);
+  }
+}
+async function checkKept() {
+  const b = $("b-kept");
+  try {
+    b.disabled = true; $("k-summary").textContent = "Reading the chain…";
+    const [rec, hold] = await Promise.all([welcomeReceipts(), holders()]);
+    KEPT = [...rec.entries()].map(([to, r]) => {
+      const now = hold.get(to)?.amount || 0n;
+      return { to, got: r.got, at: r.at, now, st: now >= r.got ? "kept" : now > 0n ? "part" : "sold" };
+    }).sort((x, y) => (x.now < y.now ? 1 : x.now > y.now ? -1 : 0));
+    const n = (k) => KEPT.filter((r) => r.st === k).length;
+    $("k-summary").textContent = `${KEPT.length} accounts got a drop · ${n("kept")} kept it all (or more) · ${n("part")} sold part · ${n("sold")} sold everything.`;
+    renderKept();
+  } catch (e) { $("k-summary").textContent = e.message || String(e); }
+  finally { b.disabled = false; }
+}
+$("b-kept").addEventListener("click", checkKept);
+document.querySelectorAll(".kf button").forEach((x) => x.addEventListener("click", () => {
+  KF = x.dataset.k; document.querySelectorAll(".kf button").forEach((y) => y.setAttribute("aria-pressed", String(y === x))); renderKept();
+}));
 </script>
+<script src="./fx.js" defer></script>
 </body>
 </html>
