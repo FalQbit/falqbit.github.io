@@ -652,6 +652,42 @@ body { background-image: none; }
 .stat .v.loading { filter: none; }
 .stat:nth-child(2) .v { animation-delay: -1.5s; } .stat:nth-child(3) .v { animation-delay: -3s; } .stat:nth-child(4) .v { animation-delay: -4.5s; }
 @keyframes holo { 0%, 100% { background-position: 100% 0; } 50% { background-position: 0% 0; } }
+/* --- futurist layer on the Supply dashboard --- */
+.fx2 .dpanel { position: relative; background: linear-gradient(180deg, rgba(24,34,62,.78), rgba(18,26,48,.4)); backdrop-filter: blur(8px); border: 1px solid rgba(63,224,208,.18); box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 24px 60px -40px rgba(63,224,208,.35); overflow: hidden; }
+.fx2 .dpanel::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; background: conic-gradient(from var(--ang), transparent 0 55%, rgba(63,224,208,.5) 68%, rgba(156,144,255,.4) 82%, transparent 100%); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; animation: dRotate 14s linear infinite; }
+.fx2 .dpanel::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse 100% 60% at 50% -20%, rgba(63,224,208,.12), transparent 70%); pointer-events: none; }
+.fx2 .dpanel .dk { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px; }
+.fx2 .dpanel .dk::before { content: "◆"; font-size: 8px; color: var(--cyan); animation: dkBlink 3s ease-in-out infinite; }
+@keyframes dRotate { to { --ang: 360deg; } }
+@keyframes dkBlink { 50% { opacity: .3; } }
+
+/* big numbers on the dashboard — holographic, with soft glow */
+.fx2 .cnums b, .fx2 .res-total b, .fx2 .donut-c b { background: linear-gradient(100deg, #E8ECF6 30%, #A9FFF6 45%, #C9C2FF 55%, #E8ECF6 70%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(63,224,208,.3)); animation: holo 7s ease-in-out infinite; }
+.fx2 .res-total b, .fx2 .donut-c b { filter: drop-shadow(0 0 14px rgba(63,224,208,.45)); }
+@keyframes holo { 0%, 100% { background-position: 0% 0; } 50% { background-position: 100% 0; } }
+
+/* circulating bar — gradient fill with a shimmer sweep */
+.fx2 .cbar { height: 14px; background: linear-gradient(90deg, rgba(10,15,30,.9), rgba(24,34,62,.4)); border: 1px solid rgba(63,224,208,.2); box-shadow: inset 0 1px 2px rgba(0,0,0,.35); }
+.fx2 .cbar span { background: linear-gradient(90deg, #3FE0D0 0%, #8B7CFF 60%, #F5B942 100%); box-shadow: 0 0 10px rgba(63,224,208,.6), 0 0 20px rgba(156,144,255,.3); position: relative; overflow: hidden; }
+.fx2 .cbar span::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent); transform: translateX(-100%); animation: barSheen 3.5s linear infinite; }
+@keyframes barSheen { 0%, 70% { transform: translateX(-100%); } 85% { transform: translateX(200%); } 100% { transform: translateX(200%); } }
+
+/* donut — soft pulsing glow on the SVG + ring around the center */
+.fx2 .donut-wrap svg { filter: drop-shadow(0 0 20px rgba(63,224,208,.22)); }
+.fx2 .donut-wrap::before { content: ""; position: absolute; inset: 18%; border-radius: 50%; border: 1px solid rgba(63,224,208,.25); animation: donutRing 3s ease-in-out infinite; pointer-events: none; }
+.fx2 .donut-wrap::after { content: ""; position: absolute; inset: 30%; border-radius: 50%; background: radial-gradient(circle, rgba(63,224,208,.12), transparent 70%); pointer-events: none; }
+@keyframes donutRing { 50% { transform: scale(1.03); border-color: rgba(156,144,255,.5); } }
+
+/* reserved list — subtle highlight sweep on hover, bigger color chip */
+.fx2 .res-list li { padding: 12px 8px; border-top-color: rgba(63,224,208,.12); border-radius: 8px; transition: background .25s; }
+.fx2 .res-list li:hover, .fx2 .res-list li.on { background: linear-gradient(90deg, rgba(63,224,208,.08), transparent); }
+.fx2 .res-list i { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 10px currentColor; }
+
+/* flip (total supply digits) — digital tick effect + glow */
+.fx2 .flip span { background: linear-gradient(180deg, #1F2B4D 0%, #1B2643 50%, #142040 100%); border: 1px solid rgba(63,224,208,.25); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 6px 20px -8px rgba(63,224,208,.4); color: #A9FFF6; text-shadow: 0 0 10px rgba(63,224,208,.5); }
+
+@media (prefers-reduced-motion: reduce) { .fx2 .dpanel::before, .fx2 .cbar span::after, .fx2 .donut-wrap::before, .fx2 .cnums b, .fx2 .res-total b, .fx2 .donut-c b, .fx2 .dpanel .dk::before { animation: none; } }
+
 /* glitch on the hero highlight, every few seconds */
 .fx2 .hero h1 em { position: relative; }
 .fx2 .hero h1 em::after { content: attr(data-g); position: absolute; left: 0; top: 0; color: transparent; background: inherit; -webkit-background-clip: text; background-clip: text; clip-path: inset(0 0 100% 0); animation: glitch 7s steps(1) infinite 3s; text-shadow: none; }
@@ -1690,12 +1726,8 @@ body { background-image: none; }
           <div><span>Total supply</span><b>10,000,000,000</b></div>
           <div><span>Held by the community</span><b id="d-circ-amt">…</b></div>
         </div>
-        <div class="cnums" id="d-founder" hidden>
-          <div><span>Founder wallets</span><b id="d-founder-amt">…</b></div>
-          <div><span>Not counted as community</span><b>excluded from rewards</b></div>
-        </div>
         <div class="cnums">
-          <div><span>Holders</span><b id="h-count">…</b></div>
+          <div><span>Community wallets</span><b id="h-count-comm">…</b></div>
           <div><span>Earning (1M+)</span><b id="h-earn">…</b></div>
         </div>
       </div>
@@ -1708,7 +1740,6 @@ body { background-image: none; }
             <ul class="res-list" id="d-res-list">
               <li data-addr="CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA"><i style="background:#1F9E94"></i><span class="nm">Liquidity pool<a href="https://lora.algokit.io/mainnet/account/CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA" target="_blank" rel="noopener">CEQH5W…M7VCIA</a></span><b class="bal" data-addr="CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA">…</b></li>
               <li data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q"><i style="background:#7A6EE6"></i><span class="nm">Rewards<a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">V4J46S…CPTC2Q</a></span><b class="bal" data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q">…</b></li>
-              <li data-addr="XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q"><i style="background:#D55181"></i><span class="nm">Team<a href="https://lora.algokit.io/mainnet/account/XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q" target="_blank" rel="noopener">XMKDQF…GBDT7Q</a></span><b class="bal" data-addr="XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q">…</b></li>
               <li data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU"><i style="background:#C98500"></i><span class="nm">Project reserve<a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></span><b class="bal" data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU">…</b></li>
             </ul>
           </div>
@@ -1991,7 +2022,7 @@ document.documentElement.classList.add("js");
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (j) { acc = acc.concat(j.balances || []); return j["next-token"] && (j.balances || []).length ? allBalances(j["next-token"], acc) : acc; });
   }
-  var RES = [["CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", "Liquidity pool", "#1F9E94"], ["V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", "Rewards", "#7A6EE6"], ["XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q", "Team", "#D55181"], ["OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU", "Project reserve", "#C98500"]];
+  var RES = [["CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", "Liquidity pool", "#1F9E94"], ["V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", "Rewards", "#7A6EE6"], ["OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU", "Project reserve", "#C98500"]];
   function arc(cx, cy, r0, r1, a0, a1) {
     var big = a1 - a0 > Math.PI ? 1 : 0, c0 = Math.cos(a0), s0 = Math.sin(a0), c1 = Math.cos(a1), s1 = Math.sin(a1);
     return "M" + (cx + r1 * c0) + " " + (cy + r1 * s0) + "A" + r1 + " " + r1 + " 0 " + big + " 1 " + (cx + r1 * c1) + " " + (cy + r1 * s1) +
@@ -1999,6 +2030,9 @@ document.documentElement.classList.add("js");
   }
   function drawDonut(proj, psum) {
     var by = {}; proj.forEach(function (b) { by[b.address] = b.amount / 1e6; });
+    // the Team wallet is folded into the Project reserve slice so the donut has three clean categories and still sums to psum
+    var TEAM = "XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q", PROJ = "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU";
+    if (by[TEAM]) { by[PROJ] = (by[PROJ] || 0) + by[TEAM]; delete by[TEAM]; }
     var svg = $("d-donut"); if (!svg) return;
     var a = -Math.PI / 2, html = "", gap = 0.012;
     RES.forEach(function (r, i) {
@@ -2075,11 +2109,12 @@ document.documentElement.classList.add("js");
     box.innerHTML = rows.map(function (b, i) {
       var fq = b.amount / 1e6, al = TOP.algo[b.address], main = by === "al" ? (al || 0) : b.amount;
       var big = by === "al" ? fmt(al || 0, 2) + " ALGO" : fmt(fq, 0) + " FALQBIT";
-      var small = by === "al" ? fmt(fq, 0) + " FALQBIT" : (al === undefined ? fmt(fq / SUPPLY * 100, 2) + "% of supply" : fmt(al, 2) + " ALGO");
       var rw = estReward(fq);
+      // when sorting by ALGO, the small line shows the FALQBIT held; by FALQBIT we drop the small line entirely (ALGO amounts aren't useful here)
+      var small = by === "al" ? "<span>" + fmt(fq, 0) + " FALQBIT</span>" : "";
       return "<li><span class=\"fill\" style=\"width:" + Math.max(2, Math.round(100 * main / (maxV || 1))) + "%\"></span><span class=\"rk" + (off + i < 3 ? " m" + (off + i + 1) : "") + "\">" + (off + i + 1) + "</span>" +
         "<span class=\"who\"><a href=\"https://lora.algokit.io/mainnet/account/" + b.address + "\" target=\"_blank\" rel=\"noopener\">" + shortA(b.address) + "</a><small>" + pctS(fq) + " of supply" + (rw ? " · next reward ≈ " + fmt(rw, 0) : " · <span class=\"under\">under 1M, no reward yet</span>") + "</small></span>" +
-        "<span class=\"val\"><b>" + big + "</b><span>" + small + "</span></span></li>";
+        "<span class=\"val\"><b>" + big + "</b>" + small + "</span></li>";
     }).join("") || "<li><span></span><span class=\"muted\">No wallets yet.</span></li>";
   }
   function pctS(v) { var p = v / SUPPLY * 100; return p > 0 && p < 0.01 ? "<0.01%" : fmt(p, 2) + "%"; }
@@ -2222,9 +2257,8 @@ document.documentElement.classList.add("js");
       var psum = proj.reduce(function (s, b) { return s + b.amount / 1e6; }, 0);
       html += "<tr class=\"proj\"><td>Pool and project accounts</td><td>" + proj.length + "</td><td>" + fmt(psum, 0) + "</td><td>" + fmt(psum / SUPPLY * 100, 2) + "%</td></tr>";
       if (fn) html += "<tr class=\"proj\"><td>Founder wallets</td><td>" + fn + "</td><td>" + fmt(fsum, 0) + "</td><td>" + fmt(fsum / SUPPLY * 100, 2) + "%</td></tr>";
-      var fr = $("d-founder"); if (fr) { fr.hidden = !fn; $("d-founder-amt").textContent = fmt(fsum, 0); }
       $("h-rows").innerHTML = html;
-      $("h-count").textContent = fmt(allHolders.length, 0);
+      var hc = $("h-count-comm"); if (hc) hc.textContent = fmt(comm.length, 0);
       $("h-earn").textContent = fmt(comm.filter(function (b) { return b.amount >= 1e12; }).length, 0);
       var pc = total / SUPPLY * 100;
       $("d-circ-pct").textContent = fmt(pc, 2) + "%";
