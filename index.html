@@ -559,6 +559,47 @@ body { background-image: none; }
 .tiers div { display: flex; justify-content: space-between; gap: 10px; font: 500 13px/1.6 var(--mono); color: var(--muted); }
 .tiers div b { color: var(--fg); font-weight: 600; }
 .tiers div:first-child b { color: var(--cyan); }
+.wd { margin-top: 18px; padding: 22px; border-radius: 18px; border: 1px solid rgba(63,224,208,.3); background: radial-gradient(80% 140% at 100% 0%, rgba(63,224,208,.10), transparent 60%), linear-gradient(180deg, rgba(24,34,62,.75), rgba(16,23,44,.7)); }
+.wd-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px 28px; }
+.wd-big { margin: 0; color: var(--muted); font-size: 16px; }
+.wd-big b { font: 800 46px/1 var(--display); color: var(--fg); text-shadow: 0 0 24px rgba(63,224,208,.35); margin-right: 6px; }
+.wd-stats { display: flex; flex-wrap: wrap; gap: 12px 28px; }
+.wd-stats div { display: flex; flex-direction: column; gap: 4px; }
+.wd-stats span { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.wd-stats b { font: 700 20px/1.1 var(--display); color: var(--fg); }
+.wd-stats div:last-child b { color: var(--cyan); }
+.wd-bar { display: flex; gap: 4px; height: 14px; margin: 18px 0 12px; }
+.wd-bar .seg { position: relative; height: 100%; border-radius: 7px; background: rgba(255,255,255,.06); overflow: hidden; }
+.wd-bar .seg i { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 7px; background: linear-gradient(90deg, #1F9E94, #3FE0D0); box-shadow: 0 0 14px rgba(63,224,208,.6); transition: width 1.2s cubic-bezier(.2,.8,.2,1); }
+.wd-tiers { display: grid; grid-template-columns: 2fr 4fr 2fr 2fr; gap: 4px; }
+.wd-tiers div { font: 500 12px/1.5 var(--mono); color: var(--muted); }
+.wd-tiers div b { display: block; color: var(--fg); font-weight: 600; font-size: 13px; }
+.wd-tiers div.now b { color: var(--cyan); }
+.wd-tiers div.done { opacity: .55; }
+@media (max-width: 600px) { .wd-tiers { grid-template-columns: 1fr 1fr; gap: 10px; } .wd-big b { font-size: 38px; } }
+/* welcome progress: futuristic layer */
+.wd { position: relative; overflow: hidden; }
+.wd::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: conic-gradient(from var(--ang), transparent 0 65%, rgba(63,224,208,.95) 80%, rgba(156,144,255,.85) 90%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: spinB 7s linear infinite; }
+.wd::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+  background-image: linear-gradient(rgba(63,224,208,.07) 1px, transparent 1px), linear-gradient(90deg, rgba(63,224,208,.07) 1px, transparent 1px); background-size: 28px 28px;
+  -webkit-mask: radial-gradient(70% 120% at 85% 0%, #000, transparent 70%); mask: radial-gradient(70% 120% at 85% 0%, #000, transparent 70%); }
+.wd > * { position: relative; z-index: 1; }
+.wd-top .dk { display: inline-flex; align-items: center; gap: 8px; }
+.wd-top .dk::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); animation: livePulse 1.8s ease-in-out infinite; }
+@keyframes livePulse { 50% { opacity: .35; transform: scale(.7); } }
+.wd-bar .seg { background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px rgba(63,224,208,.12); }
+.wd-bar .seg i { background: linear-gradient(90deg, #1F9E94, #3FE0D0 40%, #A9FFF6 50%, #3FE0D0 60%, #1F9E94); background-size: 220% 100%; animation: barFlow 2.6s linear infinite; }
+@keyframes barFlow { from { background-position: 120% 0; } to { background-position: -100% 0; } }
+.wd-bar .seg i::after { content: ""; position: absolute; right: -2px; top: 50%; width: 14px; height: 14px; margin-top: -7px; border-radius: 50%; background: #E9FFFC; box-shadow: 0 0 10px #3FE0D0, 0 0 24px #3FE0D0; animation: tipPulse 1.4s ease-in-out infinite; }
+.wd-bar .seg i[style*="width:0%"]::after, .wd-bar .seg i[style*="width:100%"]::after { display: none; }
+@keyframes tipPulse { 50% { transform: scale(1.35); opacity: .7; } }
+.wd-stats div { padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(63,224,208,.15); }
+.wd-stats div:last-child { border-color: rgba(63,224,208,.5); box-shadow: 0 0 22px -6px rgba(63,224,208,.6); }
+.wd-tiers div.now { position: relative; }
+.wd-tiers div.now b { text-shadow: 0 0 14px rgba(63,224,208,.6); }
+@media (prefers-reduced-motion: reduce) { .wd::before, .wd-bar .seg i, .wd-bar .seg i::after, .wd-top .dk::before { animation: none; } }
 </style>
 </head><body id="top">
 <div class="glow" aria-hidden="true"></div>
@@ -1439,6 +1480,14 @@ body { background-image: none; }
         <span class="lock off">Paid every 25th</span>
       </article>
     </div>
+    <div class="wd" id="wd" aria-live="polite">
+      <div class="wd-top">
+        <div><p class="dk" style="margin:0 0 6px">Welcome drop progress</p><p class="wd-big"><b id="wd-paid">…</b> <span>of 1,000 accounts paid</span></p></div>
+        <div class="wd-stats"><div><span>FALQBIT paid</span><b id="wd-sum">…</b></div><div><span>Spots left</span><b id="wd-left">…</b></div><div><span>Next account gets</span><b id="wd-next">…</b></div></div>
+      </div>
+      <div class="wd-bar" id="wd-bar" aria-hidden="true"></div>
+      <div class="wd-tiers" id="wd-tiers"></div>
+    </div>
   </section>
 
   <section class="sec reveal" aria-labelledby="h-trade">
@@ -1968,6 +2017,39 @@ document.documentElement.classList.add("js");
         }).join("") || "<li><span></span><span class=\"muted\">No payouts yet.</span></li>";
       }).catch(function () { box.innerHTML = "<li><span></span><span class=\"muted\">Could not read the chain right now.</span></li>"; });
   }
+  // ---- welcome drop progress: accounts paid from the Rewards account ----
+  var WD_TIERS = [[200, 1000000, "1–200"], [600, 500000, "201–600"], [800, 250000, "601–800"], [1000, 100000, "801–1,000"]];
+  function loadWelcome() {
+    if (!$("wd")) return;
+    var RW = "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", PR = "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU";
+    var SIZES = { "1000000000000": 1, "500000000000": 1, "250000000000": 1, "100000000000": 1 };
+    function all(addr, next, acc) {
+      acc = acc || [];
+      return fetch(IDX + "/v2/accounts/" + addr + "/transactions?tx-type=axfer&asset-id=" + ASSET + "&limit=1000" + (next ? "&next=" + encodeURIComponent(next) : ""))
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length ? all(addr, j["next-token"], acc) : acc; });
+    }
+    function note(t) { try { return t.note ? atob(t.note) : ""; } catch (e) { return ""; } }
+    Promise.all([all(RW), all(PR).catch(function () { return []; })]).then(function (x) {
+      var seen = {}, sum = 0;
+      x[0].forEach(function (t) { var a = t["asset-transfer-transaction"]; if (t.sender === RW && a && a.amount > 0 && note(t).indexOf("FALQBIT hold") !== 0 && !PROJECT[a.receiver] && !seen[a.receiver]) { seen[a.receiver] = 1; sum += a.amount / 1e6; } });
+      x[1].forEach(function (t) { var a = t["asset-transfer-transaction"]; if (t.sender === PR && a && SIZES[String(a.amount)] && note(t).indexOf("FALQBIT hold") !== 0 && !PROJECT[a.receiver] && !seen[a.receiver]) { seen[a.receiver] = 1; sum += a.amount / 1e6; } });
+      var n = Object.keys(seen).length, next = 0;
+      for (var k = 0; k < WD_TIERS.length; k++) if (n < WD_TIERS[k][0]) { next = WD_TIERS[k][1]; break; }
+      countUp("wd-paid", n, function (v) { return fmt(Math.round(v), 0); });
+      $("wd-sum").textContent = fmt(sum, 0);
+      $("wd-left").textContent = fmt(Math.max(0, 1000 - n), 0);
+      $("wd-next").textContent = next ? fmt(next, 0) + " FALQBIT" : "Drop complete";
+      var bar = "", tl = "", lo = 0;
+      WD_TIERS.forEach(function (t) {
+        var size = t[0] - lo, done = Math.max(0, Math.min(size, n - lo)), state = n >= t[0] ? "done" : n >= lo ? "now" : "";
+        bar += "<div class=\"seg\" style=\"flex:" + size + "\"><i style=\"width:" + (done / size * 100) + "%\"></i></div>";
+        tl += "<div class=\"" + state + "\"><b>" + fmt(t[1], 0) + "</b>Accounts " + t[2] + "<br>" + (size - done) + " left</div>";
+        lo = t[0];
+      });
+      $("wd-bar").innerHTML = bar; $("wd-tiers").innerHTML = tl;
+    }).catch(function () { $("wd-paid").textContent = "–"; });
+  }
   // ---- liquidity providers: holders of the Tinyman pool token ----
   var LP_TOKEN = 3760920578, LP_POOL = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
   var LP_NAMES = { "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU": "Project" };
@@ -2104,7 +2186,7 @@ document.documentElement.classList.add("js");
       h.addEventListener("mouseleave", function () { tip.hidden = true; });
     });
   }
-  load(); loadHeld(); loadHolders(); loadActivity(); loadLP(); setInterval(function () { load(); loadHeld(); loadHolders(); loadActivity(); loadLP(); }, 60000);
+  load(); loadHeld(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); setInterval(function () { load(); loadHeld(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); }, 60000);
 })();
 </script>
 <script>
