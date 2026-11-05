@@ -33,6 +33,7 @@
 .list li .flag.amber { background: rgba(245,185,66,.16); color: #F5B942; }
 .list li.warn { background: rgba(245,185,66,.06); }
 .warnline.amber { background: rgba(245,185,66,.08); border-color: rgba(245,185,66,.4); color: #F5D08A; }
+.warnline.ok { background: rgba(63,224,208,.08); border-color: rgba(63,224,208,.4); color: #A9FFF6; }
 .list li .flag.ok { background: rgba(63,224,208,.16); color: #3FE0D0; }
 .list li .flag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: rgba(240,110,120,.18); color: #F2A0A6; font-size: 11px; }
 .list li button.skipall { min-height: 28px; padding: 0 10px; font: 600 12px/1 var(--body); border-radius: 8px; background: rgba(240,110,120,.15); color: #F2A0A6; border: 1px solid rgba(240,110,120,.45); cursor: pointer; white-space: nowrap; }
@@ -365,7 +366,7 @@ async function buildWelcome() {
   const ok = cand.filter((a, i) => algo[i] >= WELCOME_MIN_ALGO);
   const low = cand.length - ok.length;
   const lowList = cand.map((a, i) => [a, algo[i]]).filter(([, v]) => v < WELCOME_MIN_ALGO);
-  const due = ok.slice(0, left).map((a, i) => ({ to: a, amount: tierAmount(paid.size + i) }));
+  let due = ok.slice(0, left).map((a, i) => ({ to: a, amount: tierAmount(paid.size + i) }));
   say("Checking who funded each account…");
   await annotateFunders(due);
   // chains: the funder already got a drop itself, or already funded accounts welcomed in earlier rounds
@@ -407,12 +408,20 @@ async function buildWelcome() {
   // a burst of 4+ accounts from the same exchange hot wallet in 30 minutes is almost certainly one person, not a coincidence
   const red = (r) => (r.chain || r.prior > 0 || r.dup > 1 || r.sib || r.hub || (r.burst && r.burst >= 4)) ? 1 : 0;
   const amber = (r) => (r.twin || (r.burst && r.burst < 4) || r.feeds) ? 1 : 0;
-  // fairness: clean accounts in the order they were funded (earliest joins get the higher tier); flagged ones on top for review
-  due.sort((x, y) => (red(y) - red(x)) || (amber(y) - amber(x)) || ((x.fund?.at || 9e9) - (y.fund?.at || 9e9)));
+  // auto-skip every red flag: they already match a clear farm pattern, you shouldn't have to click skip on each one.
+  // amber still shows in the pay list so you can decide on the borderline cases (same exchange ×2 or ×3, twins, feeds).
+  const autoSkipped = [];
+  for (const r of due) {
+    if (red(r) && !SKIP.has(r.to)) { SKIP.add(r.to); autoSkipped.push(r.to); }
+  }
+  if (autoSkipped.length) { saveSkip(); log(`Auto-skipped ${autoSkipped.length} account${autoSkipped.length > 1 ? "s" : ""} that matched a farm pattern. Review them in the Skipped list if you want to pay anyway.`); }
+  due = due.filter((r) => !SKIP.has(r.to));
+  // fairness: clean accounts in the order they were funded (earliest joins get the higher tier); amber ones on top so you can decide
+  due.sort((x, y) => (amber(y) - amber(x)) || ((x.fund?.at || 9e9) - (y.fund?.at || 9e9)));
   PAIDN = paid.size;
-  const flagged = due.filter((r) => r.chain || r.prior > 0 || r.sib || r.hub || (r.burst && r.burst >= 4)).length;
+  const flagged = autoSkipped.length;
   const twins = due.filter((r) => r.twin || (r.burst && r.burst < 4) || r.feeds).length;
-  const groups = new Set(due.filter((r) => r.dup > 1).map((r) => r.fund.from));
+  const groups = new Set();
   $("p-summary").innerHTML = statGrid([
     ["Unlocked on chain", unlocked.length.toLocaleString()],
     ["Welcomed", `${paid.size.toLocaleString()} <small>/ ${WELCOME_CAP.toLocaleString()}</small>`],
@@ -421,9 +430,8 @@ async function buildWelcome() {
     ["To pay now", `${due.length} <small>· ${fq(due.reduce((s, d) => s + d.amount, 0n))}</small>`, due.length > 0],
     ["Under 2 ALGO", low.toLocaleString()],
   ]);
-  if (flagged) $("p-summary").innerHTML += `<b class="warnline">⚠ ${flagged} account${flagged > 1 ? "s were" : " was"} funded by a wallet that already got a drop, already funded welcomed accounts, collects from welcomed accounts, or is itself a FALQBIT account. Likely the same person: review before paying.</b>`;
-  if (twins) $("p-summary").innerHTML += `<b class="warnline amber">◐ ${twins} account${twins > 1 ? "s need" : " needs"} a look: accounts funded by the same exchange hot wallet within 30 minutes, exchange twins with near-identical amount, or an account that funded another one on this list. Could be one person. Check before paying.</b>`;
-  if (groups.size) $("p-summary").innerHTML += `<b class="warnline">⚠ ${due.filter((r) => r.dup > 1).length} accounts share a funding wallet with others (${groups.size} funder${groups.size > 1 ? "s" : ""}). One drop per person: review them before paying.</b>`;
+  if (flagged) $("p-summary").innerHTML += `<b class="warnline ok">✓ ${flagged} farm account${flagged > 1 ? "s were" : " was"} auto-skipped. See the Skipped list below if you want to review any.</b>`;
+  if (twins) $("p-summary").innerHTML += `<b class="warnline amber">◐ ${twins} account${twins > 1 ? "s need" : " needs"} your call: same exchange ×2 or ×3 within 30 minutes, exchange twins with near-identical amount, or an account that funded another one on this list. Pay or skip as you see fit.</b>`;
   if (lowList.length) $("p-summary").innerHTML += `<details class="lowlist"><summary>Waiting for 2 ALGO (${lowList.length})</summary><div class="chips">` + lowList.map(([a, v]) => `<a class="chip" href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)} <span>${(v / 1e6).toFixed(2)} ALGO</span></a>`).join("") + `</div></details>`;
   return due;
 }
@@ -506,10 +514,14 @@ function render() {
   for (const r of queue.slice(0, 500)) {
     const li = document.createElement("li");
     const f = r.fund;
-    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}${r.chain ? `<span class="flag">funder got a drop</span>` : ""}${r.prior ? `<span class="flag">funder used before ×${r.prior}</span>` : ""}${r.sib ? `<span class="flag">funder is a FALQBIT account</span>` : ""}${r.hub ? `<span class="flag">funder collects from ${r.hub} welcomed</span>` : ""}${r.exch ? `<span class="flag ok">exchange</span>` : ""}${r.twin ? `<span class="flag amber">twin ×${r.twin}</span>` : ""}${r.burst && !r.twin ? `<span class="flag ${r.burst >= 4 ? '' : 'amber'}">same exchange ×${r.burst} within 30 min</span>` : ""}${r.feeds ? `<span class="flag amber">funded ${r.feeds} other on this list</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
-    if (r.dup > 1 || r.chain || r.prior || r.sib || r.hub) li.className = "dup";
-    else if (r.twin || r.feeds) li.className = "warn";
-    li.innerHTML = `<span class="who"><a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a>${fundLine}</span><span class="right"><span class="amt">${fq(r.amount)}</span>${r.dup > 1 ? `<button type="button" class="skipall">Skip all ${r.dup}</button>` : ""}<button type="button" class="skip">Skip</button></span>`;
+    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}${r.chain ? `<span class="flag">funder got a drop</span>` : ""}${r.prior ? `<span class="flag">funder used before ×${r.prior}</span>` : ""}${r.sib ? `<span class="flag">funder is a FALQBIT account</span>` : ""}${r.hub ? `<span class="flag">funder collects from ${r.hub} welcomed</span>` : ""}${r.exch ? `<span class="flag ok">exchange</span>` : ""}${r.twin ? `<span class="flag amber">twin ×${r.twin}</span>` : ""}${r.burst ? `<span class="flag ${r.burst >= 4 ? '' : 'amber'}">same exchange ×${r.burst} within 30 min</span>` : ""}${r.feeds ? `<span class="flag amber">funded ${r.feeds} other on this list</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
+    if (r.dup > 1 || r.chain || r.prior || r.sib || r.hub || (r.burst && r.burst >= 4)) li.className = "dup";
+    else if (r.twin || r.burst || r.feeds) li.className = "warn";
+    // "Skip all N" also appears for an exchange burst (4+ accounts funded by the same hot wallet within 30 min)
+    const burstAll = (r.burst && r.burst >= 4) ? (r.burst + 1) : 0;
+    const skipAllN = r.dup > 1 ? r.dup : burstAll;
+    const skipAllLabel = burstAll && !r.dup ? `Skip all burst (${skipAllN})` : `Skip all ${skipAllN}`;
+    li.innerHTML = `<span class="who"><a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a>${fundLine}</span><span class="right"><span class="amt">${fq(r.amount)}</span>${skipAllN ? `<button type="button" class="skipall">${skipAllLabel}</button>` : ""}<button type="button" class="skip">Skip</button></span>`;
     li.querySelector(".skip").addEventListener("click", () => {
       SKIP.add(r.to); saveSkip();
       queue = queue.filter((q) => q.to !== r.to); render(); renderSkipped();
@@ -517,9 +529,11 @@ function render() {
     const sa = li.querySelector(".skipall");
     if (sa) sa.addEventListener("click", () => {
       const from = r.fund.from;
-      queue.filter((q) => q.fund && q.fund.from === from).forEach((q) => SKIP.add(q.to)); saveSkip();
-      queue = queue.filter((q) => !(q.fund && q.fund.from === from)); render(); renderSkipped();
-      say(`Skipped every account funded by ${short(from)}.`);
+      // for an exchange burst, only skip ones inside the 30-min window around this account; otherwise skip every same-funder match
+      const within = (q) => q.fund && q.fund.from === from && (!burstAll || Math.abs((q.fund.at || 0) - (r.fund.at || 0)) <= 30 * 60);
+      queue.filter(within).forEach((q) => SKIP.add(q.to)); saveSkip();
+      queue = queue.filter((q) => !within(q)); render(); renderSkipped();
+      say(burstAll ? `Skipped ${skipAllN} accounts funded by ${short(from)} within 30 minutes of each other.` : `Skipped every account funded by ${short(from)}.`);
     });
     ul.append(li);
   }
