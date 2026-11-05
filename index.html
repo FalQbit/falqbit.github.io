@@ -2308,70 +2308,53 @@ document.documentElement.classList.add("js");
       h.addEventListener("mouseleave", function () { tip.hidden = true; });
     });
   }
-  // ---- price chart: Vestige has every trade since launch, pre-aggregated into candles. We fetch candles for the range.
+  // ---- price chart: read every transaction involving the pool, group by atomic group, then every group whose balances
+  // moved ALGO one way and FALQBIT the other is a swap. One point per swap, since launch. Zero external APIs.
   var PC_RAW = null, PC_RANGE = 7, PC_LOAD = null;
-  function vestigeInterval(days) {
-    // choose a candle interval that keeps the chart readable: ~70-200 candles across the window
-    if (!days || days >= 30) return "4H";
-    if (days >= 7) return "1H";
-    if (days >= 2) return "15M";
-    return "5M";
-  }
   function loadPrice() {
-    var now = Math.floor(Date.now() / 1000);
-    var days = PC_RANGE || 60; // "All" = up to 60 days since launch is early November
-    var from = now - days * 86400;
-    var interval = vestigeInterval(PC_RANGE);
-    // Vestige free API returns candles denominated in ALGO (currency=0). Each candle has {timestamp, open, high, low, close, volume}.
-    var url = "https://free-api.vestige.fi/asset/" + ASSET + "/candles?interval=" + interval + "&denominating_asset_id=0&start=" + from + "&end=" + now + "&volume_in_denominating_asset=true";
-    PC_LOAD = Date.now();
-    var mine = PC_LOAD;
-    fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (j) {
-      if (mine !== PC_LOAD) return; // a later tab click won
-      var rows = Array.isArray(j) ? j : (j.data || j.candles || []);
-      var trades = rows.map(function (c) {
-        // Vestige fields: timestamp (unix), open, close, high, low, volume. Price is denominated in ALGO per 1 token.
-        // We want ALGO per 1,000,000 FALQBIT to match the rest of the site, so multiply by 1e6.
-        var ts = c.timestamp || c.t || c.time; if (ts > 1e12) ts = Math.floor(ts / 1000);
-        return { t: ts, price: (c.close ?? c.c) * 1e6, vol: (c.volume ?? c.v ?? 0), high: (c.high ?? c.h) * 1e6, low: (c.low ?? c.l) * 1e6, side: "candle" };
-      }).filter(function (p) { return p.t && isFinite(p.price) && p.price > 0; });
-      trades.sort(function (a, b) { return a.t - b.t; });
-      PC_RAW = trades;
-      drawPrice();
-    }).catch(function () {
-      if (mine !== PC_LOAD) return;
-      loadPriceFromChain(); // fallback to Algorand indexer swaps if Vestige is unreachable
-    });
-  }
-  // fallback: compute each swap from the FALQBIT asset transactions (works offline from Vestige)
-  function loadPriceFromChain() {
     var PFX = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
-    var since = new Date(Date.now() - 45 * 86400000).toISOString();
+    var since = new Date(Date.now() - 60 * 86400000).toISOString();
     var acc = [], seen = {};
+    PC_LOAD = Date.now(); var mine = PC_LOAD;
     function page(next) {
-      return fetch(IDX + "/v2/assets/" + ASSET + "/transactions?limit=1000&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
+      return fetch(IDX + "/v2/accounts/" + PFX + "/transactions?limit=1000&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
         .then(function (r) { return r.ok ? r.json() : { transactions: [] }; })
-        .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 4000 ? page(j["next-token"]) : acc; });
+        .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 6000 ? page(j["next-token"]) : acc; });
     }
     page().then(function (txs) {
-      var trades = [];
+      if (mine !== PC_LOAD) return;
+      // group by atomic group id — a Tinyman swap is several txs in one group: an ALGO/FALQBIT in to the pool, and one out
+      var byGroup = {};
       txs.forEach(function (t) {
         if (seen[t.id]) return; seen[t.id] = 1;
-        var algoIn = 0, algoOut = 0, fqIn = 0, fqOut = 0;
+        var g = t.group || t.id; // ungrouped txs become their own single-tx group
+        if (!byGroup[g]) byGroup[g] = { t: t["round-time"], algoIn: 0, algoOut: 0, fqIn: 0, fqOut: 0 };
+        var bg = byGroup[g];
         function walk(x) {
           var p = x["payment-transaction"], a = x["asset-transfer-transaction"];
-          if (p && (p.amount || 0) > 0) { if (p.receiver === PFX) algoIn += p.amount; else if (x.sender === PFX) algoOut += p.amount; }
-          if (a && a["asset-id"] === ASSET && (a.amount || 0) > 0) { if (a.receiver === PFX) fqIn += a.amount; else if (x.sender === PFX) fqOut += a.amount; }
+          if (p && (p.amount || 0) > 0) {
+            if (p.receiver === PFX) bg.algoIn += p.amount;
+            else if (x.sender === PFX) bg.algoOut += p.amount;
+          }
+          if (a && a["asset-id"] === ASSET && (a.amount || 0) > 0) {
+            if (a.receiver === PFX) bg.fqIn += a.amount;
+            else if (x.sender === PFX) bg.fqOut += a.amount;
+          }
           (x["inner-txns"] || []).forEach(walk);
         }
         walk(t);
-        if (algoIn > 0 && fqOut > 0) trades.push({ t: t["round-time"], price: (algoIn / fqOut) * 1e6, vol: fqOut / 1e6, side: "buy" });
-        else if (fqIn > 0 && algoOut > 0) trades.push({ t: t["round-time"], price: (algoOut / fqIn) * 1e6, vol: fqIn / 1e6, side: "sell" });
       });
+      var trades = [];
+      for (var g in byGroup) {
+        var b = byGroup[g];
+        // a swap must have both an ALGO side and a FALQBIT side, moving in opposite directions through the pool
+        if (b.algoIn > 0 && b.fqOut > 0 && b.algoOut === 0) trades.push({ t: b.t, price: (b.algoIn / b.fqOut) * 1e6, vol: b.fqOut / 1e6, side: "buy" });
+        else if (b.fqIn > 0 && b.algoOut > 0 && b.fqOut === 0) trades.push({ t: b.t, price: (b.algoOut / b.fqIn) * 1e6, vol: b.fqIn / 1e6, side: "sell" });
+      }
       trades.sort(function (a, b) { return a.t - b.t; });
       PC_RAW = trades;
       drawPrice();
-    }).catch(function () { $("pc-empty").hidden = false; $("pc-empty").textContent = "Could not read the chain right now."; });
+    }).catch(function () { if (mine !== PC_LOAD) return; $("pc-empty").hidden = false; $("pc-empty").textContent = "Could not read the chain right now."; });
   }
   function drawPrice() {
     if (!PC_RAW) return;
@@ -2428,7 +2411,7 @@ document.documentElement.classList.add("js");
   document.querySelectorAll(".pc-tab").forEach(function (b) {
     b.addEventListener("click", function () {
       document.querySelectorAll(".pc-tab").forEach(function (x) { x.classList.remove("active"); });
-      b.classList.add("active"); PC_RANGE = parseInt(b.dataset.r, 10); loadPrice();
+      b.classList.add("active"); PC_RANGE = parseInt(b.dataset.r, 10); drawPrice();
     });
   });
   window.addEventListener("resize", function () { clearTimeout(window._pcrz); window._pcrz = setTimeout(drawPrice, 200); });
