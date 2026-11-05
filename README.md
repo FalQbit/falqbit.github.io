@@ -2,7 +2,7 @@
 
 The first Algorand token that only post-quantum (Falcon-1024) accounts can hold.
 
-Site: https://falqbit.github.io · X: https://x.com/FalQbit
+Site: https://falqbit.com · X: https://x.com/FalQbit
 
 ## Live on Algorand MainNet
 

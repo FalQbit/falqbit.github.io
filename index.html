@@ -133,6 +133,35 @@ p { margin: 0; }
 .rule { display: flex; flex-direction: column; gap: 6px; padding-block: 20px; border-top: 1px solid var(--line); min-width: 0; }
 .rule p { color: var(--muted); font-size: 16px; }
 
+/* price chart */
+.pchart { padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(180deg, rgba(10,15,30,.55), rgba(10,15,30,.25)); backdrop-filter: blur(6px); }
+.pchart-head { display: grid; grid-template-columns: repeat(3, auto) 1fr; gap: 20px 32px; align-items: end; margin-bottom: 14px; }
+.pchart-head > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pchart-head .k { font: 600 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.pchart-head b { font: 800 clamp(22px, 2.4vw, 30px)/1 var(--display); color: var(--fg); font-variant-numeric: tabular-nums; }
+.pchart-head .s { font: 500 12px/1.3 var(--body); color: var(--muted); }
+.pchart-head b.up { color: #5EE2B0; } .pchart-head b.down { color: #F2A0A6; }
+.pchart-tabs { display: flex; gap: 6px; flex-wrap: wrap; justify-self: end; align-self: end; }
+.pc-tab { min-height: 32px; padding: 0 12px; font: 600 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; border-radius: 10px; background: transparent; color: var(--muted); border: 1px solid var(--line); cursor: pointer; transition: all .2s; }
+.pc-tab:hover { color: var(--fg); border-color: var(--cyan); }
+.pc-tab.active { color: var(--bg); background: var(--cyan); border-color: var(--cyan); }
+.pchart-plot { position: relative; width: 100%; height: clamp(240px, 36vw, 340px); overflow: hidden; border-radius: 12px; }
+.pchart-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pchart-plot .grid { stroke: rgba(169,180,208,.1); stroke-width: 1; }
+.pchart-plot .axlbl { font: 500 10.5px var(--mono); fill: var(--muted); }
+.pchart-plot .barV { fill: rgba(63,224,208,.18); }
+.pchart-plot .area { fill: url(#pc-grad); opacity: .85; }
+.pchart-plot .line { stroke: #A9FFF6; stroke-width: 2; fill: none; filter: drop-shadow(0 0 6px rgba(63,224,208,.55)); }
+.pchart-plot .pt { fill: #A9FFF6; stroke: #0A0F1E; stroke-width: 2; opacity: 0; transition: opacity .15s; }
+.pchart-plot .pt.hot { opacity: 1; r: 5; }
+.pchart-plot .hoverL { stroke: rgba(169,255,246,.35); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0; }
+.pchart-plot .hoverL.on { opacity: 1; }
+.pc-tip { position: absolute; pointer-events: none; min-width: 170px; padding: 10px 12px; background: rgba(10,15,30,.95); border: 1px solid var(--cyan); border-radius: 10px; font: 500 12.5px var(--body); color: var(--fg); box-shadow: 0 10px 30px -10px rgba(63,224,208,.5); transform: translate(-50%, -110%); z-index: 2; }
+.pc-tip b { display: block; font: 800 15px/1 var(--display); color: #A9FFF6; margin-bottom: 2px; }
+.pc-tip small { display: block; color: var(--muted); font-size: 11px; margin-top: 4px; font-family: var(--mono); }
+.pc-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+@media (max-width: 760px) { .pchart-head { grid-template-columns: repeat(3, 1fr); } .pchart-tabs { grid-column: 1 / -1; justify-self: stretch; } .pc-tab { flex: 1; } }
+
 /* supply */
 .supply-top { display: flex; flex-wrap: wrap; gap: 16px 48px; align-items: baseline; }
 .big { font: 800 clamp(40px, 6vw, 64px)/1 var(--display); letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
@@ -1047,6 +1076,7 @@ body { background-image: none; }
     <nav class="topnav" aria-label="Sections">
       <a href="#how">How it works</a>
       <a href="#rewards">Rewards</a>
+      <a href="#price">Price</a>
       <a href="#supply">Supply</a>
       <a href="#holders">Holders</a>
       <a href="#proof">Proof</a>
@@ -1578,6 +1608,44 @@ body { background-image: none; }
         </div>
       </div>
       <div class="phone"><img src="./app-shot.webp" alt="The FALQBIT app wallet screen showing a balance, the price and the next hold reward" width="585" height="1266" loading="lazy"></div>
+    </div>
+  </section>
+
+  <section class="sec reveal" id="price" aria-labelledby="h-price">
+    <div class="sec-head">
+      <p class="eyebrow">Price</p>
+      <h2 id="h-price">FALQBIT price in ALGO.</h2>
+      <p class="muted">Every Tinyman swap, straight from the chain. Hover a point to see the exact price and time.</p>
+    </div>
+    <div class="pchart fxframe">
+      <div class="pchart-head">
+        <div class="pchart-now">
+          <span class="k">Now</span>
+          <b id="pc-now" class="fxholo">…</b>
+          <span class="s" id="pc-now-s">ALGO per 1M FALQBIT</span>
+        </div>
+        <div class="pchart-change">
+          <span class="k">Change</span>
+          <b id="pc-chg">…</b>
+          <span class="s" id="pc-chg-s">vs start of window</span>
+        </div>
+        <div class="pchart-vol">
+          <span class="k">Volume</span>
+          <b id="pc-vol" class="fxholo">…</b>
+          <span class="s">FALQBIT traded in window</span>
+        </div>
+        <div class="pchart-tabs" role="tablist">
+          <button type="button" class="pc-tab" data-r="1">24h</button>
+          <button type="button" class="pc-tab active" data-r="7">7d</button>
+          <button type="button" class="pc-tab" data-r="30">30d</button>
+          <button type="button" class="pc-tab" data-r="0">All</button>
+        </div>
+      </div>
+      <div class="pchart-plot">
+        <svg id="pc-svg" viewBox="0 0 800 320" preserveAspectRatio="none" aria-label="FALQBIT price chart"></svg>
+        <div class="pc-tip" id="pc-tip" hidden></div>
+        <div class="pc-empty muted" id="pc-empty" hidden>No swaps in this window yet.</div>
+      </div>
     </div>
   </section>
 
@@ -2240,7 +2308,99 @@ document.documentElement.classList.add("js");
       h.addEventListener("mouseleave", function () { tip.hidden = true; });
     });
   }
-  load(); loadHeld(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); setInterval(function () { load(); loadHeld(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); }, 60000);
+  // ---- price chart: extract every swap from the pool's transactions, compute price per trade, draw with timeframe toggle
+  var PC_RAW = null, PC_RANGE = 7;
+  function loadPrice() {
+    var PFX = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
+    var since = new Date(Date.now() - 45 * 86400000).toISOString();
+    var acc = [], seen = {};
+    function page(next) {
+      return fetch(IDX + "/v2/accounts/" + PFX + "/transactions?limit=1000&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
+        .then(function (r) { return r.ok ? r.json() : { transactions: [] }; })
+        .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 4000 ? page(j["next-token"]) : acc; });
+    }
+    page().then(function (txs) {
+      var trades = [];
+      // each app call to the pool has inner-txns with the payment + asset-transfer that make up the swap
+      txs.forEach(function (t) {
+        if (seen[t.id]) return; seen[t.id] = 1;
+        var algoIn = 0, algoOut = 0, fqIn = 0, fqOut = 0;
+        function walk(x) {
+          var p = x["payment-transaction"], a = x["asset-transfer-transaction"];
+          if (p) { if (p.receiver === PFX) algoIn += p.amount || 0; else if (x.sender === PFX) algoOut += p.amount || 0; }
+          if (a && a["asset-id"] === ASSET) { if (a.receiver === PFX) fqIn += a.amount || 0; else if (x.sender === PFX) fqOut += a.amount || 0; }
+          (x["inner-txns"] || []).forEach(walk);
+        }
+        walk(t);
+        if (algoIn > 0 && fqOut > 0) trades.push({ t: t["round-time"], price: (algoIn / fqOut) * 1e6, vol: fqOut / 1e6, side: "buy" });
+        else if (fqIn > 0 && algoOut > 0) trades.push({ t: t["round-time"], price: (algoOut / fqIn) * 1e6, vol: fqIn / 1e6, side: "sell" });
+      });
+      trades.sort(function (a, b) { return a.t - b.t; });
+      PC_RAW = trades;
+      drawPrice();
+    }).catch(function () { $("pc-empty").hidden = false; $("pc-empty").textContent = "Could not read the chain right now."; });
+  }
+  function drawPrice() {
+    if (!PC_RAW) return;
+    var now = Math.floor(Date.now() / 1000);
+    var from = PC_RANGE ? now - PC_RANGE * 86400 : 0;
+    var pts = PC_RAW.filter(function (p) { return p.t >= from; });
+    var svg = $("pc-svg"), empty = $("pc-empty");
+    if (!pts.length) { svg.innerHTML = ""; empty.hidden = false; empty.textContent = "No swaps in this window yet."; $("pc-now").textContent = "…"; $("pc-chg").textContent = "–"; $("pc-vol").textContent = "–"; return; }
+    empty.hidden = true;
+    var W = 800, H = 320, L = 50, R = 12, T = 14, B = 46, pw = W - L - R, ph = H - T - B, bh = 32;
+    var ts = pts.map(function (p) { return p.t; }), ps = pts.map(function (p) { return p.price; }), vs = pts.map(function (p) { return p.vol; });
+    var t0 = PC_RANGE ? from : ts[0], t1 = now;
+    var pmin = Math.min.apply(null, ps), pmax = Math.max.apply(null, ps), pad = (pmax - pmin) * 0.12 || pmax * 0.05;
+    pmin = Math.max(0, pmin - pad); pmax = pmax + pad;
+    var vmax = Math.max.apply(null, vs) || 1;
+    var xf = function (t) { return L + (t - t0) / (t1 - t0 || 1) * pw; };
+    var yf = function (p) { return T + ph - (p - pmin) / (pmax - pmin || 1) * (ph - bh); };
+    var yv = function (v) { return T + ph - (v / vmax) * bh; };
+    var path = "", area = "", bars = "", first = null, last = null;
+    pts.forEach(function (p, i) {
+      var x = xf(p.t), y = yf(p.price); if (i === 0) { path = "M" + x + "," + y; area = "M" + x + "," + (T + ph) + " L" + x + "," + y; first = p; } else { path += " L" + x + "," + y; area += " L" + x + "," + y; } last = p;
+      var vx = xf(p.t), vy = yv(p.vol); bars += "<rect class=\"barV\" x=\"" + (vx - 1.5) + "\" y=\"" + vy + "\" width=\"3\" height=\"" + (T + ph - vy) + "\"/>";
+    });
+    area += " L" + xf(last.t) + "," + (T + ph) + " Z";
+    var gridY = "", labY = "";
+    for (var i = 0; i <= 4; i++) { var y = T + i * (ph - bh) / 4, v = pmax - i * (pmax - pmin) / 4; gridY += "<line class=\"grid\" x1=\"" + L + "\" y1=\"" + y + "\" x2=\"" + (W - R) + "\" y2=\"" + y + "\"/>"; labY += "<text class=\"axlbl\" x=\"" + (L - 6) + "\" y=\"" + (y + 3) + "\" text-anchor=\"end\">" + v.toFixed(2) + "</text>"; }
+    var gridX = "", labX = "";
+    for (var i = 0; i <= 5; i++) { var x = L + i * pw / 5, t = t0 + i * (t1 - t0) / 5, d = new Date(t * 1000); gridX += "<line class=\"grid\" x1=\"" + x + "\" y1=\"" + T + "\" x2=\"" + x + "\" y2=\"" + (T + ph) + "\"/>"; var lab = PC_RANGE && PC_RANGE <= 1 ? d.getHours() + ":00" : (d.getDate() + "/" + (d.getMonth() + 1)); labX += "<text class=\"axlbl\" x=\"" + x + "\" y=\"" + (H - 24) + "\" text-anchor=\"middle\">" + lab + "</text>"; }
+    svg.innerHTML = "<defs><linearGradient id=\"pc-grad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0%\" stop-color=\"#3FE0D0\" stop-opacity=\"0.5\"/><stop offset=\"100%\" stop-color=\"#3FE0D0\" stop-opacity=\"0\"/></linearGradient></defs>" + gridY + gridX + bars + "<path class=\"area\" d=\"" + area + "\"/><path class=\"line\" d=\"" + path + "\"/>" + labY + labX + "<line id=\"pc-hL\" class=\"hoverL\" y1=\"" + T + "\" y2=\"" + (T + ph) + "\"/><circle id=\"pc-hC\" class=\"pt\" r=\"4\"/><rect id=\"pc-hit\" x=\"" + L + "\" y=\"" + T + "\" width=\"" + pw + "\" height=\"" + ph + "\" fill=\"transparent\" style=\"cursor:crosshair\"/>";
+    var totalVol = vs.reduce(function (s, v) { return s + v; }, 0);
+    var chg = ((last.price - first.price) / first.price) * 100;
+    $("pc-now").textContent = last.price.toFixed(3);
+    $("pc-vol").textContent = totalVol >= 1e9 ? (totalVol / 1e9).toFixed(2) + "B" : totalVol >= 1e6 ? (totalVol / 1e6).toFixed(1) + "M" : totalVol >= 1e3 ? (totalVol / 1e3).toFixed(1) + "k" : totalVol.toFixed(0);
+    var chgEl = $("pc-chg"); chgEl.textContent = (chg >= 0 ? "+" : "") + chg.toFixed(2) + "%";
+    chgEl.className = chg >= 0 ? "up" : "down";
+    // hover
+    var hit = document.getElementById("pc-hit"), hL = document.getElementById("pc-hL"), hC = document.getElementById("pc-hC"), tip = $("pc-tip");
+    hit.addEventListener("mousemove", function (e) {
+      var r = svg.getBoundingClientRect(), mx = (e.clientX - r.left) * (W / r.width);
+      var t = t0 + (mx - L) / pw * (t1 - t0);
+      var i = 0, best = Infinity; for (var k = 0; k < pts.length; k++) { var dd = Math.abs(pts[k].t - t); if (dd < best) { best = dd; i = k; } }
+      var p = pts[i], x = xf(p.t), y = yf(p.price);
+      hL.setAttribute("x1", x); hL.setAttribute("x2", x); hL.classList.add("on");
+      hC.setAttribute("cx", x); hC.setAttribute("cy", y); hC.classList.add("hot");
+      tip.hidden = false;
+      var d = new Date(p.t * 1000);
+      tip.innerHTML = "<b>" + p.price.toFixed(3) + " ALGO</b>per 1M FALQBIT<small>" + d.toLocaleString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) + " · " + p.side + " · " + (p.vol >= 1e6 ? (p.vol / 1e6).toFixed(1) + "M" : p.vol >= 1e3 ? (p.vol / 1e3).toFixed(0) + "k" : p.vol.toFixed(0)) + " FALQBIT</small>";
+      var left = L + (x - L) / pw * r.width;
+      tip.style.left = Math.max(80, Math.min(r.width - 80, left)) + "px";
+      tip.style.top = ((y / H) * r.height - 12) + "px";
+    });
+    hit.addEventListener("mouseleave", function () { hL.classList.remove("on"); hC.classList.remove("hot"); tip.hidden = true; });
+  }
+  document.querySelectorAll(".pc-tab").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll(".pc-tab").forEach(function (x) { x.classList.remove("active"); });
+      b.classList.add("active"); PC_RANGE = parseInt(b.dataset.r, 10); drawPrice();
+    });
+  });
+  window.addEventListener("resize", function () { clearTimeout(window._pcrz); window._pcrz = setTimeout(drawPrice, 200); });
+
+  load(); loadHeld(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); loadPrice(); setInterval(function () { load(); loadHeld(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); loadPrice(); }, 60000);
 })();
 </script>
 <script>
