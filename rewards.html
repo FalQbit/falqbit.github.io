@@ -117,7 +117,7 @@ const c = client(net);
 const $ = (id) => document.getElementById(id);
 $("n-" + net).setAttribute("aria-current", "true");
 
-let account = null, mode = "welcome", queue = [];
+let account = null, mode = "welcome", queue = [], PAIDN = 0;
 
 const say = (html, kind = "") => { const m = $("msg"); m.hidden = !html; m.className = "msg " + kind; m.innerHTML = html; };
 const log = (html) => { const p = document.createElement("p"); p.className = "detail"; p.innerHTML = html; $("log").prepend(p); };
@@ -171,6 +171,26 @@ async function paidWith(note) {
   for (const t of txns) if (t.sender === cfg.rewards && t["asset-transfer-transaction"]) s.add(t["asset-transfer-transaction"].receiver);
   return s;
 }
+// Everyone who ever got a welcome drop, by any route: the note, or any other FALQBIT transfer
+// from the Rewards account that isn't a hold reward, or a tier-sized transfer from the Project account
+// (early manual drops). Plus what this browser paid in the last minutes, before the indexer catches up.
+const LOCAL_PAID = "fq-paid-local-v1";
+function localPaid() { try { return JSON.parse(localStorage.getItem(LOCAL_PAID) || "{}"); } catch { return {}; } }
+function markPaid(list, kind) { const m = localPaid(); for (const a of list) m[kind + ":" + a] = Date.now(); try { localStorage.setItem(LOCAL_PAID, JSON.stringify(m)); } catch {} }
+async function paidWelcome() {
+  const TIER_SIZES = new Set(TIERS.map(([, v]) => (v * DEC).toString()));
+  const notHold = (t) => { let n = ""; try { n = t.note ? atob(t.note) : ""; } catch {} return !n.startsWith("FALQBIT hold"); };
+  const [fromRewards, fromProject] = await Promise.all([
+    indexerAll(`/v2/accounts/${cfg.rewards}/transactions?asset-id=${cfg.asset_id}&tx-type=axfer`, "transactions"),
+    cfg.project ? indexerAll(`/v2/accounts/${cfg.project}/transactions?asset-id=${cfg.asset_id}&tx-type=axfer`, "transactions") : [],
+  ]);
+  const s = new Set();
+  for (const t of fromRewards) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.rewards && x && x.amount > 0 && notHold(t)) s.add(x.receiver); }
+  for (const t of fromProject) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.project && x && TIER_SIZES.has(String(x.amount)) && notHold(t)) s.add(x.receiver); }
+  for (const k of Object.keys(localPaid())) if (k.startsWith("welcome:")) s.add(k.slice(8));
+  for (const a of EXCLUDE) s.delete(a);
+  return s;
+}
 async function unlockedAccounts() {
   const j = await c.algodGet(`/v2/applications/${cfg.app_id}/boxes?max=100000`);
   return (j?.boxes || []).map((b) => Uint8Array.from(atob(b.name), (x) => x.charCodeAt(0)))
@@ -180,14 +200,30 @@ async function unlockedAccounts() {
 
 // ---- building the lists -------------------------------------------------
 // Anti-farming: who sent each account its first ALGO. Several new accounts funded by the same wallet = likely one person.
+const FUND_KEY = "fq-funders-v1";
+let FUND_CACHE = {}; try { FUND_CACHE = JSON.parse(localStorage.getItem(FUND_KEY) || "{}"); } catch {}
+function saveFunders() { try { localStorage.setItem(FUND_KEY, JSON.stringify(FUND_CACHE)); } catch {} }
 async function firstFunding(a) {
+  if (FUND_CACHE[a]) return FUND_CACHE[a];
   try {
     const j = await c.getJSON(`${c.n.indexer}/v2/transactions?address=${a}&address-role=receiver&tx-type=pay&limit=100`);
     // ignore the account's own 0 ALGO self-payments; the first real deposit from another wallet is the funder
     const ins = (j?.transactions || []).filter((t) => t.sender !== a && Number(t["payment-transaction"]?.amount || 0) > 0);
     const t = ins.sort((x, y) => (x["confirmed-round"] || 0) - (y["confirmed-round"] || 0))[0];
-    return t ? { from: t.sender, amt: Number(t["payment-transaction"]?.amount || 0), at: t["round-time"] } : null;
+    const r = t ? { from: t.sender, amt: Number(t["payment-transaction"]?.amount || 0), at: t["round-time"] } : null;
+    if (r) FUND_CACHE[a] = r;
+    return r;
   } catch { return null; }
+}
+// Funders of accounts that already got a welcome drop (cached in this browser, funders never change).
+async function paidFunders(paid) {
+  const list = [...paid], m = new Map();
+  for (let i = 0; i < list.length; i += 8) {
+    const res = await Promise.all(list.slice(i, i + 8).map((a) => firstFunding(a)));
+    res.forEach((f) => { if (f) m.set(f.from, (m.get(f.from) || 0) + 1); });
+  }
+  saveFunders();
+  return m;
 }
 async function annotateFunders(rows) {
   for (let i = 0; i < rows.length; i += 8) {
@@ -198,12 +234,13 @@ async function annotateFunders(rows) {
   const count = {};
   rows.forEach((r) => { if (r.fund) count[r.fund.from] = (count[r.fund.from] || 0) + 1; });
   rows.forEach((r) => { r.dup = r.fund ? count[r.fund.from] : 0; });
+  saveFunders();
   rows.sort((x, y) => (y.dup - x.dup) || String(x.fund?.from).localeCompare(String(y.fund?.from)));
   return rows;
 }
 
 async function buildWelcome() {
-  const [unlocked, hold, paid] = await Promise.all([unlockedAccounts(), holders(), paidWith(NOTE_WELCOME)]);
+  const [unlocked, hold, paid] = await Promise.all([unlockedAccounts(), holders(), paidWelcome()]);
   const left = Math.max(0, WELCOME_CAP - paid.size);
   const FOUNDER = await founderSet(unlocked);
   const cand = unlocked.filter((a) => !EXCLUDE.has(a) && !FOUNDER.has(a) && !SKIP.has(a) && !paid.has(a) && hold.has(a) && !hold.get(a).frozen);
@@ -215,8 +252,16 @@ async function buildWelcome() {
   const due = ok.slice(0, left).map((a, i) => ({ to: a, amount: tierAmount(paid.size + i) }));
   say("Checking who funded each account…");
   await annotateFunders(due);
+  // chains: the funder already got a drop itself, or already funded accounts welcomed in earlier rounds
+  say("Checking earlier rounds for repeat funders…");
+  const prior = await paidFunders(paid);
+  due.forEach((r) => { if (!r.fund) return; r.chain = paid.has(r.fund.from); r.prior = prior.get(r.fund.from) || 0; });
+  due.sort((x, y) => ((y.chain || y.prior > 0 || y.dup > 1) - (x.chain || x.prior > 0 || x.dup > 1)) || (y.dup - x.dup));
+  PAIDN = paid.size;
+  const flagged = due.filter((r) => r.chain || r.prior > 0).length;
   const groups = new Set(due.filter((r) => r.dup > 1).map((r) => r.fund.from));
   $("p-summary").textContent = `${unlocked.length} unlocked accounts on chain · ${paid.size} of ${WELCOME_CAP} welcomed · ${left} left · ${due.length} to pay now (${fq(due.reduce((s, d) => s + d.amount, 0n))} FALQBIT) · current tier ${fq(tierAmount(paid.size))} each` + (low ? ` · ${low} skipped automatically (under ${WELCOME_MIN_ALGO / 1e6} ALGO)` : "") + ".";
+  if (flagged) $("p-summary").innerHTML += `<br><b style="color:#F2A0A6">⚠ ${flagged} account${flagged > 1 ? "s were" : " was"} funded by a wallet that already got a drop, or that already funded welcomed accounts. Likely the same person: review before paying.</b>`;
   if (groups.size) $("p-summary").innerHTML += `<br><b style="color:#F2A0A6">⚠ ${due.filter((r) => r.dup > 1).length} accounts share a funding wallet with others (${groups.size} funder${groups.size > 1 ? "s" : ""}). One drop per person: review them before paying.</b>`;
   if (lowList.length) $("p-summary").innerHTML += "<br>Under " + (WELCOME_MIN_ALGO / 1e6) + " ALGO: " + lowList.map(([a, v]) => `<a href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)}</a> (${(v / 1e6).toFixed(3)} ALGO)`).join(", ");
   return due;
@@ -269,7 +314,8 @@ async function buildHold() {
     $("p-summary").textContent = `Month ${month} · payout day is the ${PAY_DAY}th. Come back then: balances are checked from the 1st up to that day.`;
     return [];
   }
-  const [hold, paid] = await Promise.all([holders(), paidWith(NOTE_HOLD)]);
+  const [hold, paid0] = await Promise.all([holders(), paidWith(NOTE_HOLD)]);
+  const paid = new Set(paid0); for (const k of Object.keys(localPaid())) if (k.startsWith(NOTE_HOLD + ":")) paid.add(k.slice(NOTE_HOLD.length + 1));
   let snap = loadSnap();
   if (!snap) {
     const FOUNDER = await founderSet([...hold.keys()]);
@@ -293,12 +339,13 @@ async function buildHold() {
 
 function render() {
   const ul = $("p-list"); ul.innerHTML = "";
+  if (mode === "welcome") queue.forEach((r, i) => { r.amount = tierAmount(PAIDN + i); });
   if (!queue.length) { ul.innerHTML = `<li class="empty">Nobody to pay right now.</li>`; }
   for (const r of queue.slice(0, 500)) {
     const li = document.createElement("li");
     const f = r.fund;
-    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
-    if (r.dup > 1) li.className = "dup";
+    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}${r.chain ? `<span class="flag">funder got a drop</span>` : ""}${r.prior ? `<span class="flag">funder used before ×${r.prior}</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
+    if (r.dup > 1 || r.chain || r.prior) li.className = "dup";
     li.innerHTML = `<span class="who"><a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a>${fundLine}</span><span class="right"><span class="amt">${fq(r.amount)}</span>${r.dup > 1 ? `<button type="button" class="skipall">Skip all ${r.dup}</button>` : ""}<button type="button" class="skip">Skip</button></span>`;
     li.querySelector(".skip").addEventListener("click", () => {
       SKIP.add(r.to); saveSkip();
@@ -359,10 +406,21 @@ function setMode(m) {
 
 // ---- paying --------------------------------------------------------------
 async function payBatch() {
+  // never the same account twice in one batch
+  const seen = new Set(); queue = queue.filter((r) => !seen.has(r.to) && seen.add(r.to));
   const batch = queue.slice(0, BATCH);
   if (!batch.length) return;
   try {
     $("b-pay").disabled = true;
+    // last check against the chain right before signing: drop anyone already paid
+    say("Final check: making sure nobody in this batch was paid before…");
+    const fresh = mode === "welcome" ? await paidWelcome() : await paidWith(NOTE_HOLD).then((s) => { for (const k of Object.keys(localPaid())) if (k.startsWith(NOTE_HOLD + ":")) s.add(k.slice(NOTE_HOLD.length + 1)); return s; });
+    const already = batch.filter((r) => fresh.has(r.to));
+    if (already.length) {
+      queue = queue.filter((r) => !fresh.has(r.to));
+      say(`${already.length} account${already.length > 1 ? "s were" : " was"} already paid and removed: ${already.map((r) => short(r.to)).join(", ")}. Check the list and sign again.`, "err");
+      render(); return;
+    }
     say(`Approve ${batch.length} transfers in Pera…`);
     const sp = await c.params(FEE);
     const note = new TextEncoder().encode(mode === "welcome" ? NOTE_WELCOME : NOTE_HOLD);
@@ -370,6 +428,7 @@ async function payBatch() {
       sender: account, receiver: r.to, amount: r.amount, assetIndex: cfg.asset_id, note, suggestedParams: sp,
     }));
     const { id } = await c.signAndSend(txns);
+    markPaid(batch.map((r) => r.to), mode === "welcome" ? "welcome" : NOTE_HOLD);
     log(`Paid ${batch.length} accounts · <a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">view on Lora</a>`);
     queue = queue.slice(batch.length);
     say(queue.length ? "Batch done. Sign the next one when ready." : "All paid.", "ok");
