@@ -90,8 +90,11 @@ import { algosdk, NETWORKS, client, loadConfig, pickNetwork, short } from "./fal
 
 // ---- rules -------------------------------------------------------------
 const DEC = 1_000_000n;                    // 6 decimals
-const WELCOME = 1_000_000n * DEC;          // 1,000,000 FALQBIT per new account
-const WELCOME_CAP = 200;                   // first 200 accounts
+const WELCOME = 1_000_000n * DEC;          // 1,000,000 FALQBIT for accounts 1-200
+const WELCOME_CAP = 1000;                  // first 1,000 accounts, in tiers
+// Tiers by welcome number (0-based): 1-200 get 1M, 201-600 500k, 601-800 250k, 801-1000 100k.
+const TIERS = [[200, 1_000_000n], [600, 500_000n], [800, 250_000n], [1000, 100_000n]];
+const tierAmount = (n) => { for (const [upTo, v] of TIERS) if (n < upTo) return v * DEC; return 0n; };
 const WELCOME_MIN_ALGO = 2_000_000;        // the account must hold at least 2 ALGO on payout day
 // Hold-to-earn rules. November 2026 keeps the launch announcement (1%, 62.5M pool);
 // from December 2026: 0.5% of the lowest balance since the 1st, max 500k per wallet, 15M pool, paid on the 25th.
@@ -209,11 +212,11 @@ async function buildWelcome() {
   const ok = cand.filter((a, i) => algo[i] >= WELCOME_MIN_ALGO);
   const low = cand.length - ok.length;
   const lowList = cand.map((a, i) => [a, algo[i]]).filter(([, v]) => v < WELCOME_MIN_ALGO);
-  const due = ok.slice(0, left).map((a) => ({ to: a, amount: WELCOME }));
+  const due = ok.slice(0, left).map((a, i) => ({ to: a, amount: tierAmount(paid.size + i) }));
   say("Checking who funded each account…");
   await annotateFunders(due);
   const groups = new Set(due.filter((r) => r.dup > 1).map((r) => r.fund.from));
-  $("p-summary").textContent = `${unlocked.length} unlocked accounts on chain · ${paid.size} of ${WELCOME_CAP} welcomed · ${left} left · ${due.length} to pay now (${fq(WELCOME * BigInt(due.length))} FALQBIT)` + (low ? ` · ${low} skipped automatically (under ${WELCOME_MIN_ALGO / 1e6} ALGO)` : "") + ".";
+  $("p-summary").textContent = `${unlocked.length} unlocked accounts on chain · ${paid.size} of ${WELCOME_CAP} welcomed · ${left} left · ${due.length} to pay now (${fq(due.reduce((s, d) => s + d.amount, 0n))} FALQBIT) · current tier ${fq(tierAmount(paid.size))} each` + (low ? ` · ${low} skipped automatically (under ${WELCOME_MIN_ALGO / 1e6} ALGO)` : "") + ".";
   if (groups.size) $("p-summary").innerHTML += `<br><b style="color:#F2A0A6">⚠ ${due.filter((r) => r.dup > 1).length} accounts share a funding wallet with others (${groups.size} funder${groups.size > 1 ? "s" : ""}). One drop per person: review them before paying.</b>`;
   if (lowList.length) $("p-summary").innerHTML += "<br>Under " + (WELCOME_MIN_ALGO / 1e6) + " ALGO: " + lowList.map(([a, v]) => `<a href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)}</a> (${(v / 1e6).toFixed(3)} ALGO)`).join(", ");
   return due;
@@ -344,7 +347,7 @@ function setMode(m) {
   $("p-summary").textContent = 'Press "Check the chain" to build the list.';
   if (m === "welcome") {
     $("p-title").textContent = "Welcome drop";
-    $("p-rules").innerHTML = `<li>${fq(WELCOME)} FALQBIT to every quantum account the gate has unlocked.</li><li>Only the first ${WELCOME_CAP.toLocaleString()} accounts. Each account once, ever. The account must hold at least ${WELCOME_MIN_ALGO / 1e6} ALGO; others are skipped automatically and can get it in a later round.</li><li>Project accounts and the pool are left out. Transfers carry the note "${NOTE_WELCOME}".</li>`;
+    $("p-rules").innerHTML = `<li>A drop for every quantum account the gate has unlocked, in tiers: accounts 1–200 get 1,000,000 FALQBIT, 201–600 get 500,000, 601–800 get 250,000, 801–1,000 get 100,000.</li><li>Only the first ${WELCOME_CAP.toLocaleString()} accounts. Each account once, ever. The account must hold at least ${WELCOME_MIN_ALGO / 1e6} ALGO; others are skipped automatically and can get it in a later round.</li><li>Project accounts and the pool are left out. Transfers carry the note "${NOTE_WELCOME}".</li>`;
   } else {
     $("p-title").textContent = "Hold-to-earn";
     const R = holdRules(month);
