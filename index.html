@@ -661,14 +661,13 @@ body { background-image: none; }
 @keyframes dRotate { to { --ang: 360deg; } }
 @keyframes dkBlink { 50% { opacity: .3; } }
 
-/* big numbers on the dashboard — holographic, with soft glow */
-.fx2 .cnums b, .fx2 .res-total b, .fx2 .donut-c b { background: linear-gradient(100deg, #E8ECF6 30%, #A9FFF6 45%, #C9C2FF 55%, #E8ECF6 70%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 10px rgba(63,224,208,.3)); animation: holo 7s ease-in-out infinite; }
-.fx2 .res-total b, .fx2 .donut-c b { filter: drop-shadow(0 0 14px rgba(63,224,208,.45)); }
-@keyframes holo { 0%, 100% { background-position: 0% 0; } 50% { background-position: 100% 0; } }
+/* big numbers on the dashboard — one consistent soft-cyan tint with a gentle glow, no colour-shifting animation */
+.fx2 .cnums b, .fx2 .res-total b, .fx2 .donut-c b, .fx2 .cbar-row > b { color: #E8ECF6; text-shadow: 0 0 10px rgba(63,224,208,.35); background: none; -webkit-background-clip: border-box; background-clip: border-box; filter: none; animation: none; }
+.fx2 .res-total b, .fx2 .donut-c b { text-shadow: 0 0 14px rgba(63,224,208,.5); }
 
-/* circulating bar — gradient fill with a shimmer sweep */
+/* circulating bar — single cyan→violet gradient (no amber so it doesn't fight the rest of the panel) */
 .fx2 .cbar { height: 14px; background: linear-gradient(90deg, rgba(10,15,30,.9), rgba(24,34,62,.4)); border: 1px solid rgba(63,224,208,.2); box-shadow: inset 0 1px 2px rgba(0,0,0,.35); }
-.fx2 .cbar span { background: linear-gradient(90deg, #3FE0D0 0%, #8B7CFF 60%, #F5B942 100%); box-shadow: 0 0 10px rgba(63,224,208,.6), 0 0 20px rgba(156,144,255,.3); position: relative; overflow: hidden; }
+.fx2 .cbar span { background: linear-gradient(90deg, #3FE0D0 0%, #8B7CFF 100%); box-shadow: 0 0 10px rgba(63,224,208,.6), 0 0 20px rgba(156,144,255,.3); position: relative; overflow: hidden; }
 .fx2 .cbar span::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent); transform: translateX(-100%); animation: barSheen 3.5s linear infinite; }
 @keyframes barSheen { 0%, 70% { transform: translateX(-100%); } 85% { transform: translateX(200%); } 100% { transform: translateX(200%); } }
 
@@ -1732,15 +1731,16 @@ body { background-image: none; }
         </div>
       </div>
       <div class="dpanel d-res">
-        <h3 class="dk">Reserved supply</h3>
+        <h3 class="dk">Supply breakdown</h3>
         <div class="res">
-          <div class="donut-wrap"><svg id="d-donut" viewBox="0 0 200 200" role="img" aria-label="Reserved supply by account"></svg><div class="donut-c"><b id="d-res-pct">…</b><span>of supply</span></div></div>
+          <div class="donut-wrap"><svg id="d-donut" viewBox="0 0 200 200" role="img" aria-label="Supply breakdown by category"></svg><div class="donut-c"><b id="d-res-pct">…</b><span>reserved</span></div></div>
           <div class="res-side">
-            <div class="res-total"><span>Total reserved</span><b id="d-res-amt">…</b></div>
+            <div class="res-total"><span>Total supply</span><b>10B FALQBIT</b></div>
             <ul class="res-list" id="d-res-list">
               <li data-addr="CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA"><i style="background:#1F9E94"></i><span class="nm">Liquidity pool<a href="https://lora.algokit.io/mainnet/account/CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA" target="_blank" rel="noopener">CEQH5W…M7VCIA</a></span><b class="bal" data-addr="CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA">…</b></li>
               <li data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q"><i style="background:#7A6EE6"></i><span class="nm">Rewards<a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">V4J46S…CPTC2Q</a></span><b class="bal" data-addr="V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q">…</b></li>
               <li data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU"><i style="background:#C98500"></i><span class="nm">Project reserve<a href="https://lora.algokit.io/mainnet/account/OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU" target="_blank" rel="noopener">OCAF6E…Y73YIU</a></span><b class="bal" data-addr="OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU">…</b></li>
+              <li data-addr="__community__"><i style="background:#3FE0D0"></i><span class="nm">Community<a>in <span id="d-comm-n">…</span> wallets</a></span><b class="bal" id="d-comm-bal">…</b></li>
             </ul>
           </div>
         </div>
@@ -2007,10 +2007,19 @@ document.documentElement.classList.add("js");
     });
   }
   function loadHeld() {
+    // the Team wallet is folded into the Project reserve line so the three listed balances sum to Total Reserved
+    var TEAM = "XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q", PROJ = "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU";
     document.querySelectorAll(".res-list .bal[data-addr]").forEach(function (el) {
-      get("/v2/accounts/" + el.dataset.addr + "/assets/" + ASSET).then(function (j) {
-        el.textContent = fmt(j["asset-holding"].amount / 1e6, 0);
-      }).catch(function () { el.textContent = "–"; });
+      var addr = el.dataset.addr;
+      if (addr === PROJ) {
+        Promise.all([get("/v2/accounts/" + PROJ + "/assets/" + ASSET), get("/v2/accounts/" + TEAM + "/assets/" + ASSET).catch(function () { return { "asset-holding": { amount: 0 } }; })])
+          .then(function (xs) { el.textContent = fmt((xs[0]["asset-holding"].amount + xs[1]["asset-holding"].amount) / 1e6, 0); })
+          .catch(function () { el.textContent = "–"; });
+      } else {
+        get("/v2/accounts/" + addr + "/assets/" + ASSET).then(function (j) {
+          el.textContent = fmt(j["asset-holding"].amount / 1e6, 0);
+        }).catch(function () { el.textContent = "–"; });
+      }
     });
   }
   var IDX = "https://mainnet-idx.algonode.cloud";
@@ -2022,28 +2031,31 @@ document.documentElement.classList.add("js");
       .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
       .then(function (j) { acc = acc.concat(j.balances || []); return j["next-token"] && (j.balances || []).length ? allBalances(j["next-token"], acc) : acc; });
   }
-  var RES = [["CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", "Liquidity pool", "#1F9E94"], ["V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", "Rewards", "#7A6EE6"], ["OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU", "Project reserve", "#C98500"]];
+  var RES = [["CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", "Liquidity pool", "#1F9E94"], ["V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", "Rewards", "#7A6EE6"], ["OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU", "Project reserve", "#C98500"], ["__community__", "Community", "#3FE0D0"]];
   function arc(cx, cy, r0, r1, a0, a1) {
     var big = a1 - a0 > Math.PI ? 1 : 0, c0 = Math.cos(a0), s0 = Math.sin(a0), c1 = Math.cos(a1), s1 = Math.sin(a1);
     return "M" + (cx + r1 * c0) + " " + (cy + r1 * s0) + "A" + r1 + " " + r1 + " 0 " + big + " 1 " + (cx + r1 * c1) + " " + (cy + r1 * s1) +
       "L" + (cx + r0 * c1) + " " + (cy + r0 * s1) + "A" + r0 + " " + r0 + " 0 " + big + " 0 " + (cx + r0 * c0) + " " + (cy + r0 * s0) + "Z";
   }
-  function drawDonut(proj, psum) {
+  function drawDonut(proj, psum, commSum, commN) {
     var by = {}; proj.forEach(function (b) { by[b.address] = b.amount / 1e6; });
-    // the Team wallet is folded into the Project reserve slice so the donut has three clean categories and still sums to psum
+    // the Team wallet is folded into the Project reserve slice so the breakdown shows four clean categories and sums to the full supply
     var TEAM = "XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q", PROJ = "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU";
     if (by[TEAM]) { by[PROJ] = (by[PROJ] || 0) + by[TEAM]; delete by[TEAM]; }
+    by["__community__"] = commSum || 0;
+    var total = SUPPLY;
     var svg = $("d-donut"); if (!svg) return;
     var a = -Math.PI / 2, html = "", gap = 0.012;
     RES.forEach(function (r, i) {
       var v = by[r[0]] || 0; if (!v) return;
-      var sweep = v / psum * Math.PI * 2, a0 = a + gap, a1 = a + sweep - gap;
+      var sweep = v / total * Math.PI * 2, a0 = a + gap, a1 = a + sweep - gap;
       html += "<path data-i=\"" + i + "\" d=\"" + arc(100, 100, 62, 96, a0, Math.max(a0 + 0.001, a1)) + "\" fill=\"" + r[2] + "\"><title>" + r[1] + ": " + fmt(v, 0) + " FALQBIT (" + fmt(v / SUPPLY * 100, 1) + "% of supply)</title></path>";
       a += sweep;
     });
     svg.innerHTML = html;
     $("d-res-pct").textContent = fmt(psum / SUPPLY * 100, 1) + "%";
-    $("d-res-amt").textContent = psum >= 1e9 ? fmt(psum / 1e9, 2) + "B" : fmt(psum / 1e6, 0) + "M";
+    var cb = $("d-comm-bal"); if (cb) cb.textContent = fmt(commSum || 0, 0);
+    var cn = $("d-comm-n"); if (cn) cn.textContent = fmt(commN || 0, 0);
     var items = document.querySelectorAll("#d-res-list li");
     function hl(i) { svg.classList.toggle("hl", i !== null); svg.querySelectorAll("path").forEach(function (p) { p.classList.toggle("on", +p.dataset.i === i); }); items.forEach(function (li, k) { li.classList.toggle("on", k === i); }); }
     svg.querySelectorAll("path").forEach(function (p) { p.addEventListener("mouseenter", function () { hl(+p.dataset.i); }); p.addEventListener("mouseleave", function () { hl(null); }); });
@@ -2264,7 +2276,7 @@ document.documentElement.classList.add("js");
       $("d-circ-pct").textContent = fmt(pc, 2) + "%";
       $("d-circ-amt").textContent = fmt(total, 0);
       $("d-circ-bar").style.width = Math.min(100, pc).toFixed(2) + "%";
-      drawDonut(proj, psum);
+      drawDonut(proj, psum, total, comm.length);
       drawDist(rows);
       TOP.comm = allHolders; TOP.scale = undefined; drawTop(); loadAlgo();
       countUp("st-circ", total, function (v) { return v >= 1e9 ? fmt(v / 1e9, 2) + "B" : fmt(v / 1e6, 0) + "M"; });
