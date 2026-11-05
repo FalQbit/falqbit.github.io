@@ -1498,7 +1498,7 @@ body { background-image: none; }
     <div class="stat"><span class="k">Price</span><span class="v loading" id="st-price">&nbsp;</span><span class="s">ALGO per 1M FALQBIT</span></div>
     <div class="stat"><span class="k">Pool liquidity</span><span class="v loading" id="st-pool">&nbsp;</span><span class="s" id="st-pool-s">ALGO in the Tinyman pool</span></div>
     <div class="stat"><span class="k">Circulating</span><span class="v loading" id="st-circ">&nbsp;</span><span class="meter" aria-hidden="true"><span id="st-circ-bar"></span></span><span class="s" id="st-circ-s">FALQBIT held by the community</span></div>
-    <div class="stat"><span class="k">Holders</span><span class="v loading" id="st-holders">&nbsp;</span><span class="s">community wallets holding FALQBIT</span></div>
+    <div class="stat"><span class="k">Holders</span><span class="v loading" id="st-holders">&nbsp;</span><span class="s">wallets holding FALQBIT</span></div>
     <p class="stats-note"><i aria-hidden="true"></i><span id="st-note">Reading Algorand MainNet…</span></p>
   </section>
 
@@ -2224,7 +2224,7 @@ document.documentElement.classList.add("js");
       if (fn) html += "<tr class=\"proj\"><td>Founder wallets</td><td>" + fn + "</td><td>" + fmt(fsum, 0) + "</td><td>" + fmt(fsum / SUPPLY * 100, 2) + "%</td></tr>";
       var fr = $("d-founder"); if (fr) { fr.hidden = !fn; $("d-founder-amt").textContent = fmt(fsum, 0); }
       $("h-rows").innerHTML = html;
-      $("h-count").textContent = fmt(comm.length, 0);
+      $("h-count").textContent = fmt(allHolders.length, 0);
       $("h-earn").textContent = fmt(comm.filter(function (b) { return b.amount >= 1e12; }).length, 0);
       var pc = total / SUPPLY * 100;
       $("d-circ-pct").textContent = fmt(pc, 2) + "%";
@@ -2236,7 +2236,7 @@ document.documentElement.classList.add("js");
       countUp("st-circ", total, function (v) { return v >= 1e9 ? fmt(v / 1e9, 2) + "B" : fmt(v / 1e6, 0) + "M"; });
       var bar = $("st-circ-bar"); if (bar) bar.style.width = Math.min(100, total / SUPPLY * 100).toFixed(1) + "%";
       $("st-circ-s").textContent = fmt(total / SUPPLY * 100, 1) + "% of supply, held by the community";
-      countUp("st-holders", comm.length, function (v) { return fmt(Math.round(v), 0); });
+      countUp("st-holders", allHolders.length, function (v) { return fmt(Math.round(v), 0); });
     }).catch(function () { ["st-circ", "st-holders"].forEach(failStat); $("d-dist-plot").innerHTML = "<p class=\"muted\">Could not read the chain right now.</p>"; $("h-rows").innerHTML = "<tr><td colspan=\"4\" class=\"muted\">Could not read the chain right now. Try again in a minute.</td></tr>"; });
   }
   // ---- activity: last 14 days of FALQBIT actions ----
