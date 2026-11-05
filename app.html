@@ -152,9 +152,68 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
 .links a { color: var(--muted); }
 .seg.pair { margin-top: -4px; }
 @media (prefers-reduced-motion: reduce) { .live div::after, .bar i { animation: none; } }
+
+/* ---- app v5: dashboard + swap ---- */
+.dash { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.dc { position: relative; overflow: hidden; padding: 14px; border-radius: 18px; display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  background: linear-gradient(180deg, rgba(18,27,52,.85), rgba(11,17,34,.9)); border: 1px solid rgba(63,224,208,.16); }
+.dc.wide { grid-column: span 2; }
+.dc::before { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: conic-gradient(from var(--ang, 0deg), transparent 0 70%, rgba(63,224,208,.9) 82%, rgba(156,144,255,.8) 90%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: spinA 7s linear infinite; }
+.dc:nth-child(2)::before { animation-delay: -1.4s; } .dc:nth-child(3)::before { animation-delay: -2.8s; } .dc:nth-child(4)::before { animation-delay: -4.2s; } .dc:nth-child(5)::before { animation-delay: -5.6s; }
+@property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes spinA { to { --ang: 360deg; } }
+.dc span { font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cyan); }
+.dc b { font: 800 26px/1.1 var(--display); color: var(--fg); text-shadow: 0 0 22px rgba(63,224,208,.3); }
+.dc.wide b { font-size: 32px; }
+.dc small { font: 500 11.5px/1.3 var(--mono); color: var(--muted); }
+.drop-bar { gap: 8px; padding: 12px 14px; }
+.segs { display: flex; gap: 4px; height: 10px; }
+.segs div { position: relative; border-radius: 6px; background: rgba(255,255,255,.06); overflow: hidden; }
+.segs i { position: absolute; inset: 0 auto 0 0; border-radius: 6px; background: linear-gradient(90deg, #1F9E94, #3FE0D0, #A9FFF6, #3FE0D0); background-size: 200% 100%; animation: barFlow2 2.6s linear infinite; box-shadow: 0 0 10px rgba(63,224,208,.6); }
+.paywith { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.paywith > span { font: 500 11px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.paywith .seg { width: 170px; }
+.leg { padding: 14px 16px; border-radius: 18px; background: rgba(255,255,255,.035); border: 1px solid rgba(255,255,255,.08); display: flex; flex-direction: column; gap: 8px; }
+.leg.out { background: rgba(63,224,208,.05); border-color: rgba(63,224,208,.22); }
+.leg-h { display: flex; justify-content: space-between; font: 500 12px/1 var(--mono); color: var(--muted); }
+.leg-r { display: flex; align-items: center; gap: 10px; }
+.leg-r input { flex: 1; min-width: 0; background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; font: 700 30px/1.2 var(--display) !important; color: var(--fg); }
+.leg-r b { flex: 1; min-width: 0; font: 700 30px/1.2 var(--display); color: var(--fg); overflow: hidden; text-overflow: ellipsis; }
+.leg-r b.dim { color: var(--muted); }
+.tok { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px 7px 7px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); font: 600 14px/1 var(--mono); white-space: nowrap; }
+.tok i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font: 700 12px/1 var(--mono); }
+.tok i.fq { background: url(./icon.png) center/cover; box-shadow: 0 0 10px rgba(63,224,208,.6); }
+.tok i.al { background: #E8ECF6; color: #0A0F1E; } .tok i.us { background: #3B7DD8; color: #fff; }
+.flip { align-self: center; margin: -18px 0; z-index: 2; width: 44px; height: 44px; border-radius: 14px; border: 1px solid rgba(63,224,208,.5); background: #0E1630; color: var(--cyan); font-size: 20px; cursor: pointer; box-shadow: 0 0 18px -4px rgba(63,224,208,.8); transition: transform .35s ease; }
+.flip.spin { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .dc::before, .segs i { animation: none; } }
+.leg-r input::-webkit-outer-spin-button, .leg-r input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.leg-r input { -moz-appearance: textfield; }
+
+/* ---- PIN lock ---- */
+.lock { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: radial-gradient(80% 60% at 50% 0%, rgba(63,224,208,.18), transparent 70%), rgba(7,11,22,.97); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.lock-in { width: min(100%, 320px); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+.lock-in img { border-radius: 50%; box-shadow: 0 0 0 2px rgba(63,224,208,.5), 0 0 40px rgba(63,224,208,.5); }
+.lock-in h2 { margin: 6px 0 0; font: 800 26px/1.1 var(--display); }
+.lock-in p { margin: 0; min-height: 20px; }
+.dots { display: flex; gap: 16px; margin: 10px 0 8px; }
+.dots i { width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(63,224,208,.6); transition: background .15s, box-shadow .15s; }
+.dots i.on { background: var(--cyan); box-shadow: 0 0 12px var(--cyan); }
+.dots.shake { animation: shake .4s; }
+@keyframes shake { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
+.pad button { height: 64px; border-radius: 20px; border: 1px solid rgba(63,224,208,.18); background: rgba(255,255,255,.04); color: var(--fg); font: 600 26px/1 var(--display); cursor: pointer; }
+.pad button:active { background: rgba(63,224,208,.18); }
+.pad button.sm { font: 600 14px/1 var(--body); color: var(--muted); }
+.forgot { background: none; border: 0; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer; margin-top: 6px; }
+button.sm { min-height: 34px !important; padding: 0 14px !important; font-size: 13px !important; }
+html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden; }
 </style>
 </head>
 <body>
+<script>try { if (localStorage.getItem("fq-pin-v1")) document.documentElement.classList.add("locked"); } catch (e) {}</script>
 <canvas id="lattice" aria-hidden="true"></canvas>
 <div class="glow1"></div><div class="glow2"></div>
 <script>
@@ -184,10 +243,13 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
   <section id="v-wallet" data-view>
     <div style="display:flex;flex-direction:column;gap:16px">
       <h1>Your <em>quantum</em> wallet.</h1>
-      <div class="live" id="w-live">
-        <div><span>Price · 1M</span><b id="l-price">…</b><small id="l-usd"></small></div>
-        <div><span>Pool</span><b id="l-pool">…</b><small>ALGO</small></div>
-        <div><span>Welcome drop</span><b id="l-drop">…</b><small id="l-tier"></small></div>
+      <div class="dash" id="w-dash">
+        <div class="dc wide"><span>Price · 1M FALQBIT</span><b id="l-price">…</b><small id="l-usd"></small></div>
+        <div class="dc"><span>Pool liquidity</span><b id="l-pool">…</b><small>ALGO on Tinyman</small></div>
+        <div class="dc"><span>Holders</span><b id="l-holders">…</b><small>community wallets</small></div>
+        <div class="dc"><span>Circulating</span><b id="l-circ">…</b><small id="l-circ-s">held by the community</small></div>
+        <div class="dc"><span>Welcome drop</span><b id="l-drop">…</b><small id="l-tier"></small></div>
+        <div class="dc wide drop-bar"><div class="segs" id="l-segs"></div><small id="l-segs-t"></small></div>
       </div>
       <div class="card" id="w-empty">
         <p class="muted" style="margin:0">Connect a Pera Quantum Account to see your FALQBIT, trade, and pay with QR codes.</p>
@@ -222,6 +284,11 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
         <a href="https://x.com/FalQbit" target="_blank" rel="noopener">X</a>
         <a href="./" target="_blank" rel="noopener">falqbit.com</a>
       </div>
+      <div class="card" id="w-sec">
+        <span class="k">Security</span>
+        <div class="row"><span class="muted">PIN lock</span><button type="button" class="ghost sm" id="sec-pin">Turn on</button></div>
+        <p class="fine" style="margin:0">Asks for a 4-digit PIN when you open the app, so nobody else sees your balances. Payments always need your approval in Pera anyway.</p>
+      </div>
       <div class="card install" id="w-install">
         <span class="k">Install</span>
         <p class="muted" style="margin:0" id="w-install-text">Add FALQBIT to your home screen: in your browser menu, tap "Add to Home Screen".</p>
@@ -235,16 +302,22 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
     <div style="display:flex;flex-direction:column;gap:16px">
       <h1>Buy or sell <em>FALQBIT</em>.</h1>
       <div class="card">
-        <div class="seg" role="group" aria-label="Direction">
-          <button type="button" id="t-buy" aria-pressed="true">Buy</button>
-          <button type="button" id="t-sell" aria-pressed="false">Sell</button>
+        <div class="paywith"><span>Pay with</span>
+          <div class="seg pair" role="group" aria-label="Pair currency">
+            <button type="button" id="t-algo" aria-pressed="true">ALGO</button>
+            <button type="button" id="t-usdc" aria-pressed="false">USDC</button>
+          </div>
         </div>
-        <div class="seg pair" role="group" aria-label="Pay with">
-          <button type="button" id="t-algo" aria-pressed="true">ALGO</button>
-          <button type="button" id="t-usdc" aria-pressed="false">USDC</button>
+        <div class="leg">
+          <div class="leg-h"><span id="t-in-label">You pay</span><span class="lb" id="t-bal-in"></span></div>
+          <div class="leg-r"><input type="number" id="t-amount" inputmode="decimal" min="0" step="any" placeholder="0"><span class="tok" id="t-tok-in"></span></div>
         </div>
-        <span class="fine" id="t-bal"></span>
-        <label class="f"><span id="t-in-label">You pay (ALGO)</span><input type="number" id="t-amount" inputmode="decimal" min="0" step="any" placeholder="0"></label>
+        <button type="button" class="flip" id="t-flip" aria-label="Switch buy and sell">⇅</button>
+        <div class="leg out">
+          <div class="leg-h"><span>You get</span><span class="lb" id="t-bal-out"></span></div>
+          <div class="leg-r"><b id="t-out">0</b><span class="tok" id="t-tok-out"></span></div>
+        </div>
+        <button type="button" id="t-buy" hidden></button><button type="button" id="t-sell" hidden></button><span id="t-bal" hidden></span>
         <div class="quote" id="t-quote"><span>Enter an amount to see the quote.</span></div>
         <button class="primary" id="t-go" type="button" disabled>Sign in Pera</button>
         <p class="fine" style="margin:0">Swaps run on Tinyman v2 pools: FALQBIT/ALGO, and USDC/ALGO for USDC (both steps in one approval). Max 1% price slippage per step. Your account must be unlocked to receive FALQBIT.</p>
@@ -284,6 +357,21 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
   <div id="msg" class="msg" hidden></div>
 </main>
 
+<div class="lock" id="lock" hidden>
+  <div class="lock-in">
+    <img src="./icon.png" alt="" width="72" height="72">
+    <h2 id="lock-title">Enter your PIN</h2>
+    <p class="muted" id="lock-sub">FALQBIT is locked.</p>
+    <div class="dots" id="lock-dots"><i></i><i></i><i></i><i></i></div>
+    <div class="pad" id="lock-pad">
+      <button type="button">1</button><button type="button">2</button><button type="button">3</button>
+      <button type="button">4</button><button type="button">5</button><button type="button">6</button>
+      <button type="button">7</button><button type="button">8</button><button type="button">9</button>
+      <button type="button" data-k="cancel" class="sm">Cancel</button><button type="button">0</button><button type="button" data-k="del" class="sm">⌫</button>
+    </div>
+    <button type="button" class="forgot" id="lock-forgot">Forgot PIN?</button>
+  </div>
+</div>
 <nav class="tabs" role="tablist" aria-label="App sections">
   <button role="tab" type="button" id="tab-wallet" aria-selected="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.3"/></svg>Wallet</button>
   <button role="tab" type="button" id="tab-trade" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3.5-3.5"/><path d="M20 16H6l3.5 3.5"/></svg>Trade</button>
@@ -340,6 +428,18 @@ async function loadReserves() {
 const usdPerAlgo = () => U ? Number(U.usdc) / Number(U.algo) : 0;
 const usd = (n) => n >= 100 ? "$" + fmt(n, 0) : n >= 1 ? "$" + fmt(n, 2) : "$" + Number(n.toPrecision(2));
 // welcome drop progress: accounts paid by the Rewards account (or early drops from the Project account)
+let STATS = null;
+async function loadStats() {
+  const skip = new Set([cfg.pool, cfg.rewards, cfg.project, cfg.team, cfg.app_address].filter(Boolean));
+  let all = [], next = "";
+  for (let i = 0; i < 20; i++) {
+    const j = await c.getJSON(`${c.n.indexer}/v2/assets/${cfg.asset_id}/balances?limit=1000&currency-greater-than=0${next ? "&next=" + encodeURIComponent(next) : ""}`);
+    all = all.concat(j?.balances || []); if (!j?.["next-token"] || !(j?.balances || []).length) break; next = j["next-token"];
+  }
+  const comm = all.filter((b) => !skip.has(b.address) && !b.deleted && b.amount > 0);
+  STATS = { holders: comm.length, circ: comm.reduce((t, b) => t + b.amount / DEC, 0) };
+  renderLive();
+}
 async function loadProgram() {
   const all = async (addr) => { let out = [], next = ""; for (let i = 0; i < 20; i++) { const j = await c.getJSON(`${c.n.indexer}/v2/accounts/${addr}/transactions?tx-type=axfer&asset-id=${cfg.asset_id}&limit=1000${next ? "&next=" + encodeURIComponent(next) : ""}`); out = out.concat(j?.transactions || []); if (!j?.["next-token"] || !(j?.transactions || []).length) break; next = j["next-token"]; } return out; };
   const note = (t) => { try { return t.note ? atob(t.note) : ""; } catch { return ""; } };
@@ -355,11 +455,18 @@ async function loadProgram() {
 function renderLive() {
   if (reserves) {
     const px = priceAlgoPerFq() * 1e6;
-    $("l-price").textContent = fmt(px, 2);
-    $("l-usd").textContent = "ALGO" + (U ? ` · ${usd(px * usdPerAlgo())}` : "");
+    $("l-price").textContent = `${fmt(px, 3)} ALGO`;
+    $("l-usd").textContent = U ? `≈ ${usd(px * usdPerAlgo())} · live from Tinyman` : "live from Tinyman";
     $("l-pool").textContent = fmt(Number(reserves.algo) / DEC, 0);
   }
-  if (PROG) { $("l-drop").textContent = fmt(PROG.n); const t = tierFor(PROG.n); $("l-tier").textContent = t ? `of 1,000 · ${t >= 1e6 ? fmt(t / 1e6) + "M" : fmt(t / 1e3) + "k"}` : "complete"; }
+  if (PROG) {
+    $("l-drop").textContent = fmt(PROG.n); const t = tierFor(PROG.n);
+    $("l-tier").textContent = t ? `of 1,000 paid` : "complete";
+    let lo = 0, h = "";
+    for (const [u] of TIERS) { const size = u - lo, done = Math.max(0, Math.min(size, PROG.n - lo)); h += `<div style="flex:${size}"><i style="width:${done / size * 100}%"></i></div>`; lo = u; }
+    $("l-segs").innerHTML = h; $("l-segs-t").textContent = t ? `Next account gets ${fmt(t)} FALQBIT · ${fmt(Math.max(0, 1000 - PROG.n))} spots left` : "Welcome drop complete";
+  }
+  if (STATS) { $("l-holders").textContent = fmt(STATS.holders); $("l-circ").textContent = STATS.circ >= 1e9 ? fmt(STATS.circ / 1e9, 2) + "B" : fmt(STATS.circ / 1e6) + "M"; $("l-circ-s").textContent = `${fmt(STATS.circ / 1e8, 1)}% of supply`; }
 }
 let MYDROP = null;
 function renderDrop() {
@@ -462,13 +569,18 @@ function setDir(d) {
   $("t-sell").setAttribute("aria-pressed", String(d === "sell"));
   $("t-algo").setAttribute("aria-pressed", String(cur === "algo"));
   $("t-usdc").setAttribute("aria-pressed", String(cur === "usdc"));
-  $("t-in-label").textContent = d === "buy" ? `You pay (${sym()})` : `You sell (FALQBIT) for ${sym()}`;
+  const TOKS = { FALQBIT: `<i class="fq"></i>FALQBIT`, ALGO: `<i class="al">A</i>ALGO`, USDC: `<i class="us">$</i>USDC` };
+  $("t-tok-in").innerHTML = TOKS[d === "buy" ? sym() : "FALQBIT"];
+  $("t-tok-out").innerHTML = TOKS[d === "buy" ? "FALQBIT" : sym()];
+  $("t-in-label").textContent = d === "buy" ? "You pay" : "You sell";
+  $("t-go").textContent = d === "buy" ? `Buy FALQBIT with ${sym()}` : `Sell FALQBIT for ${sym()}`;
   quote();
 }
 $("t-buy").addEventListener("click", () => setDir("buy"));
 $("t-sell").addEventListener("click", () => setDir("sell"));
 $("t-algo").addEventListener("click", () => { cur = "algo"; setDir(dir); });
 $("t-usdc").addEventListener("click", () => { cur = "usdc"; setDir(dir); });
+$("t-flip").addEventListener("click", () => { $("t-flip").classList.toggle("spin"); $("t-amount").value = ""; setDir(dir === "buy" ? "sell" : "buy"); });
 $("t-amount").addEventListener("input", quote);
 
 function swapOut(amountIn, rIn, rOut, feeBps) {
@@ -481,7 +593,10 @@ let lastQuote = null;
 function quote() {
   const v = Number($("t-amount").value);
   lastQuote = null; $("t-go").disabled = true;
-  $("t-bal").textContent = account ? `You have ${fmt(Number(fqBal) / DEC)} FALQBIT · ${fmt(Number(algoBal) / DEC, 3)} ALGO · ${fmt(Number(usdcBal) / DEC, 2)} USDC` : "";
+  const balOf = (x) => x === "FALQBIT" ? `${fmt(Number(fqBal) / DEC)}` : x === "USDC" ? fmt(Number(usdcBal) / DEC, 2) : fmt(Number(algoBal) / DEC, 3);
+  const inS = dir === "buy" ? sym() : "FALQBIT", outS = dir === "buy" ? "FALQBIT" : sym();
+  $("t-bal-in").textContent = account ? `Balance ${balOf(inS)}` : ""; $("t-bal-out").textContent = account ? `Balance ${balOf(outS)}` : "";
+  $("t-out").textContent = "0"; $("t-out").classList.add("dim");
   if (!reserves || !(v > 0) || (cur === "usdc" && !U)) { $("t-quote").innerHTML = "<span>Enter an amount to see the quote.</span>"; return; }
   const inBase = BigInt(Math.round(v * DEC));
   const buy = dir === "buy", usdc = cur === "usdc";
@@ -494,7 +609,8 @@ function quote() {
   after = buy ? Number(reserves.algo + (usdc ? mid : inBase)) / Number(reserves.fq - out) : Number(reserves.algo - (usdc ? mid : out)) / Number(reserves.fq + inBase);
   const impact = Math.abs(after / before - 1) * 100;
   const outSym = buy ? "FALQBIT" : sym(), d = buy ? 0 : (usdc ? 2 : 4);
-  $("t-quote").innerHTML = `<span>You get about <b>${fmt(Number(out) / DEC, d)} ${outSym}</b></span><span>Minimum after slippage: ${fmt(Number(min) / DEC, d)} ${outSym}</span><span>Route: ${buy ? sym() : "FALQBIT"} → ${usdc ? "ALGO → " : ""}${buy ? "FALQBIT" : sym()} · price impact ${impact < 0.01 ? "<0.01" : fmt(impact, 2)}%${impact > 10 ? " · large trade" : ""}</span>`;
+  $("t-out").textContent = fmt(Number(out) / DEC, d); $("t-out").classList.toggle("dim", out <= 0n);
+  $("t-quote").innerHTML = `<span>Minimum after slippage: ${fmt(Number(min) / DEC, d)} ${outSym}</span><span>Route: ${buy ? sym() : "FALQBIT"} → ${usdc ? "ALGO → " : ""}${buy ? "FALQBIT" : sym()} · price impact ${impact < 0.01 ? "<0.01" : fmt(impact, 2)}%${impact > 10 ? " · large trade" : ""}</span>`;
   lastQuote = { inBase, min, midMin, buy, usdc };
   let ok = !!account && out > 0n, warn = "";
   if (account) {
@@ -639,6 +755,65 @@ $("p-scan").addEventListener("click", async () => {
   tick();
 });
 
+
+// ---------- PIN lock (privacy only: keys never live in this app) ----------
+const PIN_KEY = "fq-pin-v1", LOCK_AFTER = 60 * 1000;
+const pinStore = () => { try { return JSON.parse(localStorage.getItem(PIN_KEY) || "null"); } catch { return null; } };
+const hashPin = async (pin, salt) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(salt + ":" + pin)))).map((b) => b.toString(16).padStart(2, "0")).join("");
+let pinMode = "unlock", pinBuf = "", pinFirst = "", hiddenAt = 0, fails = 0;
+function pinUI() {
+  $("lock-dots").querySelectorAll("i").forEach((d, i) => d.classList.toggle("on", i < pinBuf.length));
+  $("lock-forgot").hidden = pinMode !== "unlock";
+  $("lock-pad").querySelector('[data-k="cancel"]').style.visibility = pinMode === "unlock" ? "hidden" : "visible";
+}
+function openLock(mode) {
+  pinMode = mode; pinBuf = ""; pinFirst = "";
+  $("lock-title").textContent = mode === "unlock" ? "Enter your PIN" : mode === "set" ? "Choose a PIN" : "Enter your PIN to turn it off";
+  $("lock-sub").textContent = mode === "unlock" ? "FALQBIT is locked." : mode === "set" ? "4 digits. You'll need it to open the app." : "";
+  $("lock").hidden = false; pinUI();
+}
+function shake(msg) { const d = $("lock-dots"); d.classList.remove("shake"); void d.offsetWidth; d.classList.add("shake"); $("lock-sub").textContent = msg; pinBuf = ""; pinUI(); }
+async function pinDone() {
+  const st = pinStore();
+  if (pinMode === "set") {
+    if (!pinFirst) { pinFirst = pinBuf; pinBuf = ""; $("lock-title").textContent = "Repeat your PIN"; $("lock-sub").textContent = ""; return pinUI(); }
+    if (pinBuf !== pinFirst) { pinFirst = ""; $("lock-title").textContent = "Choose a PIN"; return shake("The PINs didn't match. Try again."); }
+    const salt = Array.from(crypto.getRandomValues(new Uint8Array(12))).map((b) => b.toString(16).padStart(2, "0")).join("");
+    try { localStorage.setItem(PIN_KEY, JSON.stringify({ salt, h: await hashPin(pinBuf, salt) })); } catch {}
+    $("lock").hidden = true; secUI(); return;
+  }
+  if (!st) { $("lock").hidden = true; return; }
+  if (await hashPin(pinBuf, st.salt) === st.h) {
+    fails = 0;
+    if (pinMode === "off") { try { localStorage.removeItem(PIN_KEY); } catch {} secUI(); }
+    $("lock").hidden = true; pinBuf = ""; document.documentElement.classList.remove("locked"); return;
+  }
+  fails++; shake(fails >= 5 ? "Wrong PIN. Use “Forgot PIN?” to reset." : "Wrong PIN.");
+}
+$("lock-pad").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.k === "del") { pinBuf = pinBuf.slice(0, -1); return pinUI(); }
+  if (b.dataset.k === "cancel") { $("lock").hidden = true; return; }
+  if (pinBuf.length >= 4) return;
+  pinBuf += b.textContent; pinUI();
+  if (pinBuf.length === 4) setTimeout(pinDone, 120);
+});
+document.addEventListener("keydown", (e) => { if ($("lock").hidden) return; if (/^[0-9]$/.test(e.key) && pinBuf.length < 4) { pinBuf += e.key; pinUI(); if (pinBuf.length === 4) setTimeout(pinDone, 120); } else if (e.key === "Backspace") { pinBuf = pinBuf.slice(0, -1); pinUI(); } });
+$("lock-forgot").addEventListener("click", () => {
+  if (!confirmReset()) return;
+  try { localStorage.removeItem(PIN_KEY); } catch {}
+  try { c.pera.disconnect(); } catch {} setAccount(null);
+  $("lock").hidden = true; document.documentElement.classList.remove("locked"); secUI(); say("PIN removed and wallet disconnected. Connect Pera again and set a new PIN.", "ok");
+});
+function confirmReset() { $("lock-sub").textContent = "Resetting removes the PIN and disconnects the wallet. Your funds are safe in Pera."; return true; }
+function secUI() { const on = !!pinStore(); $("sec-pin").textContent = on ? "Turn off" : "Turn on"; }
+$("sec-pin").addEventListener("click", () => openLock(pinStore() ? "off" : "set"));
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) hiddenAt = Date.now();
+  else if (pinStore() && hiddenAt && Date.now() - hiddenAt > LOCK_AFTER) { document.documentElement.classList.add("locked"); openLock("unlock"); }
+});
+secUI();
+if (pinStore()) openLock("unlock");
 // ---------- install prompt + service worker ----------
 let deferred = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("w-install-btn").hidden = false; $("w-install-text").textContent = "Install FALQBIT on this device for quick access."; });
@@ -648,8 +823,9 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").ca
 
 // ---------- start ----------
 loadReserves().then(quote).catch(() => {});
-loadProgram().catch(() => {});
-setInterval(() => { loadProgram().catch(() => {}); }, 300000);
+loadProgram().catch(() => {}); loadStats().catch(() => {});
+setInterval(() => { loadProgram().catch(() => {}); loadStats().catch(() => {}); }, 300000);
+setDir("buy");
 c.reconnect().then((a) => { if (a.length) { c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); refresh(); } }).catch(() => {});
 setInterval(() => { refresh().catch(() => {}); }, 60000);
 </script>
