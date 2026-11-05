@@ -30,6 +30,7 @@
 .list li .fund a { color: var(--muted); }
 .list li.dup { background: rgba(240,110,120,.07); }
 .list li.dup .fund { color: #F2A0A6; }
+.list li .flag.ok { background: rgba(63,224,208,.16); color: #3FE0D0; }
 .list li .flag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: rgba(240,110,120,.18); color: #F2A0A6; font-size: 11px; }
 .list li button.skipall { min-height: 28px; padding: 0 10px; font: 600 12px/1 var(--body); border-radius: 8px; background: rgba(240,110,120,.15); color: #F2A0A6; border: 1px solid rgba(240,110,120,.45); cursor: pointer; white-space: nowrap; }
 .log { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
@@ -144,7 +145,8 @@ const WELCOME_CAP = 1000;                  // first 1,000 accounts, in tiers
 // Tiers by welcome number (0-based): 1-200 get 1M, 201-600 500k, 601-800 250k, 801-1000 100k.
 const TIERS = [[200, 1_000_000n], [600, 500_000n], [800, 250_000n], [1000, 100_000n]];
 const tierAmount = (n) => { for (const [upTo, v] of TIERS) if (n < upTo) return v * DEC; return 0n; };
-const WELCOME_MIN_ALGO = 2_000_000;        // the account must hold at least 2 ALGO on payout day
+const WELCOME_MIN_ALGO = 2_000_000;
+const EXCHANGE_MIN = 100_000 * 1_000_000;  // a funder with 100,000+ ALGO is treated as an exchange        // the account must hold at least 2 ALGO on payout day
 // Hold-to-earn rules. November 2026 keeps the launch announcement (1%, 62.5M pool);
 // from December 2026: 0.5% of the lowest balance since the 1st, max 500k per wallet, 15M pool, paid on the 25th.
 const PAY_DAY = 25;
@@ -295,6 +297,21 @@ async function buildWelcome() {
   const [unlocked, hold, paid] = await Promise.all([unlockedAccounts(), holders(), paidWelcome()]);
   const left = Math.max(0, WELCOME_CAP - paid.size);
   const FOUNDER = await founderSet(unlocked);
+  // Auto-restore: accounts skipped earlier whose ALGO came from an exchange are real people, not farms.
+  // Only new accounts (holding under 1M FALQBIT) that never got a drop; big wallets stay skipped.
+  const restorable = unlocked.filter((a) => SKIP.has(a) && !paid.has(a) && !EXCLUDE.has(a) && hold.has(a) && !hold.get(a).frozen && hold.get(a).amount < MIN_HOLD);
+  if (restorable.length) {
+    say("Re-checking skipped accounts funded by exchanges…");
+    const fs = await Promise.all(restorable.map((a) => firstFunding(a)));
+    const funders = [...new Set(fs.filter(Boolean).map((f) => f.from))];
+    const exch = new Set();
+    await Promise.all(funders.map((f) => c.algodGet(`/v2/accounts/${f}?exclude=all`).then((j) => { if (Number(j?.amount || 0) >= EXCHANGE_MIN) exch.add(f); }).catch(() => {})));
+    const back = restorable.filter((a, i) => fs[i] && exch.has(fs[i].from) && !paid.has(fs[i].from));
+    if (back.length) {
+      back.forEach((a) => SKIP.delete(a)); saveSkip(); renderSkipped(); saveFunders();
+      log(`Put back ${back.length} skipped account${back.length > 1 ? "s" : ""} funded by an exchange: ${back.map((a) => short(a)).join(", ")}`);
+    }
+  }
   const cand = unlocked.filter((a) => !EXCLUDE.has(a) && !FOUNDER.has(a) && !SKIP.has(a) && !paid.has(a) && hold.has(a) && !hold.get(a).frozen);
   // anti-farming: the account must hold at least 2 ALGO right now
   const algo = await Promise.all(cand.map((a) => c.algodGet(`/v2/accounts/${a}?exclude=all`).then((j) => Number(j?.amount || 0)).catch(() => 0)));
@@ -308,6 +325,11 @@ async function buildWelcome() {
   say("Checking earlier rounds for repeat funders…");
   const prior = await paidFunders(paid);
   due.forEach((r) => { if (!r.fund) return; r.chain = paid.has(r.fund.from); r.prior = prior.get(r.fund.from) || 0; });
+  // exchanges: a funder holding a huge ALGO balance is an exchange hot wallet, shared by many real people
+  const sus = [...new Set(due.filter((r) => r.fund && (r.chain || r.prior > 0 || r.dup > 1)).map((r) => r.fund.from))];
+  const big = new Set();
+  await Promise.all(sus.map((f) => c.algodGet(`/v2/accounts/${f}?exclude=all`).then((j) => { if (Number(j?.amount || 0) >= EXCHANGE_MIN) big.add(f); }).catch(() => {})));
+  due.forEach((r) => { if (r.fund && big.has(r.fund.from)) { r.exch = true; r.chain = false; r.prior = 0; r.dup = 0; } });
   due.sort((x, y) => ((y.chain || y.prior > 0 || y.dup > 1) - (x.chain || x.prior > 0 || x.dup > 1)) || (y.dup - x.dup));
   PAIDN = paid.size;
   const flagged = due.filter((r) => r.chain || r.prior > 0).length;
@@ -403,7 +425,7 @@ function render() {
   for (const r of queue.slice(0, 500)) {
     const li = document.createElement("li");
     const f = r.fund;
-    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}${r.chain ? `<span class="flag">funder got a drop</span>` : ""}${r.prior ? `<span class="flag">funder used before ×${r.prior}</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
+    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}${r.chain ? `<span class="flag">funder got a drop</span>` : ""}${r.prior ? `<span class="flag">funder used before ×${r.prior}</span>` : ""}${r.exch ? `<span class="flag ok">exchange</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
     if (r.dup > 1 || r.chain || r.prior) li.className = "dup";
     li.innerHTML = `<span class="who"><a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a>${fundLine}</span><span class="right"><span class="amt">${fq(r.amount)}</span>${r.dup > 1 ? `<button type="button" class="skipall">Skip all ${r.dup}</button>` : ""}<button type="button" class="skip">Skip</button></span>`;
     li.querySelector(".skip").addEventListener("click", () => {
