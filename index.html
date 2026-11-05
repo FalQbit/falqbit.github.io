@@ -1084,7 +1084,7 @@ body { background-image: none; }
       <a href="./trade.html">Trade</a>
       <a href="#app">App</a>
       <a href="#faq">FAQ</a>
-      <a href="./whitepaper">Whitepaper</a>
+      <a href="./whitepaper.html">Whitepaper</a>
     </nav>
     <div class="top-right">
       <span class="status-pill"><i aria-hidden="true"></i>Live on MainNet</span>
@@ -1845,7 +1845,7 @@ body { background-image: none; }
       <li class="done"><span class="state">Done</span><h3>FALQBIT app</h3><p>Wallet, USDC swaps, QR payments and an optional PIN lock on your phone. <a href="#app">Get the app</a></p></li>
       <li class="now"><span class="state">In progress</span><h3>Verified everywhere</h3><p>Logo on Tinyman and Vestige, Algorand project directories, more wallets and explorers.</p></li>
       <li class="done"><span class="state">Done</span><h3>Community live</h3><p>Official Telegram group and channel, with anti-scam rules and a public Rewards page.</p></li>
-      <li><span class="state">Next</span><h3>Shops</h3><p>A shop mode with prices in local currency, and weekly welcome rounds. <a href="./whitepaper#roadmap">Full roadmap</a></p></li>
+      <li><span class="state">Next</span><h3>Shops</h3><p>A shop mode with prices in local currency, and weekly welcome rounds. <a href="./whitepaper.html#roadmap">Full roadmap</a></p></li>
     </ol>
   </section>
 
@@ -1880,7 +1880,7 @@ body { background-image: none; }
       <a href="https://t.me/falqbit_news" target="_blank" rel="noopener">Announcements</a>
       <a href="https://github.com/FalQbit/falqbit.github.io" target="_blank" rel="noopener">GitHub</a>
       <a href="https://www.vestige.fi/asset/3760920399" target="_blank" rel="noopener">Vestige</a>
-      <a href="./whitepaper">Whitepaper</a>
+      <a href="./whitepaper.html">Whitepaper</a>
       <a href="./app.html">App</a>
       <a href="https://algorand.co/technology/post-quantum" target="_blank" rel="noopener">Algorand post-quantum</a>
     </nav>
@@ -2075,13 +2075,12 @@ document.documentElement.classList.add("js");
     box.innerHTML = rows.map(function (b, i) {
       var fq = b.amount / 1e6, al = TOP.algo[b.address], main = by === "al" ? (al || 0) : b.amount;
       var big = by === "al" ? fmt(al || 0, 2) + " ALGO" : fmt(fq, 0) + " FALQBIT";
-      var worth = PX.usdPerAlgo && PX.algoPerFq ? (fq * PX.algoPerFq + (al || 0)) * PX.usdPerAlgo : 0;
       var small = by === "al" ? fmt(fq, 0) + " FALQBIT" : (al === undefined ? fmt(fq / SUPPLY * 100, 2) + "% of supply" : fmt(al, 2) + " ALGO");
       var rw = estReward(fq);
       return "<li><span class=\"fill\" style=\"width:" + Math.max(2, Math.round(100 * main / (maxV || 1))) + "%\"></span><span class=\"rk" + (off + i < 3 ? " m" + (off + i + 1) : "") + "\">" + (off + i + 1) + "</span>" +
         "<span class=\"who\"><a href=\"https://lora.algokit.io/mainnet/account/" + b.address + "\" target=\"_blank\" rel=\"noopener\">" + shortA(b.address) + "</a><small>" + pctS(fq) + " of supply" + (rw ? " · next reward ≈ " + fmt(rw, 0) : " · <span class=\"under\">under 1M, no reward yet</span>") + "</small></span>" +
-        "<span class=\"val\"><b>" + big + "</b><span>" + small + "" + "</span></span></li>";
-    }).join("") || "<li><span></span><span class=\"muted\">No community wallets yet.</span></li>";
+        "<span class=\"val\"><b>" + big + "</b><span>" + small + "</span></span></li>";
+    }).join("") || "<li><span></span><span class=\"muted\">No wallets yet.</span></li>";
   }
   function pctS(v) { var p = v / SUPPLY * 100; return p > 0 && p < 0.01 ? "<0.01%" : fmt(p, 2) + "%"; }
   function drawPager(n, pages) {
@@ -2103,7 +2102,11 @@ document.documentElement.classList.add("js");
   function rewardRate() { var d = new Date(); return d.getUTCFullYear() === 2026 && d.getUTCMonth() === 10 ? 0.01 : 0.005; }
   function rawReward(v) { return v >= 1e6 ? Math.min(500000, v * rewardRate()) : 0; }
   function estReward(v) {
-    if (TOP.scale === undefined) { var sum = TOP.comm.reduce(function (t, b) { return t + rawReward(b.amount / 1e6); }, 0); TOP.scale = sum > 15e6 ? 15e6 / sum : 1; }
+    if (TOP.scale === undefined) {
+      // only real community wallets share the monthly pool; project and founder wallets are left out, so exclude them from the sum
+      var sum = TOP.comm.reduce(function (t, b) { return (PROJECT[b.address] || (window.FOUNDER_SET && FOUNDER_SET[b.address])) ? t : t + rawReward(b.amount / 1e6); }, 0);
+      TOP.scale = sum > 15e6 ? 15e6 / sum : 1;
+    }
     return Math.floor(rawReward(v) * TOP.scale);
   }
   function loadAlgo() {
@@ -2203,7 +2206,10 @@ document.documentElement.classList.add("js");
       var list = x.list, FOUNDER = x.founder;
       var fsum = list.filter(function (b) { return FOUNDER[b.address]; }).reduce(function (s, b) { return s + b.amount / 1e6; }, 0);
       var fn = list.filter(function (b) { return FOUNDER[b.address] && b.amount > 0; }).length;
+      window.FOUNDER_SET = FOUNDER; // drawTop needs it to skip the "next reward" line on project and founder wallets
       var comm = list.filter(function (b) { return !PROJECT[b.address] && !FOUNDER[b.address] && !b.deleted && b.amount > 0; });
+      // the public ranking shows every holder, like Pera's explorer: project and reward wallets appear mixed in, unlabeled
+      var allHolders = list.filter(function (b) { return !b.deleted && b.amount > 0; });
       var rows = RANGES.map(function (r) { return { label: r[2], n: 0, sum: 0, lo: r[0], hi: r[1] }; });
       var total = 0;
       comm.forEach(function (b) { var v = b.amount / 1e6; total += v; rows.forEach(function (r) { if (v >= r.lo && v < r.hi) { r.n++; r.sum += v; } }); });
@@ -2226,7 +2232,7 @@ document.documentElement.classList.add("js");
       $("d-circ-bar").style.width = Math.min(100, pc).toFixed(2) + "%";
       drawDonut(proj, psum);
       drawDist(rows);
-      TOP.comm = comm; TOP.scale = undefined; drawTop(); loadAlgo();
+      TOP.comm = allHolders; TOP.scale = undefined; drawTop(); loadAlgo();
       countUp("st-circ", total, function (v) { return v >= 1e9 ? fmt(v / 1e9, 2) + "B" : fmt(v / 1e6, 0) + "M"; });
       var bar = $("st-circ-bar"); if (bar) bar.style.width = Math.min(100, total / SUPPLY * 100).toFixed(1) + "%";
       $("st-circ-s").textContent = fmt(total / SUPPLY * 100, 1) + "% of supply, held by the community";
