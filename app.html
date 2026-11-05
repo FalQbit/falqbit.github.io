@@ -123,6 +123,35 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
   section[data-view]:not([hidden]) > div { animation: rise .35s ease; }
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 }
+
+/* ---- app v4: live strip, drop, history, pair ---- */
+.live { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.live div { padding: 12px; border-radius: 16px; background: linear-gradient(180deg, rgba(18,27,52,.82), rgba(11,17,34,.88)); border: 1px solid rgba(63,224,208,.18); display: flex; flex-direction: column; gap: 4px; min-width: 0; position: relative; overflow: hidden; }
+.live div::after { content: ""; position: absolute; left: -40%; top: 0; bottom: 0; width: 40%; background: linear-gradient(100deg, transparent, rgba(63,224,208,.12), transparent); animation: liveSweep 5s ease-in-out infinite; }
+.live div:nth-child(2)::after { animation-delay: 1.2s; } .live div:nth-child(3)::after { animation-delay: 2.4s; }
+@keyframes liveSweep { 0%, 60% { left: -40%; } 100% { left: 120%; } }
+.live span { font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cyan); }
+.live b { font: 700 20px/1.15 var(--display); color: var(--fg); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live small { font: 500 11px/1.3 var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usd { font: 500 14px/1 var(--mono); color: var(--cyan); }
+.drop { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+.drop b { font: 700 22px/1.2 var(--display); }
+.drop .ok { color: var(--cyan); } .drop .wait { color: var(--amber); }
+.bar { height: 8px; border-radius: 999px; background: rgba(255,255,255,.06); overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; border-radius: 999px; background: linear-gradient(90deg, #1F9E94, #3FE0D0, #A9FFF6, #3FE0D0); background-size: 200% 100%; box-shadow: 0 0 12px rgba(63,224,208,.6); transition: width 1s ease; animation: barFlow2 2.6s linear infinite; }
+@keyframes barFlow2 { from { background-position: 100% 0; } to { background-position: -100% 0; } }
+.hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.hist li { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 14px; }
+.hist li:last-child { border-bottom: 0; }
+.hist .ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 700 14px/1 var(--mono); background: rgba(63,224,208,.12); color: var(--cyan); }
+.hist .ic.out { background: rgba(240,110,120,.12); color: #F2A0A6; } .hist .ic.gift { background: rgba(156,144,255,.16); color: #B9B0FF; }
+.hist .t { display: flex; flex-direction: column; min-width: 0; } .hist .t small { color: var(--muted); font: 500 11px/1.3 var(--mono); }
+.hist .t a { color: var(--fg); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist .v { font: 600 13px/1 var(--mono); white-space: nowrap; } .hist .v.plus { color: var(--cyan); }
+.links { display: flex; justify-content: center; gap: 18px; font-size: 13px; }
+.links a { color: var(--muted); }
+.seg.pair { margin-top: -4px; }
+@media (prefers-reduced-motion: reduce) { .live div::after, .bar i { animation: none; } }
 </style>
 </head>
 <body>
@@ -155,6 +184,11 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
   <section id="v-wallet" data-view>
     <div style="display:flex;flex-direction:column;gap:16px">
       <h1>Your <em>quantum</em> wallet.</h1>
+      <div class="live" id="w-live">
+        <div><span>Price · 1M</span><b id="l-price">…</b><small id="l-usd"></small></div>
+        <div><span>Pool</span><b id="l-pool">…</b><small>ALGO</small></div>
+        <div><span>Welcome drop</span><b id="l-drop">…</b><small id="l-tier"></small></div>
+      </div>
       <div class="card" id="w-empty">
         <p class="muted" style="margin:0">Connect a Pera Quantum Account to see your FALQBIT, trade, and pay with QR codes.</p>
         <button class="primary" id="w-connect" type="button">Connect Pera Wallet</button>
@@ -163,6 +197,7 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
         <span class="k">FALQBIT balance</span>
         <span class="big" id="w-fq">…</span>
         <span class="muted" id="w-fq-algo">…</span>
+        <span class="usd" id="w-usd"></span>
         <span class="pill" id="w-status">…</span>
         <a class="btn ghost" id="w-unlock" href="./unlock.html?net=mainnet" hidden>Unlock this account</a>
       </div>
@@ -171,6 +206,21 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
         <div class="row"><span class="muted">Price</span><span id="w-price">…</span></div>
         <div class="row"><span class="muted">Next hold reward (est.)</span><span id="w-reward">…</span></div>
         <div class="row"><span class="muted">Payout day</span><span id="w-payday">…</span></div>
+      </div>
+      <div class="card" id="w-drop" hidden>
+        <span class="k">Welcome drop</span>
+        <div class="drop" id="w-drop-body">…</div>
+        <div class="bar" aria-hidden="true"><i id="w-drop-bar"></i></div>
+        <span class="fine" id="w-drop-fine"></span>
+      </div>
+      <div class="card" id="w-hist" hidden>
+        <span class="k">Activity</span>
+        <ul class="hist" id="w-hist-list"><li class="muted">Loading…</li></ul>
+      </div>
+      <div class="links">
+        <a href="https://t.me/falqbit" target="_blank" rel="noopener">Telegram</a>
+        <a href="https://x.com/FalQbit" target="_blank" rel="noopener">X</a>
+        <a href="./" target="_blank" rel="noopener">falqbit.com</a>
       </div>
       <div class="card install" id="w-install">
         <span class="k">Install</span>
@@ -189,10 +239,15 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
           <button type="button" id="t-buy" aria-pressed="true">Buy</button>
           <button type="button" id="t-sell" aria-pressed="false">Sell</button>
         </div>
+        <div class="seg pair" role="group" aria-label="Pay with">
+          <button type="button" id="t-algo" aria-pressed="true">ALGO</button>
+          <button type="button" id="t-usdc" aria-pressed="false">USDC</button>
+        </div>
+        <span class="fine" id="t-bal"></span>
         <label class="f"><span id="t-in-label">You pay (ALGO)</span><input type="number" id="t-amount" inputmode="decimal" min="0" step="any" placeholder="0"></label>
         <div class="quote" id="t-quote"><span>Enter an amount to see the quote.</span></div>
         <button class="primary" id="t-go" type="button" disabled>Sign in Pera</button>
-        <p class="fine" style="margin:0">Swaps go straight to the FALQBIT/ALGO pool on Tinyman v2. Max 1% price slippage. Your account must be unlocked to receive FALQBIT. Paying with USDC? Use <a href="./trade.html">falqbit.com/trade</a>.</p>
+        <p class="fine" style="margin:0">Swaps run on Tinyman v2 pools: FALQBIT/ALGO, and USDC/ALGO for USDC (both steps in one approval). Max 1% price slippage per step. Your account must be unlocked to receive FALQBIT.</p>
       </div>
     </div>
   </section>
@@ -247,7 +302,11 @@ const c = client(net);
 const T = NETWORKS[net].tinyman;
 const DEC = 1e6;
 const $ = (id) => document.getElementById(id);
-let account = null, fqBal = 0n, unlocked = false, reserves = null, dir = "buy";
+let account = null, fqBal = 0n, unlocked = false, reserves = null, dir = "buy", cur = "algo";
+let U = null, algoBal = 0n, minBal = 0n, usdcBal = 0n, usdcOpt = false, PROG = null;
+const USDC = 31566704, USDC_POOL = "2PIFZW53RHCSFSYMCFUBW4XOCXOMB7XOYQSQ6KGT3KVGJTL4HM6COZRNMM";
+const TIERS = [[200, 1000000], [600, 500000], [800, 250000], [1000, 100000]];
+const tierFor = (n) => { for (const [u, v] of TIERS) if (n < u) return v; return 0; };
 
 const say = (html, kind = "") => { const m = $("msg"); m.hidden = !html; m.className = "msg " + kind; m.innerHTML = html; if (html) m.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
 const fmt = (n, d = 0) => Number(n).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: 0 });
@@ -266,11 +325,81 @@ const start = (location.hash || "").slice(1);
 if (views.includes(start)) show(start);
 
 // ---------- chain reads ----------
-async function loadReserves() {
-  const j = await c.algodGet(`/v2/accounts/${cfg.pool}/applications/${T}`);
+async function readPool(addr) {
+  const j = await c.algodGet(`/v2/accounts/${addr}/applications/${T}`);
   const kv = {}; for (const x of j?.["app-local-state"]?.["key-value"] || []) kv[atob(x.key)] = x.value.uint;
-  reserves = { fq: BigInt(kv.asset_1_reserves), algo: BigInt(kv.asset_2_reserves), fee: BigInt(kv.total_fee_share ?? 30) };
+  return { a1: BigInt(kv.asset_1_reserves), a2: BigInt(kv.asset_2_reserves), fee: BigInt(kv.total_fee_share ?? 30) };
+}
+async function loadReserves() {
+  const [p, u] = await Promise.all([readPool(cfg.pool), readPool(USDC_POOL).catch(() => null)]);
+  reserves = { fq: p.a1, algo: p.a2, fee: p.fee };
+  if (u) U = { usdc: u.a1, algo: u.a2, fee: u.fee };
+  renderLive();
   return reserves;
+}
+const usdPerAlgo = () => U ? Number(U.usdc) / Number(U.algo) : 0;
+const usd = (n) => n >= 100 ? "$" + fmt(n, 0) : n >= 1 ? "$" + fmt(n, 2) : "$" + Number(n.toPrecision(2));
+// welcome drop progress: accounts paid by the Rewards account (or early drops from the Project account)
+async function loadProgram() {
+  const all = async (addr) => { let out = [], next = ""; for (let i = 0; i < 20; i++) { const j = await c.getJSON(`${c.n.indexer}/v2/accounts/${addr}/transactions?tx-type=axfer&asset-id=${cfg.asset_id}&limit=1000${next ? "&next=" + encodeURIComponent(next) : ""}`); out = out.concat(j?.transactions || []); if (!j?.["next-token"] || !(j?.transactions || []).length) break; next = j["next-token"]; } return out; };
+  const note = (t) => { try { return t.note ? atob(t.note) : ""; } catch { return ""; } };
+  const sizes = new Set(TIERS.map(([, v]) => String(v * DEC)));
+  const skip = new Set([cfg.pool, cfg.rewards, cfg.project, cfg.team].filter(Boolean));
+  const [a, b] = await Promise.all([all(cfg.rewards), cfg.project ? all(cfg.project).catch(() => []) : []]);
+  const seen = new Set();
+  for (const t of a) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.rewards && x && x.amount > 0 && !note(t).startsWith("FALQBIT hold") && !skip.has(x.receiver)) seen.add(x.receiver); }
+  for (const t of b) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.project && x && sizes.has(String(x.amount)) && !note(t).startsWith("FALQBIT hold") && !skip.has(x.receiver)) seen.add(x.receiver); }
+  PROG = { n: seen.size, paid: seen };
+  renderLive(); renderDrop();
+}
+function renderLive() {
+  if (reserves) {
+    const px = priceAlgoPerFq() * 1e6;
+    $("l-price").textContent = fmt(px, 2);
+    $("l-usd").textContent = "ALGO" + (U ? ` · ${usd(px * usdPerAlgo())}` : "");
+    $("l-pool").textContent = fmt(Number(reserves.algo) / DEC, 0);
+  }
+  if (PROG) { $("l-drop").textContent = fmt(PROG.n); const t = tierFor(PROG.n); $("l-tier").textContent = t ? `of 1,000 · ${t >= 1e6 ? fmt(t / 1e6) + "M" : fmt(t / 1e3) + "k"}` : "complete"; }
+}
+let MYDROP = null;
+function renderDrop() {
+  if (!account) return;
+  $("w-drop").hidden = false;
+  const n = PROG ? PROG.n : null, t = n == null ? null : tierFor(n);
+  $("w-drop-bar").style.width = n == null ? "0" : Math.min(100, n / 10) + "%";
+  $("w-drop-fine").textContent = n == null ? "" : `${fmt(n)} of 1,000 accounts welcomed · ${t ? fmt(t) + " FALQBIT for the next ones" : "drop complete"}`;
+  const b = $("w-drop-body");
+  if (MYDROP) b.innerHTML = `<b class="ok">✓ ${fmt(MYDROP.amount / DEC)} FALQBIT</b><span class="muted">Received on ${new Date(MYDROP.at * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short" })}. Welcome!</span>`;
+  else if (PROG && PROG.paid.has(account)) b.innerHTML = `<b class="ok">✓ Received</b><span class="muted">This account already got its welcome drop.</span>`;
+  else if (!unlocked) b.innerHTML = `<b class="wait">Unlock to join</b><span class="muted">Unlock this account to get in line: <a href="./unlock.html?net=mainnet">falqbit.com/unlock</a>.</span>`;
+  else if (algoBal < 2_000_000n) b.innerHTML = `<b class="wait">Add ALGO</b><span class="muted">Keep at least 2 ALGO in this account on payout day. You have ${fmt(Number(algoBal) / DEC, 2)}.</span>`;
+  else if (t) b.innerHTML = `<b class="ok">In line ✓</b><span class="muted">You qualify for the next weekly round: ${fmt(t)} FALQBIT. One drop per person.</span>`;
+  else b.innerHTML = `<b class="wait">Drop complete</b><span class="muted">All 1,000 welcome drops have been paid.</span>`;
+}
+async function loadHistory() {
+  if (!account) return;
+  $("w-hist").hidden = false;
+  try {
+    const j = await c.getJSON(`${c.n.indexer}/v2/accounts/${account}/transactions?asset-id=${cfg.asset_id}&tx-type=axfer&limit=40`);
+    const note = (t) => { try { return t.note ? atob(t.note) : ""; } catch { return ""; } };
+    const rows = (j?.transactions || []).filter((t) => t["asset-transfer-transaction"]?.amount > 0)
+      .sort((a, b) => (b["round-time"] || 0) - (a["round-time"] || 0));
+    MYDROP = null;
+    for (const t of rows) { const x = t["asset-transfer-transaction"]; if (x.receiver === account && (t.sender === cfg.rewards || t.sender === cfg.project) && !note(t).startsWith("FALQBIT hold")) MYDROP = { amount: x.amount, at: t["round-time"] }; }
+    renderDrop();
+    const list = rows.slice(0, 10).map((t) => {
+      const x = t["asset-transfer-transaction"], inn = x.receiver === account, amt = fmt(x.amount / DEC);
+      const d = new Date((t["round-time"] || 0) * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+      let ic = inn ? "↓" : "↑", cls = inn ? "" : "out", label;
+      if (t.sender === cfg.rewards && inn) { const h = note(t).startsWith("FALQBIT hold"); label = h ? "Hold reward" : "Welcome drop"; ic = "★"; cls = "gift"; }
+      else if (inn && t.sender === cfg.pool) label = "Bought";
+      else if (!inn && x.receiver === cfg.pool) label = "Sold";
+      else if (inn) label = "Received from " + short(t.sender);
+      else label = "Sent to " + short(x.receiver);
+      return `<li><span class="ic ${cls}">${ic}</span><span class="t"><a href="${c.n.lora}/transaction/${t.id}" target="_blank" rel="noopener">${label}</a><small>${d}</small></span><span class="v ${inn ? "plus" : ""}">${inn ? "+" : "−"}${amt}</span></li>`;
+    });
+    $("w-hist-list").innerHTML = list.join("") || `<li class="muted">No FALQBIT activity yet.</li>`;
+  } catch { $("w-hist-list").innerHTML = `<li class="muted">Could not read your activity right now.</li>`; }
 }
 const priceAlgoPerFq = () => reserves ? Number(reserves.algo) / Number(reserves.fq) : 0;
 
@@ -282,10 +411,13 @@ async function refresh() {
   const h = (info?.assets || []).find((a) => a["asset-id"] === cfg.asset_id);
   fqBal = h ? BigInt(h.amount) : 0n;
   unlocked = !!h && !h["is-frozen"];
+  algoBal = BigInt(info?.amount || 0); minBal = BigInt(info?.["min-balance"] || 0);
+  const ua = (info?.assets || []).find((a) => a["asset-id"] === USDC); usdcBal = ua ? BigInt(ua.amount) : 0n; usdcOpt = !!ua;
   $("w-empty").hidden = true; $("w-main").hidden = false; $("w-more").hidden = false;
   $("w-fq").textContent = fmt(Number(fqBal) / DEC);
   const p = priceAlgoPerFq();
   $("w-fq-algo").textContent = p ? `≈ ${fmt(Number(fqBal) / DEC * p, 3)} ALGO` : "";
+  $("w-usd").textContent = p && U ? `≈ ${usd((Number(fqBal) / DEC * p + algo) * usdPerAlgo())} total` : "";
   $("w-algo").textContent = fmt(algo, 3);
   $("w-price").textContent = p ? `${fmt(p * 1e6, 3)} ALGO / 1M` : "–";
   const st = $("w-status");
@@ -301,7 +433,7 @@ async function refresh() {
   const pay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + (now.getUTCDate() > 25 ? 1 : 0), 25));
   const days = Math.ceil((pay - now) / 86400000);
   $("w-payday").textContent = days <= 0 ? "Today" : `${pay.toLocaleDateString(undefined, { day: "numeric", month: "short" })} · in ${days} day${days === 1 ? "" : "s"}`;
-  renderReceive(); quote(); checkPay();
+  renderReceive(); quote(); checkPay(); renderDrop(); loadHistory();
 }
 
 // ---------- connect ----------
@@ -310,7 +442,7 @@ function setAccount(a) {
   $("acct").textContent = a ? short(a) : "Connect Pera";
   $("acct").classList.toggle("on", !!a);
   $("r-copy").disabled = !a;
-  if (!a) { $("w-empty").hidden = false; $("w-main").hidden = true; $("w-more").hidden = true; renderReceive(); }
+  if (!a) { $("w-empty").hidden = false; $("w-main").hidden = true; $("w-more").hidden = true; $("w-drop").hidden = true; $("w-hist").hidden = true; MYDROP = null; renderReceive(); }
 }
 async function connect() {
   try { const a = await c.connect(); c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); await refresh(); }
@@ -323,15 +455,20 @@ $("acct").addEventListener("click", () => {
 });
 
 // ---------- trade ----------
+const sym = () => (cur === "usdc" ? "USDC" : "ALGO");
 function setDir(d) {
   dir = d;
   $("t-buy").setAttribute("aria-pressed", String(d === "buy"));
   $("t-sell").setAttribute("aria-pressed", String(d === "sell"));
-  $("t-in-label").textContent = d === "buy" ? "You pay (ALGO)" : "You sell (FALQBIT)";
+  $("t-algo").setAttribute("aria-pressed", String(cur === "algo"));
+  $("t-usdc").setAttribute("aria-pressed", String(cur === "usdc"));
+  $("t-in-label").textContent = d === "buy" ? `You pay (${sym()})` : `You sell (FALQBIT) for ${sym()}`;
   quote();
 }
 $("t-buy").addEventListener("click", () => setDir("buy"));
 $("t-sell").addEventListener("click", () => setDir("sell"));
+$("t-algo").addEventListener("click", () => { cur = "algo"; setDir(dir); });
+$("t-usdc").addEventListener("click", () => { cur = "usdc"; setDir(dir); });
 $("t-amount").addEventListener("input", quote);
 
 function swapOut(amountIn, rIn, rOut, feeBps) {
@@ -344,37 +481,51 @@ let lastQuote = null;
 function quote() {
   const v = Number($("t-amount").value);
   lastQuote = null; $("t-go").disabled = true;
-  if (!reserves || !(v > 0)) { $("t-quote").innerHTML = "<span>Enter an amount to see the quote.</span>"; return; }
+  $("t-bal").textContent = account ? `You have ${fmt(Number(fqBal) / DEC)} FALQBIT · ${fmt(Number(algoBal) / DEC, 3)} ALGO · ${fmt(Number(usdcBal) / DEC, 2)} USDC` : "";
+  if (!reserves || !(v > 0) || (cur === "usdc" && !U)) { $("t-quote").innerHTML = "<span>Enter an amount to see the quote.</span>"; return; }
   const inBase = BigInt(Math.round(v * DEC));
-  const buy = dir === "buy";
-  const out = buy ? swapOut(inBase, reserves.algo, reserves.fq, reserves.fee) : swapOut(inBase, reserves.fq, reserves.algo, reserves.fee);
+  const buy = dir === "buy", usdc = cur === "usdc";
+  let out, mid = 0n, midMin = 0n, after;
+  if (!usdc) out = buy ? swapOut(inBase, reserves.algo, reserves.fq, reserves.fee) : swapOut(inBase, reserves.fq, reserves.algo, reserves.fee);
+  else if (buy) { midMin = swapOut(inBase, U.usdc, U.algo, U.fee) * 99n / 100n; out = swapOut(midMin, reserves.algo, reserves.fq, reserves.fee); mid = midMin; }
+  else { mid = swapOut(inBase, reserves.fq, reserves.algo, reserves.fee); midMin = mid * 99n / 100n; out = swapOut(midMin, U.algo, U.usdc, U.fee); }
   const min = (out * 99n) / 100n;
   const before = Number(reserves.algo) / Number(reserves.fq);
-  const after = buy ? Number(reserves.algo + inBase) / Number(reserves.fq - out) : Number(reserves.algo - out) / Number(reserves.fq + inBase);
+  after = buy ? Number(reserves.algo + (usdc ? mid : inBase)) / Number(reserves.fq - out) : Number(reserves.algo - (usdc ? mid : out)) / Number(reserves.fq + inBase);
   const impact = Math.abs(after / before - 1) * 100;
-  const outTxt = buy ? `${fmt(Number(out) / DEC)} FALQBIT` : `${fmt(Number(out) / DEC, 4)} ALGO`;
-  const minTxt = buy ? `${fmt(Number(min) / DEC)} FALQBIT` : `${fmt(Number(min) / DEC, 4)} ALGO`;
-  $("t-quote").innerHTML = `<span>You get about <b>${outTxt}</b></span><span>Minimum after 1% slippage: ${minTxt}</span><span>Price impact: ${impact < 0.01 ? "<0.01" : fmt(impact, 2)}%${impact > 10 ? " · large trade, the price moves a lot" : ""}</span>`;
-  lastQuote = { inBase, min, buy };
-  $("t-go").disabled = !account || out <= 0n || (buy && !unlocked) || (!buy && inBase > fqBal);
-  if (account && buy && !unlocked) $("t-quote").innerHTML += `<span>Unlock this account first: <a href="./unlock.html?net=mainnet">unlock page</a>.</span>`;
-  if (account && !buy && inBase > fqBal) $("t-quote").innerHTML += `<span>You hold ${fmt(Number(fqBal) / DEC)} FALQBIT.</span>`;
+  const outSym = buy ? "FALQBIT" : sym(), d = buy ? 0 : (usdc ? 2 : 4);
+  $("t-quote").innerHTML = `<span>You get about <b>${fmt(Number(out) / DEC, d)} ${outSym}</b></span><span>Minimum after slippage: ${fmt(Number(min) / DEC, d)} ${outSym}</span><span>Route: ${buy ? sym() : "FALQBIT"} → ${usdc ? "ALGO → " : ""}${buy ? "FALQBIT" : sym()} · price impact ${impact < 0.01 ? "<0.01" : fmt(impact, 2)}%${impact > 10 ? " · large trade" : ""}</span>`;
+  lastQuote = { inBase, min, midMin, buy, usdc };
+  let ok = !!account && out > 0n, warn = "";
+  if (account) {
+    if (!unlocked) { ok = false; warn = `Unlock this account first: <a href="./unlock.html?net=mainnet">unlock page</a>.`; }
+    else if (!buy && inBase > fqBal) { ok = false; warn = `You hold ${fmt(Number(fqBal) / DEC)} FALQBIT.`; }
+    else if (buy && usdc && inBase > usdcBal) { ok = false; warn = `You hold ${fmt(Number(usdcBal) / DEC, 2)} USDC.`; }
+    else if (buy && !usdc && inBase + 300000n > algoBal - minBal) { ok = false; warn = "Not enough ALGO (keep some for fees)."; }
+    else if (usdc && !buy && !usdcOpt) warn = "USDC will be added to your account in the same approval (0.1 ALGO deposit).";
+  }
+  if (warn) $("t-quote").innerHTML += `<span>${warn}</span>`;
+  $("t-go").disabled = !ok;
 }
 $("t-go").addEventListener("click", async () => {
   if (!lastQuote) return;
   try {
     $("t-go").disabled = true; say("Approve the swap in Pera…");
     await loadReserves(); quote(); if (!lastQuote) return;
-    const { inBase, min, buy } = lastQuote;
-    const first = buy
-      ? algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: cfg.pool, amount: inBase, suggestedParams: await c.params(FEE_PQ) })
-      : algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({ sender: account, receiver: cfg.pool, amount: inBase, assetIndex: cfg.asset_id, suggestedParams: await c.params(FEE_PQ) });
-    const call = algosdk.makeApplicationNoOpTxnFromObject({
-      sender: account, appIndex: T, suggestedParams: await c.params(FEE_CALL),
-      appArgs: [new TextEncoder().encode("swap"), new TextEncoder().encode("fixed-input"), algosdk.encodeUint64(min)],
-      accounts: [cfg.pool], foreignAssets: [cfg.asset_id, 0],
+    const { inBase, min, midMin, buy, usdc } = lastQuote;
+    const sp = await c.params(FEE_PQ), spc = await c.params(FEE_CALL);
+    const pay = (to, amt) => algosdk.makePaymentTxnWithSuggestedParamsFromObject({ sender: account, receiver: to, amount: amt, suggestedParams: sp });
+    const axf = (to, amt, asset) => algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({ sender: account, receiver: to, amount: amt, assetIndex: asset, suggestedParams: sp });
+    const call = (pool, asset, m) => algosdk.makeApplicationNoOpTxnFromObject({
+      sender: account, appIndex: T, suggestedParams: spc,
+      appArgs: [new TextEncoder().encode("swap"), new TextEncoder().encode("fixed-input"), algosdk.encodeUint64(m)],
+      accounts: [pool], foreignAssets: [asset, 0],
     });
-    const { id } = await c.signAndSend([first, call], {}, 1);
+    let txns;
+    if (!usdc) txns = buy ? [pay(cfg.pool, inBase), call(cfg.pool, cfg.asset_id, min)] : [axf(cfg.pool, inBase, cfg.asset_id), call(cfg.pool, cfg.asset_id, min)];
+    else if (buy) txns = [axf(USDC_POOL, inBase, USDC), call(USDC_POOL, USDC, midMin), pay(cfg.pool, midMin), call(cfg.pool, cfg.asset_id, min)];
+    else { txns = [axf(cfg.pool, inBase, cfg.asset_id), call(cfg.pool, cfg.asset_id, midMin), pay(USDC_POOL, midMin), call(USDC_POOL, USDC, min)]; if (!usdcOpt) txns.unshift(axf(account, 0, USDC)); }
+    const { id } = await c.signAndSend(txns, {}, txns.length - 1);
     say(`Swap done. ${lora(id)}`, "ok");
     $("t-amount").value = ""; await refresh();
   } catch (e) { say(e.message || String(e), "err"); quote(); }
@@ -497,6 +648,8 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").ca
 
 // ---------- start ----------
 loadReserves().then(quote).catch(() => {});
+loadProgram().catch(() => {});
+setInterval(() => { loadProgram().catch(() => {}); }, 300000);
 c.reconnect().then((a) => { if (a.length) { c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); refresh(); } }).catch(() => {});
 setInterval(() => { refresh().catch(() => {}); }, 60000);
 </script>

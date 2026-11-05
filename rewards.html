@@ -30,6 +30,9 @@
 .list li .fund a { color: var(--muted); }
 .list li.dup { background: rgba(240,110,120,.07); }
 .list li.dup .fund { color: #F2A0A6; }
+.list li .flag.amber { background: rgba(245,185,66,.16); color: #F5B942; }
+.list li.warn { background: rgba(245,185,66,.06); }
+.warnline.amber { background: rgba(245,185,66,.08); border-color: rgba(245,185,66,.4); color: #F5D08A; }
 .list li .flag.ok { background: rgba(63,224,208,.16); color: #3FE0D0; }
 .list li .flag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: rgba(240,110,120,.18); color: #F2A0A6; font-size: 11px; }
 .list li button.skipall { min-height: 28px; padding: 0 10px; font: 600 12px/1 var(--body); border-radius: 8px; background: rgba(240,110,120,.15); color: #F2A0A6; border: 1px solid rgba(240,110,120,.45); cursor: pointer; white-space: nowrap; }
@@ -69,6 +72,11 @@ details.lowlist summary, .skipped summary { cursor: pointer; font: 600 12px/1.4 
 .list li:hover { background: rgba(63,224,208,.05); }
 .list li.dup:hover { background: rgba(240,110,120,.1); }
 .primary { box-shadow: 0 10px 28px -10px rgba(63,224,208,.75); }
+.skipped .unskip { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 6px 12px !important; min-height: 0 !important; line-height: 1.2 !important; }
+.skipped .unskip small { font: 500 10.5px/1.2 "IBM Plex Mono", monospace; opacity: .85; }
+.skipped .unskip.w-farm { border-color: rgba(240,110,120,.5) !important; color: #F2A0A6 !important; }
+.skipped .unskip.w-big { border-color: rgba(245,185,66,.5) !important; color: #F5D08A !important; }
+.skipped .unskip.w-paid, .skipped .unskip.w-idle { opacity: .6; }
 </style>
 </head>
 <body>
@@ -146,7 +154,7 @@ const WELCOME_CAP = 1000;                  // first 1,000 accounts, in tiers
 const TIERS = [[200, 1_000_000n], [600, 500_000n], [800, 250_000n], [1000, 100_000n]];
 const tierAmount = (n) => { for (const [upTo, v] of TIERS) if (n < upTo) return v * DEC; return 0n; };
 const WELCOME_MIN_ALGO = 2_000_000;
-const EXCHANGE_MIN = 100_000 * 1_000_000;  // a funder with 100,000+ ALGO is treated as an exchange        // the account must hold at least 2 ALGO on payout day
+const EXCHANGE_MIN = 100_000 * 1_000_000;  // a funder with 100,000+ ALGO is treated as an exchange
 // Hold-to-earn rules. November 2026 keeps the launch announcement (1%, 62.5M pool);
 // from December 2026: 0.5% of the lowest balance since the 1st, max 500k per wallet, 15M pool, paid on the 25th.
 const PAY_DAY = 25;
@@ -290,6 +298,30 @@ async function annotateFunders(rows) {
   return rows;
 }
 
+// Wallets that collect ALGO or FALQBIT from accounts that already got a drop (drain targets of farms).
+// Only real amounts count: 0.5+ ALGO or any FALQBIT, so wallet fees (Pera, the gate deposit) are ignored.
+const OUT_KEY = "fq-outflows-v1", OUT_TTL = 30 * 60 * 1000;
+async function hubWallets(paid) {
+  let cache = {}; try { cache = JSON.parse(localStorage.getItem(OUT_KEY) || "{}"); } catch {}
+  const list = [...paid], now = Date.now(), hubs = new Map();
+  for (let i = 0; i < list.length; i += 8) {
+    await Promise.all(list.slice(i, i + 8).map(async (a) => {
+      if (!cache[a] || now - cache[a].t > OUT_TTL) {
+        const j = await c.getJSON(`${c.n.indexer}/v2/transactions?address=${a}&address-role=sender&limit=200`).catch(() => null);
+        const to = [];
+        for (const t of j?.transactions || []) {
+          const p = t["payment-transaction"], x = t["asset-transfer-transaction"];
+          if (p && p.receiver !== a && Number(p.amount) >= 500000) to.push(p.receiver);
+          if (x && x.receiver !== a && x.amount > 0 && t["asset-transfer-transaction"]["asset-id"] === cfg.asset_id) to.push(x.receiver);
+        }
+        cache[a] = { t: now, to: [...new Set(to)] };
+      }
+      for (const r of cache[a].to) if (!EXCLUDE.has(r) && !paid.has(r)) hubs.set(r, (hubs.get(r) || 0) + 1);
+    }));
+  }
+  try { localStorage.setItem(OUT_KEY, JSON.stringify(cache)); } catch {}
+  return hubs;
+}
 function statGrid(items) {
   return `<div class="sgrid">` + items.map(([k, v, hi]) => `<div class="sbox${hi ? " hi" : ""}"><span>${k}</span><b>${v}</b></div>`).join("") + `</div>`;
 }
@@ -312,6 +344,21 @@ async function buildWelcome() {
       log(`Put back ${back.length} skipped account${back.length > 1 ? "s" : ""} funded by an exchange: ${back.map((a) => short(a)).join(", ")}`);
     }
   }
+  // why each remaining skipped account stays out (shown in the "Skipped" list)
+  {
+    const ul = new Set(unlocked); SKIP_WHY.clear();
+    const rest = [...SKIP];
+    const fs = await Promise.all(rest.map((a) => (paid.has(a) || !ul.has(a) || (hold.get(a)?.amount || 0n) >= MIN_HOLD) ? null : firstFunding(a)));
+    rest.forEach((a, i) => {
+      if (paid.has(a)) SKIP_WHY.set(a, ["paid", "already got a drop"]);
+      else if (!ul.has(a)) SKIP_WHY.set(a, ["idle", "not unlocked"]);
+      else if ((hold.get(a)?.amount || 0n) >= MIN_HOLD) SKIP_WHY.set(a, ["big", "holds " + fq(hold.get(a).amount)]);
+      else if (fs[i] && paid.has(fs[i].from)) SKIP_WHY.set(a, ["farm", "funder got a drop"]);
+      else if (fs[i]) SKIP_WHY.set(a, ["farm", "wallet " + short(fs[i].from)]);
+      else SKIP_WHY.set(a, ["idle", "no funder found"]);
+    });
+    saveFunders(); renderSkipped();
+  }
   const cand = unlocked.filter((a) => !EXCLUDE.has(a) && !FOUNDER.has(a) && !SKIP.has(a) && !paid.has(a) && hold.has(a) && !hold.get(a).frozen);
   // anti-farming: the account must hold at least 2 ALGO right now
   const algo = await Promise.all(cand.map((a) => c.algodGet(`/v2/accounts/${a}?exclude=all`).then((j) => Number(j?.amount || 0)).catch(() => 0)));
@@ -326,13 +373,38 @@ async function buildWelcome() {
   const prior = await paidFunders(paid);
   due.forEach((r) => { if (!r.fund) return; r.chain = paid.has(r.fund.from); r.prior = prior.get(r.fund.from) || 0; });
   // exchanges: a funder holding a huge ALGO balance is an exchange hot wallet, shared by many real people
-  const sus = [...new Set(due.filter((r) => r.fund && (r.chain || r.prior > 0 || r.dup > 1)).map((r) => r.fund.from))];
+  const sus = [...new Set(due.filter((r) => r.fund).map((r) => r.fund.from))];  // every funder: we also need exchanges for the twin check
   const big = new Set();
   await Promise.all(sus.map((f) => c.algodGet(`/v2/accounts/${f}?exclude=all`).then((j) => { if (Number(j?.amount || 0) >= EXCHANGE_MIN) big.add(f); }).catch(() => {})));
   due.forEach((r) => { if (r.fund && big.has(r.fund.from)) { r.exch = true; r.chain = false; r.prior = 0; r.dup = 0; } });
-  due.sort((x, y) => ((y.chain || y.prior > 0 || y.dup > 1) - (x.chain || x.prior > 0 || x.dup > 1)) || (y.dup - x.dup));
+  // 1. funded by another FALQBIT account (one person feeding the next account)
+  const ulSet = new Set(unlocked);
+  due.forEach((r) => { if (r.fund && !r.exch && ulSet.has(r.fund.from) && !paid.has(r.fund.from)) r.sib = true; });
+  // 2. funded by a wallet that collects ALGO/FALQBIT from welcomed accounts (where farms drain to)
+  say("Checking where earlier drops went…");
+  const hubs = await hubWallets(paid);
+  const hubFunders = [...new Set(due.filter((r) => r.fund && !r.exch && hubs.has(r.fund.from)).map((r) => r.fund.from))];
+  const hubExch = new Set();
+  await Promise.all(hubFunders.map((f) => c.algodGet(`/v2/accounts/${f}?exclude=all`).then((j) => { if (Number(j?.amount || 0) >= EXCHANGE_MIN) hubExch.add(f); }).catch(() => {})));
+  due.forEach((r) => { if (r.fund && !r.exch && hubs.has(r.fund.from) && !hubExch.has(r.fund.from)) r.hub = hubs.get(r.fund.from); });
+  // 3. exchange twins: same exchange, near-identical amount, minutes apart (one person withdrawing several times)
+  const exRows = due.filter((r) => r.exch && r.fund?.at);
+  const paidEx = [...paid].map((a) => FUND_CACHE[a]).filter((f) => f && f.at && big.has(f.from));
+  for (const r of exRows) {
+    const near = (f) => f.from === r.fund.from && Math.abs(f.amt - r.fund.amt) <= 20000 && Math.abs(f.at - r.fund.at) <= 20 * 60;
+    const tw = exRows.filter((o) => o !== r && near(o.fund)).length + paidEx.filter(near).length;
+    if (tw) r.twin = tw;
+  }
+  // the other side of a sibling pair: this account funded another account on the list
+  const feeds = new Map(); due.forEach((r) => { if (r.sib) feeds.set(r.fund.from, (feeds.get(r.fund.from) || 0) + 1); });
+  due.forEach((r) => { if (feeds.has(r.to)) r.feeds = feeds.get(r.to); });
+  const red = (r) => (r.chain || r.prior > 0 || r.dup > 1 || r.sib || r.hub) ? 1 : 0;
+  const amber = (r) => (r.twin || r.feeds) ? 1 : 0;
+  // fairness: clean accounts in the order they were funded (earliest joins get the higher tier); flagged ones on top for review
+  due.sort((x, y) => (red(y) - red(x)) || (amber(y) - amber(x)) || ((x.fund?.at || 9e9) - (y.fund?.at || 9e9)));
   PAIDN = paid.size;
-  const flagged = due.filter((r) => r.chain || r.prior > 0).length;
+  const flagged = due.filter((r) => r.chain || r.prior > 0 || r.sib || r.hub).length;
+  const twins = due.filter((r) => r.twin || r.feeds).length;
   const groups = new Set(due.filter((r) => r.dup > 1).map((r) => r.fund.from));
   $("p-summary").innerHTML = statGrid([
     ["Unlocked on chain", unlocked.length.toLocaleString()],
@@ -342,7 +414,8 @@ async function buildWelcome() {
     ["To pay now", `${due.length} <small>· ${fq(due.reduce((s, d) => s + d.amount, 0n))}</small>`, due.length > 0],
     ["Under 2 ALGO", low.toLocaleString()],
   ]);
-  if (flagged) $("p-summary").innerHTML += `<b class="warnline">⚠ ${flagged} account${flagged > 1 ? "s were" : " was"} funded by a wallet that already got a drop, or that already funded welcomed accounts. Likely the same person: review before paying.</b>`;
+  if (flagged) $("p-summary").innerHTML += `<b class="warnline">⚠ ${flagged} account${flagged > 1 ? "s were" : " was"} funded by a wallet that already got a drop, already funded welcomed accounts, collects from welcomed accounts, or is itself a FALQBIT account. Likely the same person: review before paying.</b>`;
+  if (twins) $("p-summary").innerHTML += `<b class="warnline amber">◐ ${twins} account${twins > 1 ? "s need" : " needs"} a look: exchange twins (same exchange, almost the same amount, minutes apart) or an account that funded another one on this list. Could be one person. Check before paying.</b>`;
   if (groups.size) $("p-summary").innerHTML += `<b class="warnline">⚠ ${due.filter((r) => r.dup > 1).length} accounts share a funding wallet with others (${groups.size} funder${groups.size > 1 ? "s" : ""}). One drop per person: review them before paying.</b>`;
   if (lowList.length) $("p-summary").innerHTML += `<details class="lowlist"><summary>Waiting for 2 ALGO (${lowList.length})</summary><div class="chips">` + lowList.map(([a, v]) => `<a class="chip" href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)} <span>${(v / 1e6).toFixed(2)} ALGO</span></a>`).join("") + `</div></details>`;
   return due;
@@ -350,6 +423,7 @@ async function buildWelcome() {
 
 const SKIP_KEY = `falqbit-skip-${net}`;
 let SKIP = new Set();
+const SKIP_WHY = new Map();
 try { SKIP = new Set(JSON.parse(localStorage.getItem(SKIP_KEY) || "[]")); } catch { SKIP = new Set(); }
 const saveSkip = () => { try { localStorage.setItem(SKIP_KEY, JSON.stringify([...SKIP])); } catch {} };
 
@@ -425,8 +499,9 @@ function render() {
   for (const r of queue.slice(0, 500)) {
     const li = document.createElement("li");
     const f = r.fund;
-    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}${r.chain ? `<span class="flag">funder got a drop</span>` : ""}${r.prior ? `<span class="flag">funder used before ×${r.prior}</span>` : ""}${r.exch ? `<span class="flag ok">exchange</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
-    if (r.dup > 1 || r.chain || r.prior) li.className = "dup";
+    const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}${r.chain ? `<span class="flag">funder got a drop</span>` : ""}${r.prior ? `<span class="flag">funder used before ×${r.prior}</span>` : ""}${r.sib ? `<span class="flag">funder is a FALQBIT account</span>` : ""}${r.hub ? `<span class="flag">funder collects from ${r.hub} welcomed</span>` : ""}${r.exch ? `<span class="flag ok">exchange</span>` : ""}${r.twin ? `<span class="flag amber">twin ×${r.twin}</span>` : ""}${r.feeds ? `<span class="flag amber">funded ${r.feeds} other on this list</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
+    if (r.dup > 1 || r.chain || r.prior || r.sib || r.hub) li.className = "dup";
+    else if (r.twin || r.feeds) li.className = "warn";
     li.innerHTML = `<span class="who"><a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a>${fundLine}</span><span class="right"><span class="amt">${fq(r.amount)}</span>${r.dup > 1 ? `<button type="button" class="skipall">Skip all ${r.dup}</button>` : ""}<button type="button" class="skip">Skip</button></span>`;
     li.querySelector(".skip").addEventListener("click", () => {
       SKIP.add(r.to); saveSkip();
@@ -451,7 +526,7 @@ function renderSkipped() {
   const box = $("skipped");
   box.hidden = !SKIP.size;
   box.innerHTML = SKIP.size ? `<details><summary>Skipped in this browser (${SKIP.size})</summary><div class="chips">` + [...SKIP].map((a) =>
-    `<button type="button" class="unskip" data-a="${a}" title="Put back on the list">${short(a)} ✕</button>`).join("") + `</div></details>` : "";
+    `<button type="button" class="unskip${SKIP_WHY.has(a) ? " w-" + SKIP_WHY.get(a)[0] : ""}" data-a="${a}" title="Put back on the list">${short(a)}${SKIP_WHY.has(a) ? `<small>${SKIP_WHY.get(a)[1]}</small>` : ""} ✕</button>`).join("") + `</div></details>` + (SKIP_WHY.size ? `<p class="detail" style="margin:8px 0 0">Red: likely farm · Amber: big wallet (yours) · Grey: already paid or not unlocked. Exchange-funded accounts are put back automatically.</p>` : "") : "";
   box.querySelectorAll(".unskip").forEach((b) => b.addEventListener("click", () => {
     SKIP.delete(b.dataset.a); saveSkip(); renderSkipped();
     say("Put back. Press \"Check the chain\" to refresh the list.");
