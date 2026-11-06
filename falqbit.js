@@ -9,16 +9,20 @@ export const NETWORKS = {
   mainnet: {
     label: "MainNet",
     chainId: 416001,
-    algod: "https://mainnet-api.algonode.cloud",
-    indexer: "https://mainnet-idx.algonode.cloud",
+    algod: "https://mainnet-api.4160.nodely.io",
+    indexer: "https://mainnet-idx.4160.nodely.io",
+    algodFallback: "https://mainnet-api.algonode.cloud",
+    indexerFallback: "https://mainnet-idx.algonode.cloud",
     lora: "https://lora.algokit.io/mainnet",
     tinyman: 1002541853,
   },
   testnet: {
     label: "TestNet",
     chainId: 416002,
-    algod: "https://testnet-api.algonode.cloud",
-    indexer: "https://testnet-idx.algonode.cloud",
+    algod: "https://testnet-api.4160.nodely.io",
+    indexer: "https://testnet-idx.4160.nodely.io",
+    algodFallback: "https://testnet-api.algonode.cloud",
+    indexerFallback: "https://testnet-idx.algonode.cloud",
     lora: "https://lora.algokit.io/testnet",
     tinyman: 148607000,
   },
@@ -48,10 +52,34 @@ export function client(net) {
   const n = NETWORKS[net];
   const pera = new PeraWalletConnect({ chainId: n.chainId });
 
+  // Try the primary host first; if it returns 403/429/5xx and a fallback exists, try the fallback. Remembers a bad host for 10 min.
+  const _badHost = {};
+  function _hostOf(u) { try { return new URL(u).host; } catch { return u; } }
+  function _hostBad(h) { return _badHost[h] && (Date.now() - _badHost[h]) < 10 * 60 * 1000; }
+  function _markBad(h) { _badHost[h] = Date.now(); }
+  function _fallbackFor(url) {
+    // map primary host → fallback URL (same path, different host)
+    if (url.startsWith(n.indexer) && n.indexerFallback) return n.indexerFallback + url.slice(n.indexer.length);
+    if (url.startsWith(n.algod) && n.algodFallback) return n.algodFallback + url.slice(n.algod.length);
+    return null;
+  }
   async function getJSON(url) {
-    const r = await fetch(url);
+    const fb = _fallbackFor(url);
+    const target = (fb && _hostBad(_hostOf(url))) ? fb : url;
+    let r;
+    try { r = await fetch(target); }
+    catch (e) { if (fb && target !== fb) { r = await fetch(fb); } else { throw e; } }
     if (r.status === 404) return null;
-    if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+    if (!r.ok) {
+      if ((r.status === 403 || r.status === 429 || r.status >= 500) && fb && target !== fb) {
+        _markBad(_hostOf(target));
+        const r2 = await fetch(fb);
+        if (r2.status === 404) return null;
+        if (!r2.ok) throw new Error(`${r2.status} ${await r2.text()}`);
+        return r2.json();
+      }
+      throw new Error(`${r.status} ${await r.text()}`);
+    }
     return r.json();
   }
   const algodGet = (path) => getJSON(n.algod + path);
