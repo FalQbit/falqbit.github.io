@@ -1951,7 +1951,7 @@ document.documentElement.classList.add("js");
   } else { els.forEach(function (el) { el.classList.add("in"); }); }
 
   // live numbers from Algorand MainNet
-  var ALGOD = "https://mainnet-api.4160.nodely.io";
+  var ALGOD = "https://mainnet-api.algonode.cloud";
   var ALGOD_FB = "https://mainnet-api.algonode.cloud";
   var POOL = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
   var TINYMAN = 1002541853, GATE = 3760919863, ASSET = 3760920399, SUPPLY = 10000000000;
@@ -1977,23 +1977,29 @@ document.documentElement.classList.add("js");
       el.classList.remove("loading"); el.textContent = "–";
     }
   }
-  // smart fetch: tries primary endpoint first, falls back to the alternate on 403/429/5xx. Keeps the current primary cached per host.
-  var _bad = {}; // host -> timestamp when it last 403'd
-  function okFor(host) { return !_bad[host] || (Date.now() - _bad[host]) > 10 * 60 * 1000; }
-  function markBad(host) { _bad[host] = Date.now(); }
+  // Smart fetch with 60-second in-memory cache + sessionStorage fallback cache.
+  // When the API quota is hit (403) we serve cached data so the UI never goes blank.
+  var _cache = {}; // url -> {t, data}
+  var CACHE_TTL = 60 * 1000;      // serve from cache if younger than 60s (stops re-asking in bursts)
+  var STALE_MAX = 10 * 60 * 1000; // if 403, accept up to 10 min stale as a fallback
+  function _readSS(k) { try { var v = sessionStorage.getItem("fq:" + k); return v ? JSON.parse(v) : null; } catch { return null; } }
+  function _writeSS(k, v) { try { sessionStorage.setItem("fq:" + k, JSON.stringify(v)); } catch {} }
   function fetchJSON(url, fallbackUrl) {
-    var u = okFor(new URL(url).host) ? url : (fallbackUrl || url);
-    return fetch(u).then(function (r) {
-      if (r.ok) return r.json();
-      if ((r.status === 403 || r.status === 429 || r.status >= 500) && fallbackUrl && u !== fallbackUrl) {
-        markBad(new URL(u).host);
-        return fetch(fallbackUrl).then(function (r2) { if (!r2.ok) throw new Error(r2.status); return r2.json(); });
-      }
+    var key = url;
+    var hit = _cache[key] || _readSS(key);
+    if (hit && (Date.now() - hit.t) < CACHE_TTL) return Promise.resolve(hit.data);
+    return fetch(url).then(function (r) {
+      if (r.ok) return r.json().then(function (data) { var rec = { t: Date.now(), data: data }; _cache[key] = rec; _writeSS(key, rec); return data; });
+      // on quota or server error, fall back to any cached value we still have — avoids the UI going blank
+      if ((r.status === 403 || r.status === 429 || r.status >= 500) && hit && (Date.now() - hit.t) < STALE_MAX) return hit.data;
       throw new Error(r.status);
+    }).catch(function (e) {
+      if (hit && (Date.now() - hit.t) < STALE_MAX) return hit.data; // network error → serve stale
+      throw e;
     });
   }
-  function get(p) { return fetchJSON(ALGOD + p, ALGOD_FB + p); }
-  function idxGet(p) { return fetchJSON(IDX + p, IDX_FB + p); }
+  function get(p) { return fetchJSON(ALGOD + p); }
+  function idxGet(p) { return fetchJSON(IDX + p); }
   var USDC_POOL = "2PIFZW53RHCSFSYMCFUBW4XOCXOMB7XOYQSQ6KGT3KVGJTL4HM6COZRNMM";
   var PX = { algoPerFq: 0, usdPerAlgo: 0 }, cvCur = "fq";
   function usd(n) { if (!(n > 0)) return "$0"; if (n < 1) return "$" + Number(n.toPrecision(3)); return "$" + fmt(n, n < 100 ? 2 : 0); }
@@ -2068,13 +2074,13 @@ document.documentElement.classList.add("js");
       }
     });
   }
-  var IDX = "https://mainnet-idx.4160.nodely.io";
+  var IDX = "https://mainnet-idx.algonode.cloud";
   var IDX_FB = "https://mainnet-idx.algonode.cloud";
   var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": "Liquidity pool", "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": "Rewards", "XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q": "Team", "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU": "Project" };
   var RANGES = [[0, 1e6, "Under 1M"], [1e6, 1e7, "1M – 10M"], [1e7, 1e8, "10M – 100M"], [1e8, 1e9, "100M – 1B"], [1e9, Infinity, "1B+"]];
   function allBalances(next, acc) {
     acc = acc || [];
-    return fetchJSON(IDX + "/v2/assets/" + ASSET + "/balances?limit=1000&currency-greater-than=0" + (next ? "&next=" + encodeURIComponent(next) : ""), IDX_FB + "/v2/assets/" + ASSET + "/balances?limit=1000&currency-greater-than=0" + (next ? "&next=" + encodeURIComponent(next) : ""))
+    return fetchJSON(IDX + "/v2/assets/" + ASSET + "/balances?limit=1000&currency-greater-than=0" + (next ? "&next=" + encodeURIComponent(next) : ""))
       .then(function (j) { acc = acc.concat(j.balances || []); return j["next-token"] && (j.balances || []).length ? allBalances(j["next-token"], acc) : acc; });
   }
   var RES = [["CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", "Liquidity pool", "#1F9E94"], ["V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", "Rewards", "#7A6EE6"], ["OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU", "Project reserve", "#C98500"]];
@@ -2202,7 +2208,7 @@ document.documentElement.classList.add("js");
   function loadPayouts() {
     var box = $("pay-list"); if (!box) return;
     get("/v2/accounts/" + REWARDS + "/assets/" + ASSET).then(function (j) { $("pay-bal").textContent = fmt(j["asset-holding"].amount / 1e6, 0); }).catch(function () { $("pay-bal").textContent = "–"; });
-    fetchJSON(IDX + "/v2/accounts/" + REWARDS + "/transactions?tx-type=axfer&asset-id=" + ASSET + "&limit=60", IDX_FB + "/v2/accounts/" + REWARDS + "/transactions?tx-type=axfer&asset-id=" + ASSET + "&limit=60")
+    fetchJSON(IDX + "/v2/accounts/" + REWARDS + "/transactions?tx-type=axfer&asset-id=" + ASSET + "&limit=60")
       .then(function (j) {
         var rows = (j.transactions || []).filter(function (t) { var x = t["asset-transfer-transaction"] || {}; return t.sender === REWARDS && x.receiver !== REWARDS && x.amount > 0; })
           .sort(function (a, b) { return (b["round-time"] || 0) - (a["round-time"] || 0); }).slice(0, 3);
@@ -2223,7 +2229,7 @@ document.documentElement.classList.add("js");
     var SIZES = { "1000000000000": 1, "500000000000": 1, "250000000000": 1, "100000000000": 1 };
     function all(addr, next, acc) {
       acc = acc || [];
-      return fetchJSON(IDX + "/v2/accounts/" + addr + "/transactions?tx-type=axfer&asset-id=" + ASSET + "&limit=1000" + (next ? "&next=" + encodeURIComponent(next) : ""), IDX_FB + "/v2/accounts/" + addr + "/transactions?tx-type=axfer&asset-id=" + ASSET + "&limit=1000" + (next ? "&next=" + encodeURIComponent(next) : ""))
+      return fetchJSON(IDX + "/v2/accounts/" + addr + "/transactions?tx-type=axfer&asset-id=" + ASSET + "&limit=1000" + (next ? "&next=" + encodeURIComponent(next) : ""))
         .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length ? all(addr, j["next-token"], acc) : acc; });
     }
     function note(t) { try { return t.note ? atob(t.note) : ""; } catch (e) { return ""; } }
@@ -2254,7 +2260,7 @@ document.documentElement.classList.add("js");
     var box = $("lp-list"); if (!box) return;
     Promise.all([
       get("/v2/accounts/" + LP_POOL + "/applications/1002541853"),
-      fetchJSON(IDX + "/v2/assets/" + LP_TOKEN + "/balances?limit=1000&currency-greater-than=0", IDX_FB + "/v2/assets/" + LP_TOKEN + "/balances?limit=1000&currency-greater-than=0")
+      fetchJSON(IDX + "/v2/assets/" + LP_TOKEN + "/balances?limit=1000&currency-greater-than=0")
     ]).then(function (x) {
       var r = {}; (x[0]["app-local-state"]["key-value"] || []).forEach(function (k) { r[atob(k.key)] = k.value.uint; });
       var issued = r.issued_pool_tokens || 1, fq = r.asset_1_reserves / 1e6, al = r.asset_2_reserves / 1e6;
@@ -2330,7 +2336,7 @@ document.documentElement.classList.add("js");
   var SERIES = [["buys", "Buys", "#1F9E94"], ["sells", "Sells", "#7A6EE6"], ["unlocks", "Unlocks", "#B97F18"], ["transfers", "Transfers", "#4C7FDB"]];
   function allTx(after, next, acc) {
     acc = acc || [];
-    return fetchJSON(IDX + "/v2/assets/" + ASSET + "/transactions?limit=1000&after-time=" + encodeURIComponent(after) + (next ? "&next=" + encodeURIComponent(next) : ""), IDX_FB + "/v2/assets/" + ASSET + "/transactions?limit=1000&after-time=" + encodeURIComponent(after) + (next ? "&next=" + encodeURIComponent(next) : ""))
+    return fetchJSON(IDX + "/v2/assets/" + ASSET + "/transactions?limit=1000&after-time=" + encodeURIComponent(after) + (next ? "&next=" + encodeURIComponent(next) : ""))
       .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length ? allTx(after, j["next-token"], acc) : acc; });
   }
   function dayKey(t) { return new Date(t * 1000).toISOString().slice(0, 10); }
@@ -2409,7 +2415,7 @@ document.documentElement.classList.add("js");
     var acc = [], seen = {};
     PC_LOAD = Date.now(); var mine = PC_LOAD;
     function page(next) {
-      return fetchJSON(IDX + "/v2/accounts/" + PFX + "/transactions?limit=1000&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""), IDX_FB + "/v2/accounts/" + PFX + "/transactions?limit=1000&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
+      return fetchJSON(IDX + "/v2/accounts/" + PFX + "/transactions?limit=1000&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
         .then(function (r) { return r.ok ? r.json() : { transactions: [] }; })
         .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 6000 ? page(j["next-token"]) : acc; });
     }
