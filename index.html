@@ -389,6 +389,12 @@ body { overflow-x: clip; }
 .res-list b { font: 600 14px/1.2 var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .dist-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .dist-head .dk { margin: 0; }
+.dist-tools { display: flex; align-items: center; gap: 12px; }
+.updated-dot { display: inline-flex; align-items: center; gap: 6px; font: 500 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.updated-dot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px rgba(63,224,208,.8); animation: dotPulse 2.5s ease-in-out infinite; }
+.updated-dot.fresh::before { animation: dotFresh 1.2s ease-out; background: #A9FFF6; }
+@keyframes dotPulse { 50% { opacity: .35; } }
+@keyframes dotFresh { 0% { transform: scale(2.5); box-shadow: 0 0 20px rgba(169,255,246,1); } 100% { transform: scale(1); box-shadow: 0 0 10px rgba(63,224,208,.8); } }
 .ghost-btn { font: 500 13px/1 var(--text, inherit); color: var(--cyan); background: transparent; border: 1px solid rgba(63,224,208,.4); border-radius: 999px; padding: 8px 14px; cursor: pointer; white-space: nowrap; flex: none; }
 .ghost-btn:hover { background: rgba(63,224,208,.08); }
 .dist-plot { position: relative; margin-top: 14px; }
@@ -1764,7 +1770,7 @@ body { background-image: none; }
         </div>
       </div>
       <div class="dpanel d-dist">
-        <div class="dist-head"><h3 class="dk">Holder distribution</h3><button type="button" class="ghost-btn" id="d-dist-toggle" aria-pressed="false">Show as table</button></div>
+        <div class="dist-head"><h3 class="dk">Holder distribution</h3><div class="dist-tools"><span class="updated-dot" id="d-dist-updated" aria-live="polite">…</span><button type="button" class="ghost-btn" id="d-dist-toggle" aria-pressed="false">Show as table</button></div></div>
         <p class="dsub">Every wallet holding FALQBIT, grouped by balance.</p>
         <div class="dist-plot" id="d-dist-plot"><p class="muted">Reading the chain…</p></div>
         <div class="htable-wrap" id="d-dist-table" hidden>
@@ -2277,6 +2283,15 @@ document.documentElement.classList.add("js");
       if (ringArc) { var C = 2 * Math.PI * 50; ringArc.style.strokeDashoffset = (C * (1 - Math.min(100, pc) / 100)).toFixed(2); ringArc.style.transition = "stroke-dashoffset 1.4s cubic-bezier(.2,.8,.2,1)"; }
       drawDonut(proj, psum);
       drawDist(rows);
+      // signature of the current distribution (counts + sums) — if it differs from the last one, trades happened, flash the dot
+      var sig = rows.map(function (r) { return r.n + ":" + Math.round(r.sum); }).join("|");
+      var dot = $("d-dist-updated");
+      if (dot) {
+        var upd = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        if (window._lastDistSig && window._lastDistSig !== sig) { dot.classList.remove("fresh"); void dot.offsetWidth; dot.classList.add("fresh"); }
+        dot.textContent = "Updated " + upd;
+        window._lastDistSig = sig;
+      }
       TOP.comm = allHolders; TOP.scale = undefined; drawTop(); loadAlgo();
       countUp("st-circ", total, function (v) { return v >= 1e9 ? fmt(v / 1e9, 2) + "B" : fmt(v / 1e6, 0) + "M"; });
       var bar = $("st-circ-bar"); if (bar) bar.style.width = Math.min(100, total / SUPPLY * 100).toFixed(1) + "%";
@@ -2468,7 +2483,11 @@ document.documentElement.classList.add("js");
   });
   window.addEventListener("resize", function () { clearTimeout(window._pcrz); window._pcrz = setTimeout(drawPrice, 200); });
 
-  load(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); loadPrice(); setInterval(function () { load(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); loadPrice(); }, 60000);
+  load(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); loadPrice();
+  // fast refresh for live data: load() (prices + main stats) every 15s, holders/supply/pool every 30s, slower loops at 90s
+  setInterval(function () { load(); loadPrice(); }, 15000);
+  setInterval(function () { loadHolders(); loadLP(); }, 30000);
+  setInterval(function () { loadActivity(); loadWelcome(); }, 90000);
 })();
 </script>
 <script>
