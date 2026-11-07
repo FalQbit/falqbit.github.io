@@ -930,14 +930,13 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").ca
 
 // ---------- market: price chart ----------
 const IDX = c.n.indexer;
-function fmt(n, d) { return (d !== undefined ? n.toFixed(d) : Math.round(n)).toLocaleString(); }
 const POOL_ADDR = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
 let MC_RAW = null, MC_RANGE = 7, MC_LOAD = 0;
 const _mcCache = {};
 function mcFetch(url) {
   const hit = _mcCache[url];
   if (hit && Date.now() - hit.t < 120000) return Promise.resolve(hit.data);
-  return fetch(url).then(r => r.ok ? r.json() : { transactions: [] }).then(data => { _mcCache[url] = { t: Date.now(), data }; return data; });
+  return c.getJSON(url).then(data => { data = data || { transactions: [] }; _mcCache[url] = { t: Date.now(), data }; return data; }).catch(() => ({ transactions: [] }));
 }
 async function loadPriceChart() {
   const since = new Date(Date.now() - 60 * 86400000).toISOString();
