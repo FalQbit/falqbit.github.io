@@ -121,9 +121,15 @@ p { margin: 0; }
 .step .howpaid b { color: var(--fg); font-weight: 600; }
 .step p.fine b { color: var(--fg); font-weight: 600; }
 .step p.fine { font-size: 13.5px; border-top: 1px solid var(--line); padding-top: 10px; }
-.step .eg { display: grid; grid-template-columns: 1fr auto auto; gap: 4px 12px; font: 500 14px/1.5 var(--mono); font-variant-numeric: tabular-nums; color: var(--fg); background: rgba(63,224,208,.08); border: 1px solid rgba(63,224,208,.25); border-radius: 10px; padding: 10px 12px; }
-.step .eg span:nth-child(even) { text-align: right; color: var(--cyan); }
-.step .eg .h { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) !important; }
+.rew-tbl { width: 100%; border-collapse: separate; border-spacing: 0; font: 500 14px/1.4 var(--mono); font-variant-numeric: tabular-nums; background: rgba(63,224,208,.06); border: 1px solid rgba(63,224,208,.2); border-radius: 12px; overflow: hidden; }
+.rew-tbl th { font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding: 10px 12px; text-align: right; background: rgba(0,0,0,.15); border-bottom: 1px solid rgba(63,224,208,.12); }
+.rew-tbl th:first-child { text-align: left; }
+.rew-tbl td { padding: 8px 12px; text-align: right; border-bottom: 1px solid rgba(255,255,255,.04); }
+.rew-tbl td:first-child { text-align: left; color: var(--fg); }
+.rew-tbl td:nth-child(2) { color: var(--cyan); font-weight: 600; }
+.rew-tbl td:nth-child(3) { color: var(--muted); }
+.rew-tbl tr:last-child td { border-bottom: 0; }
+.rew-tbl .cap { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; opacity: .7; }
 .lock { display: inline-flex; align-items: center; gap: 8px; font: 500 12px/1 var(--mono); padding: 6px 10px; border-radius: 999px; white-space: nowrap; align-self: flex-start; margin-top: auto; }
 .lock.off { color: var(--amber); border: 1px solid var(--amber); }
 .lock.on { color: var(--ground); background: var(--cyan); }
@@ -1612,7 +1618,7 @@ body { background-image: none; }
         <span class="n">HOLD-TO-EARN</span>
         <h3>Up to 1% a month for holding</h3>
         <p>Hold 1,000,000 FALQBIT or more and earn monthly rewards sent straight to your wallet. <b>Until November 2026: 1% promo rate.</b> From December 2026: 0.5% long-term rate.</p>
-        <div class="eg"><span class="h">You hold</span><span class="h">Now (1%)</span><span class="h">Dec 2026+ (0.5%)</span><span>1,000,000</span><span>10,000</span><span>5,000</span><span>10,000,000</span><span>100,000</span><span>50,000</span><span>100,000,000+</span><span>500,000 max</span><span>500,000 max</span></div>
+        <table class="rew-tbl"><tr><th>You hold</th><th>Now (1%)</th><th>Dec '26+</th></tr><tr><td>1M</td><td>10,000</td><td>5,000</td></tr><tr><td>10M</td><td>100,000</td><td>50,000</td></tr><tr><td>100M+</td><td>500K <span class="cap">max</span></td><td>500K <span class="cap">max</span></td></tr></table>
         <p>No staking, nothing to claim. Your tokens never leave your wallet and you can sell anytime.</p>
         <span class="lock on">Min. 1,000,000 FALQBIT</span>
       </article>
