@@ -295,7 +295,7 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
       <div class="dash" id="w-dash">
         <div class="dc wide"><span>Price · 1M FALQBIT</span><b id="l-price">…</b><small id="l-usd"></small></div>
         <div class="dc"><span>Pool liquidity</span><b id="l-pool">…</b><small>ALGO on Tinyman</small></div>
-        <div class="dc"><span>Holders</span><b id="l-holders">…</b><small>community wallets</small></div>
+        <div class="dc"><span>Holders</span><b id="l-holders">…</b><small>wallets holding FALQBIT</small></div>
         <div class="dc"><span>Circulating</span><b id="l-circ">…</b><small id="l-circ-s">held by the community</small></div>
         <div class="dc"><span>Welcome drop</span><b id="l-drop">…</b><small id="l-tier"></small></div>
         <div class="dc wide drop-bar"><div class="segs" id="l-segs"></div><small id="l-segs-t"></small></div>
@@ -315,8 +315,19 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
       <div class="card" id="w-more" hidden>
         <div class="row"><span class="muted">ALGO</span><span id="w-algo">…</span></div>
         <div class="row"><span class="muted">Price</span><span id="w-price">…</span></div>
-        <div class="row"><span class="muted">Next hold reward (est.)</span><span id="w-reward">…</span></div>
-        <div class="row"><span class="muted">Payout day</span><span id="w-payday">…</span></div>
+      </div>
+      <div class="card" id="w-rewards" hidden>
+        <span class="k">💎 Hold Rewards</span>
+        <div id="w-rew-status"></div>
+        <div class="row"><span class="muted">Your balance</span><span id="w-rew-bal">…</span></div>
+        <div class="row"><span class="muted">Minimum to earn</span><span>1,000,000</span></div>
+        <div class="row"><span class="muted">Current rate</span><span id="w-rew-rate">…</span></div>
+        <div class="row"><span class="muted">Est. this month</span><span id="w-reward" style="color:var(--cyan);font-weight:700">…</span></div>
+        <div class="row"><span class="muted">Cap per wallet</span><span>500,000 / month</span></div>
+        <div class="row"><span class="muted">Monthly pool</span><span>15,000,000</span></div>
+        <div class="row"><span class="muted">Next payout</span><span id="w-payday">…</span></div>
+        <div class="bar" aria-hidden="true" style="margin-top:4px"><i id="w-rew-bar"></i></div>
+        <span class="fine" id="w-rew-fine"></span>
       </div>
       <div class="card" id="w-drop" hidden>
         <span class="k">Welcome drop</span>
@@ -519,6 +530,19 @@ views.forEach((v) => $("tab-" + v).addEventListener("click", () => show(v)));
 const start = (location.hash || "").slice(1);
 if (views.includes(start)) show(start);
 
+// ---------- persistent cache (survives page reload) ----------
+const _pCache = {};
+function pGet(key, maxAge) {
+  if (_pCache[key] && Date.now() - _pCache[key].t < maxAge) return _pCache[key].v;
+  try { const raw = localStorage.getItem("fq-c-" + key); if (raw) { const o = JSON.parse(raw); if (Date.now() - o.t < maxAge) { _pCache[key] = { t: o.t, v: o.v }; return o.v; } } } catch {}
+  return null;
+}
+function pSet(key, val) {
+  const entry = { t: Date.now(), v: val };
+  _pCache[key] = entry;
+  try { localStorage.setItem("fq-c-" + key, JSON.stringify(entry)); } catch {}
+}
+
 // ---------- chain reads ----------
 async function readPool(addr) {
   const j = await c.algodGet(`/v2/accounts/${addr}/applications/${T}`);
@@ -537,17 +561,25 @@ const usd = (n) => n >= 100 ? "$" + fmt(n, 0) : n >= 1 ? "$" + fmt(n, 2) : "$" +
 // welcome drop progress: accounts paid by the Rewards account (or early drops from the Project account)
 let STATS = null;
 async function loadStats() {
+  // Try cache first (valid 30 min)
+  const cached = pGet("stats", 30 * 60000);
+  if (cached) { STATS = cached; renderLive(); return; }
   const skip = new Set([cfg.pool, cfg.rewards, cfg.project, cfg.team, cfg.app_address].filter(Boolean));
   let all = [], next = "";
   for (let i = 0; i < 20; i++) {
     const j = await c.getJSON(`${c.n.indexer}/v2/assets/${cfg.asset_id}/balances?limit=1000&currency-greater-than=0${next ? "&next=" + encodeURIComponent(next) : ""}`);
     all = all.concat(j?.balances || []); if (!j?.["next-token"] || !(j?.balances || []).length) break; next = j["next-token"];
   }
-  const comm = all.filter((b) => !skip.has(b.address) && !b.deleted && b.amount > 0);
-  STATS = { holders: comm.length, circ: comm.reduce((t, b) => t + b.amount / DEC, 0) };
+  const live = all.filter((b) => !b.deleted && b.amount > 0);
+  const comm = live.filter((b) => !skip.has(b.address));
+  STATS = { holders: live.length, circ: comm.reduce((t, b) => t + b.amount / DEC, 0) };
+  pSet("stats", STATS);
   renderLive();
 }
 async function loadProgram() {
+  // Try cache first (valid 60 min — drops happen weekly)
+  const cached = pGet("prog", 60 * 60000);
+  if (cached) { PROG = { n: cached.n, paid: new Set(cached.list) }; renderLive(); renderDrop(); return; }
   const all = async (addr) => { let out = [], next = ""; for (let i = 0; i < 20; i++) { const j = await c.getJSON(`${c.n.indexer}/v2/accounts/${addr}/transactions?tx-type=axfer&asset-id=${cfg.asset_id}&limit=1000${next ? "&next=" + encodeURIComponent(next) : ""}`); out = out.concat(j?.transactions || []); if (!j?.["next-token"] || !(j?.transactions || []).length) break; next = j["next-token"]; } return out; };
   const note = (t) => { try { return t.note ? atob(t.note) : ""; } catch { return ""; } };
   const sizes = new Set(TIERS.map(([, v]) => String(v * DEC)));
@@ -557,6 +589,7 @@ async function loadProgram() {
   for (const t of a) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.rewards && x && x.amount > 0 && !note(t).startsWith("FALQBIT hold") && !skip.has(x.receiver)) seen.add(x.receiver); }
   for (const t of b) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.project && x && sizes.has(String(x.amount)) && !note(t).startsWith("FALQBIT hold") && !skip.has(x.receiver)) seen.add(x.receiver); }
   PROG = { n: seen.size, paid: seen };
+  pSet("prog", { n: seen.size, list: [...seen] });
   renderLive(); renderDrop();
 }
 function renderLive() {
@@ -627,7 +660,7 @@ async function refresh() {
   unlocked = !!h && !h["is-frozen"];
   algoBal = BigInt(info?.amount || 0); minBal = BigInt(info?.["min-balance"] || 0);
   const ua = (info?.assets || []).find((a) => a["asset-id"] === USDC); usdcBal = ua ? BigInt(ua.amount) : 0n; usdcOpt = !!ua;
-  $("w-empty").hidden = true; $("w-main").hidden = false; $("w-more").hidden = false;
+  $("w-empty").hidden = true; $("w-main").hidden = false; $("w-more").hidden = false; $("w-rewards").hidden = false;
   $("w-fq").textContent = fmt(Number(fqBal) / DEC);
   const p = priceAlgoPerFq();
   $("w-fq-algo").textContent = p ? `≈ ${fmt(Number(fqBal) / DEC * p, 3)} ALGO` : "";
@@ -639,14 +672,30 @@ async function refresh() {
   else if (h["is-frozen"]) { st.className = "pill warn"; st.textContent = "Locked"; }
   else { st.className = "pill ok"; st.textContent = "Unlocked"; }
   $("w-unlock").hidden = unlocked;
-  // estimate this month's hold reward from today's balance (from December the lowest balance since the 1st counts)
+  // estimate this month's hold reward from today's balance
   const now = new Date(); const ym = now.toISOString().slice(0, 7);
-  const rate = ym <= "2026-11" ? 0.01 : 0.005; const cap = 500000; // max 500,000 per wallet; 15M monthly pool shared by all
+  const rate = ym <= "2026-11" ? 0.01 : 0.005; const cap = 500000;
   const fq = Number(fqBal) / DEC;
-  $("w-reward").textContent = fq >= 1_000_000 ? `${fmt(Math.min(fq * rate, cap))} FALQBIT` : "Hold 1M+ to earn";
+  $("w-rew-bal").textContent = fmt(fq);
+  $("w-rew-rate").textContent = rate === 0.01 ? "1% (promo until Nov 2026)" : "0.5%";
+  const rewStatus = $("w-rew-status");
+  if (fq >= 1_000_000) {
+    const est = Math.min(fq * rate, cap);
+    $("w-reward").textContent = `${fmt(est)} FALQBIT`;
+    rewStatus.innerHTML = `<span class="pill ok">✓ Eligible · earning rewards</span>`;
+    const pct = Math.min(100, (est / cap) * 100);
+    $("w-rew-bar").style.width = pct + "%";
+    $("w-rew-fine").textContent = est >= cap ? "You've reached the 500K cap this month" : `${fmt(pct, 0)}% of monthly cap · hold more to earn more`;
+  } else {
+    $("w-reward").textContent = "—";
+    rewStatus.innerHTML = `<span class="pill warn">Need ${fmt(1_000_000 - fq)} more to qualify</span>`;
+    const pct = Math.min(100, (fq / 1_000_000) * 100);
+    $("w-rew-bar").style.width = pct + "%";
+    $("w-rew-fine").textContent = `${fmt(pct, 0)}% of minimum · hold 1M+ FALQBIT to earn monthly rewards`;
+  }
   const pay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + (now.getUTCDate() > 25 ? 1 : 0), 25));
   const days = Math.ceil((pay - now) / 86400000);
-  $("w-payday").textContent = days <= 0 ? "Today" : `${pay.toLocaleDateString(undefined, { day: "numeric", month: "short" })} · in ${days} day${days === 1 ? "" : "s"}`;
+  $("w-payday").textContent = days <= 0 ? "🎉 Today!" : `${pay.toLocaleDateString(undefined, { day: "numeric", month: "short" })} · in ${days} day${days === 1 ? "" : "s"}`;
   renderReceive(); quote(); checkPay(); renderDrop(); loadHistory();
 }
 
@@ -656,7 +705,7 @@ function setAccount(a) {
   $("acct").textContent = a ? short(a) : "Connect Pera";
   $("acct").classList.toggle("on", !!a);
   $("r-copy").disabled = !a;
-  if (!a) { $("w-empty").hidden = false; $("w-main").hidden = true; $("w-more").hidden = true; $("w-drop").hidden = true; $("w-hist").hidden = true; MYDROP = null; renderReceive(); }
+  if (!a) { $("w-empty").hidden = false; $("w-main").hidden = true; $("w-more").hidden = true; $("w-rewards").hidden = true; $("w-drop").hidden = true; $("w-hist").hidden = true; MYDROP = null; renderReceive(); }
 }
 async function connect() {
   try { const a = await c.connect(); c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); await refresh(); }
@@ -926,7 +975,7 @@ let deferred = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("w-install-btn").hidden = false; $("w-install-text").textContent = "Install FALQBIT on this device for quick access."; });
 $("w-install-btn").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("w-install-btn").hidden = true; });
 if (window.matchMedia("(display-mode: standalone)").matches) $("w-install").hidden = true;
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=9").catch(() => {});
 
 // ---------- market: price chart ----------
 const IDX = c.n.indexer;
@@ -935,7 +984,7 @@ let MC_RAW = null, MC_RANGE = 7, MC_LOAD = 0;
 const _mcCache = {};
 function mcFetch(url) {
   const hit = _mcCache[url];
-  if (hit && Date.now() - hit.t < 120000) return Promise.resolve(hit.data);
+  if (hit && Date.now() - hit.t < 600000) return Promise.resolve(hit.data);
   return c.getJSON(url).then(data => { data = data || { transactions: [] }; _mcCache[url] = { t: Date.now(), data }; return data; }).catch(() => ({ transactions: [] }));
 }
 async function loadPriceChart() {
@@ -1079,11 +1128,12 @@ async function loadMCActivity() {
 // ---------- start ----------
 loadReserves().then(quote).catch(() => {});
 loadProgram().catch(() => {}); loadStats().catch(() => {});
-loadPriceChart().catch(() => {}); loadMCActivity().catch(() => {});
-setInterval(() => { loadProgram().catch(() => {}); loadStats().catch(() => {}); loadPriceChart().catch(() => {}); loadMCActivity().catch(() => {}); }, 300000);
+// Price chart & activity only load when market tab is opened (see show())
+setInterval(() => { loadProgram().catch(() => {}); loadStats().catch(() => {}); }, 1800000); // 30 min
 setDir("buy");
 c.reconnect().then((a) => { if (a.length) { c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); refresh(); } }).catch(() => {});
-setInterval(() => { refresh().catch(() => {}); }, 60000);
+setInterval(() => { loadReserves().then(quote).catch(() => {}); }, 300000); // reserves every 5 min
+setInterval(() => { if (account) refresh().catch(() => {}); }, 300000); // wallet refresh every 5 min (only if connected)
 </script>
 <script src="./fx.js" defer></script>
 <script src="./fx3.js" defer></script>

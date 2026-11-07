@@ -121,7 +121,7 @@ p { margin: 0; }
 .step .howpaid b { color: var(--fg); font-weight: 600; }
 .step p.fine b { color: var(--fg); font-weight: 600; }
 .step p.fine { font-size: 13.5px; border-top: 1px solid var(--line); padding-top: 10px; }
-.step .eg { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; font: 500 14px/1.5 var(--mono); font-variant-numeric: tabular-nums; color: var(--fg); background: rgba(63,224,208,.08); border: 1px solid rgba(63,224,208,.25); border-radius: 10px; padding: 10px 12px; }
+.step .eg { display: grid; grid-template-columns: 1fr auto auto; gap: 4px 12px; font: 500 14px/1.5 var(--mono); font-variant-numeric: tabular-nums; color: var(--fg); background: rgba(63,224,208,.08); border: 1px solid rgba(63,224,208,.25); border-radius: 10px; padding: 10px 12px; }
 .step .eg span:nth-child(even) { text-align: right; color: var(--cyan); }
 .step .eg .h { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted) !important; }
 .lock { display: inline-flex; align-items: center; gap: 8px; font: 500 12px/1 var(--mono); padding: 6px 10px; border-radius: 999px; white-space: nowrap; align-self: flex-start; margin-top: auto; }
@@ -1143,7 +1143,6 @@ body { background-image: none; }
       <a href="#how">How it works</a>
       <a href="#rewards">Rewards</a>
       <a href="#price">Price</a>
-      <a href="#supply">Supply</a>
       <a href="#holders">Holders</a>
       <a href="#proof">Proof</a>
       <a href="./trade.html">Trade</a>
@@ -1611,9 +1610,9 @@ body { background-image: none; }
       </article>
       <article class="step">
         <span class="n">HOLD-TO-EARN</span>
-        <h3>0.5% a month for holding</h3>
-        <p>Hold 1,000,000 FALQBIT or more and get 0.5% of your balance every month, sent straight to your wallet. Launch month (November 2026) pays 1% of your balance on the 25th.</p>
-        <div class="eg"><span class="h">You hold</span><span class="h">You get / month</span><span>1,000,000</span><span>5,000</span><span>10,000,000</span><span>50,000</span><span>100,000,000+</span><span>500,000 max</span></div>
+        <h3>Up to 1% a month for holding</h3>
+        <p>Hold 1,000,000 FALQBIT or more and earn monthly rewards sent straight to your wallet. <b>Until November 2026: 1% promo rate.</b> From December 2026: 0.5% long-term rate.</p>
+        <div class="eg"><span class="h">You hold</span><span class="h">Now (1%)</span><span class="h">Dec 2026+ (0.5%)</span><span>1,000,000</span><span>10,000</span><span>5,000</span><span>10,000,000</span><span>100,000</span><span>50,000</span><span>100,000,000+</span><span>500,000 max</span><span>500,000 max</span></div>
         <p>No staking, nothing to claim. Your tokens never leave your wallet and you can sell anytime.</p>
         <span class="lock on">Min. 1,000,000 FALQBIT</span>
       </article>
@@ -1673,7 +1672,7 @@ body { background-image: none; }
           </div>
         </div>
       </div>
-      <div class="phone"><img src="./app-shot.webp" alt="The FALQBIT app wallet screen showing a balance, the price and the next hold reward" width="585" height="1266" loading="lazy"></div>
+      <div class="phone"><img src="./app-shot.webp" alt="The FALQBIT app wallet screen showing a balance, the price, next hold reward and the Market tab" width="585" height="1266" loading="lazy"></div>
     </div>
   </section>
 
@@ -1715,26 +1714,6 @@ body { background-image: none; }
     </div>
   </section>
 
-  <section class="sec reveal" id="supply" aria-labelledby="h-supply">
-    <div class="sec-head">
-      <p class="eyebrow">Supply</p>
-      <h2 id="h-supply">Ten billion FALQBIT, split in the open.</h2>
-    </div>
-    <div class="bar" role="img" aria-label="Allocation: 63% liquidity pool, 25% hold-to-earn, 2% welcome drop, 5% project reserve, 5% team">
-      <span style="width:63%; background: var(--cyan)"></span>
-      <span style="width:25%; background: var(--teal)"></span>
-      <span style="width:2%; background: var(--violet)"></span>
-      <span style="width:5%; background: var(--slate)"></span>
-      <span style="width:5%; background: var(--pale)"></span>
-    </div>
-    <ul class="legend">
-      <li><span class="sw" style="background: var(--cyan)"></span><span class="what">Liquidity pool</span><span class="pct">63%</span><span class="amt">6,300,000,000 · 5.5B paired with ALGO at launch + 800M added later</span></li>
-      <li><span class="sw" style="background: var(--teal)"></span><span class="what">Hold-to-earn</span><span class="pct">25%</span><span class="amt">2,500,000,000 · 0.5% a month to holders, 15M monthly pool, funded for nearly 14 years</span></li>
-      <li><span class="sw" style="background: var(--violet)"></span><span class="what">Welcome drop</span><span class="pct">2%</span><span class="amt">200,000,000 · 1M for each of the first 200 accounts (accounts 201–1,000 are funded from the project reserve)</span></li>
-      <li><span class="sw" style="background: var(--slate)"></span><span class="what">Project reserve</span><span class="pct">5%</span><span class="amt">500,000,000 · welcome rounds 2–4 (270M), liquidity, contests and partners</span></li>
-      <li><span class="sw" style="background: var(--pale)"></span><span class="what">Team</span><span class="pct">5%</span><span class="amt">500,000,000 · held in a quantum account</span></li>
-    </ul>
-  </section>
 
   <section class="sec reveal" id="holders" aria-labelledby="h-holders">
     <div class="sec-head">
@@ -1957,6 +1936,18 @@ document.documentElement.classList.add("js");
   var TINYMAN = 1002541853, GATE = 3760919863, ASSET = 3760920399, SUPPLY = 10000000000;
   function $(id) { return document.getElementById(id); }
   function fmt(n, d) { return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+  // persistent cache to avoid hammering the API on every page load
+  var _pc = {};
+  function pGet(key, maxAge) {
+    if (_pc[key] && Date.now() - _pc[key].t < maxAge) return _pc[key].v;
+    try { var raw = localStorage.getItem("fq-i-" + key); if (raw) { var o = JSON.parse(raw); if (Date.now() - o.t < maxAge) { _pc[key] = { t: o.t, v: o.v }; return o.v; } } } catch (e) {}
+    return null;
+  }
+  function pSet(key, val) {
+    var entry = { t: Date.now(), v: val };
+    _pc[key] = entry;
+    try { localStorage.setItem("fq-i-" + key, JSON.stringify(entry)); } catch (e) {}
+  }
   var REDUCED = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function countUp(id, to, show) {
     var el = $(id); if (!el) return;
@@ -2517,9 +2508,9 @@ document.documentElement.classList.add("js");
   // reasonable refresh cadence that stays well under algonode public rate limits (around 60 req/min per IP)
   // the "fresh" dot on the distribution still animates when real swaps change the data, even at this rhythm
   setInterval(function () { load(); }, 45000);          // price + main stats every 45s
-  setInterval(function () { loadHolders(); loadLP(); }, 60000); // holders + LP every 60s
-  setInterval(function () { loadPrice(); }, 120000);    // price chart every 2 min
-  setInterval(function () { loadActivity(); loadWelcome(); }, 180000); // activity + welcome every 3 min
+  setInterval(function () { loadHolders(); loadLP(); }, 600000); // holders + LP every 10 min
+  setInterval(function () { loadPrice(); }, 600000);    // price chart every 10 min
+  setInterval(function () { loadActivity(); loadWelcome(); }, 900000); // activity + welcome every 15 min
 })();
 </script>
 <script>

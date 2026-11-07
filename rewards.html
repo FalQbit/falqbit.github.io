@@ -206,6 +206,13 @@ async function founderSet(addrs) {
   return out;
 }
 
+// ---- persistent cache (avoid re-fetching on every page load) ----------
+function pGet(key, maxAge) {
+  try { const raw = localStorage.getItem("fq-r-" + key); if (raw) { const o = JSON.parse(raw); if (Date.now() - o.t < maxAge) return o.v; } } catch {}
+  return null;
+}
+function pSet(key, val) { try { localStorage.setItem("fq-r-" + key, JSON.stringify({ t: Date.now(), v: val })); } catch {} }
+
 // ---- chain reads -------------------------------------------------------
 async function indexerAll(path, key) {
   const out = []; let next = "";
