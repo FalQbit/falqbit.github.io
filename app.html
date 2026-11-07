@@ -677,7 +677,7 @@ function renderDrop() {
   if (MYDROP) b.innerHTML = `<b class="ok">✓ ${fmt(MYDROP.amount / DEC)} FALQBIT</b><span class="muted">Received on ${new Date(MYDROP.at * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short" })}. Welcome!</span>`;
   else if (PROG && PROG.paid.has(account)) b.innerHTML = `<b class="ok">✓ Received</b><span class="muted">This account already got its welcome drop.</span>`;
   else if (!unlocked) b.innerHTML = `<b class="wait">Unlock to join</b><span class="muted">Unlock this account to get in line: <a href="./unlock.html?net=mainnet">falqbit.com/unlock</a>.</span>`;
-  else if (algoBal < 2_000_000n) b.innerHTML = `<b class="wait">Add ALGO</b><span class="muted">Keep at least 2 ALGO in this account on payout day. You have ${fmt(Number(algoBal) / DEC, 2)}.</span>`;
+  else if (algoBal < 2_000_000n) b.innerHTML = `<b class="wait">⚠️ Need more ALGO</b><span class="muted">You need <b style="color:var(--amber)">${fmt((2_000_000 - Number(algoBal)) / DEC, 2)} more ALGO</b> to receive the airdrop. Send at least 2 ALGO to this wallet and you'll be paid in the next round.</span>`;
   else if (t) b.innerHTML = `<b class="ok">In line ✓</b><span class="muted">You qualify for the next weekly round: ${fmt(t)} FALQBIT. One drop per person.</span>`;
   else b.innerHTML = `<b class="wait">Drop complete</b><span class="muted">All 1,000 welcome drops have been paid.</span>`;
 }

@@ -66,6 +66,8 @@ details.lowlist summary, .skipped summary { cursor: pointer; font: 600 12px/1.4 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .chip { display: inline-flex; gap: 6px; align-items: center; padding: 5px 10px; border-radius: 999px; border: 1px solid rgba(245,185,66,.4); background: rgba(245,185,66,.08); color: #F5D08A; font: 500 12px/1 "IBM Plex Mono", monospace; text-decoration: none; }
 .chip span { opacity: .75; }
+.chip.ready { border-color: rgba(63,224,208,.5); background: rgba(63,224,208,.1); color: #A9FFF6; }
+.chip.ready span { color: var(--cyan); opacity: 1; font-weight: 600; }
 .skipped .unskip { border-radius: 999px !important; background: rgba(255,255,255,.03) !important; }
 .skipped .unskip:hover { border-color: rgba(240,110,120,.6) !important; color: #F2A0A6 !important; }
 .list { background: rgba(255,255,255,.02); border-color: rgba(63,224,208,.15); }
@@ -441,7 +443,14 @@ async function buildWelcome() {
   ]);
   if (flagged) $("p-summary").innerHTML += `<b class="warnline ok">✓ ${flagged} farm account${flagged > 1 ? "s were" : " was"} auto-skipped. See the Skipped list below if you want to review any.</b>`;
   if (twins) $("p-summary").innerHTML += `<b class="warnline amber">◐ ${twins} account${twins > 1 ? "s need" : " needs"} your call: same exchange ×2 or ×3 within 30 minutes, exchange twins with near-identical amount, or an account that funded another one on this list. Pay or skip as you see fit.</b>`;
-  if (lowList.length) $("p-summary").innerHTML += `<details class="lowlist"><summary>Waiting for 2 ALGO (${lowList.length})</summary><div class="chips">` + lowList.map(([a, v]) => `<a class="chip" href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)} <span>${(v / 1e6).toFixed(2)} ALGO</span></a>`).join("") + `</div></details>`;
+  if (lowList.length) {
+    const ready = lowList.filter(([, v]) => v >= WELCOME_MIN_ALGO);
+    const waiting = lowList.filter(([, v]) => v < WELCOME_MIN_ALGO);
+    let html = "";
+    if (ready.length) html += `<b class="warnline ok">✓ ${ready.length} account${ready.length > 1 ? "s" : ""} previously skipped now ha${ready.length > 1 ? "ve" : "s"} 2+ ALGO — ready to pay!</b><div class="chips">${ready.map(([a, v]) => `<a class="chip ready" href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)} <span>${(v / 1e6).toFixed(2)} ALGO ✓</span></a>`).join("")}</div>`;
+    if (waiting.length) html += `<details class="lowlist" open><summary>⏳ Waiting for 2 ALGO (${waiting.length})</summary><div class="chips">${waiting.map(([a, v]) => `<a class="chip" href="${c.n.lora}/account/${a}" target="_blank" rel="noopener">${short(a)} <span>${(v / 1e6).toFixed(2)} ALGO</span></a>`).join("")}</div></details>`;
+    $("p-summary").innerHTML += html;
+  }
   return due;
 }
 
