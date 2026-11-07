@@ -292,16 +292,69 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
   <section id="v-wallet" data-view>
     <div style="display:flex;flex-direction:column;gap:16px">
       <h1>Your <em>quantum</em> wallet.</h1>
-      <div class="dash" id="w-dash">
-        <div class="dc wide"><span>Price · 1M FALQBIT</span><b id="l-price">…</b><small id="l-usd"></small></div>
-        <div class="dc"><span>Pool liquidity</span><b id="l-pool">…</b><small>ALGO on Tinyman</small></div>
-        <div class="dc"><span>Holders</span><b id="l-holders">…</b><small>wallets holding FALQBIT</small></div>
-        <div class="dc"><span>Circulating</span><b id="l-circ">…</b><small id="l-circ-s">held by the community</small></div>
-        <div class="dc"><span>Welcome drop</span><b id="l-drop">…</b><small id="l-tier"></small></div>
-        <div class="dc wide drop-bar"><div class="segs" id="l-segs"></div><small id="l-segs-t"></small></div>
+      <!-- LIVE STATS — always visible -->
+      <div class="live">
+        <div><span>Price · 1M</span><b id="l-price">…</b><small id="l-usd"></small></div>
+        <div><span>Pool</span><b id="l-pool">…</b><small>ALGO</small></div>
+        <div><span>Holders</span><b id="l-holders">…</b><small>wallets</small></div>
       </div>
+
+      <!-- REWARDS INFO — always visible, no wallet needed -->
+      <div class="card" id="w-rew-public" style="background:linear-gradient(135deg,rgba(245,185,66,.08),rgba(63,224,208,.06));border-color:rgba(245,185,66,.25)">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+          <span style="font-size:28px">💎</span>
+          <div>
+            <span class="k" style="color:var(--amber)">Hold Rewards</span>
+            <div style="font:800 22px/1.1 var(--display);margin-top:2px"><span id="l-rate" style="color:var(--amber)">1%</span> <span style="color:var(--fg);font-size:16px">/ month</span></div>
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <span class="k">Next payout</span>
+            <div style="font:700 16px/1.2 var(--display);color:var(--cyan)" id="l-payday">…</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
+          <div style="text-align:center;padding:10px 4px;background:rgba(255,255,255,.04);border-radius:12px">
+            <div style="font:500 10px/1 var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Min. Hold</div>
+            <div style="font:700 16px/1.2 var(--display);color:var(--fg);margin-top:4px">1M</div>
+          </div>
+          <div style="text-align:center;padding:10px 4px;background:rgba(255,255,255,.04);border-radius:12px">
+            <div style="font:500 10px/1 var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Cap/Wallet</div>
+            <div style="font:700 16px/1.2 var(--display);color:var(--fg);margin-top:4px">500K</div>
+          </div>
+          <div style="text-align:center;padding:10px 4px;background:rgba(255,255,255,.04);border-radius:12px">
+            <div style="font:500 10px/1 var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Pool</div>
+            <div style="font:700 16px/1.2 var(--display);color:var(--fg);margin-top:4px">15M</div>
+          </div>
+        </div>
+        <div style="font:500 12px/1.4 var(--body);color:var(--muted);margin-top:8px;text-align:center">
+          Hold <b style="color:var(--fg)">1,000,000+ FALQBIT</b> → earn <b style="color:var(--amber)" id="l-rate2">1%</b> monthly, paid automatically on the 25th
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;justify-content:center">
+          <span class="pill ok" style="font-size:11px">No staking</span>
+          <span class="pill ok" style="font-size:11px">No lock-up</span>
+          <span class="pill ok" style="font-size:11px">Auto-paid</span>
+        </div>
+      </div>
+
+      <!-- WELCOME DROP — always visible -->
+      <div class="card" style="padding:14px 18px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span class="k">🎁 Welcome Drop</span>
+          <span style="font:700 14px/1 var(--mono);color:var(--violet)" id="l-drop">…</span>
+        </div>
+        <div class="bar" style="margin:8px 0 4px"><i id="l-drop-bar"></i></div>
+        <small id="l-drop-info" class="fine"></small>
+      </div>
+
+      <!-- CIRCULATING -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="dc"><span>Circulating</span><b id="l-circ" style="font-size:22px">…</b><small id="l-circ-s">community</small></div>
+        <div class="dc"><span>Supply</span><b style="font-size:22px">10B</b><small>fixed · no mint</small></div>
+      </div>
+
+      <!-- CONNECT / WALLET -->
       <div class="card" id="w-empty">
-        <p class="muted" style="margin:0">Connect a Pera Quantum Account to see your FALQBIT, trade, and pay with QR codes.</p>
+        <p class="muted" style="margin:0">Connect your Pera Wallet to see your balance, trade, and earn rewards.</p>
         <button class="primary" id="w-connect" type="button">Connect Pera Wallet</button>
       </div>
       <div class="card" id="w-main" hidden>
@@ -316,16 +369,13 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
         <div class="row"><span class="muted">ALGO</span><span id="w-algo">…</span></div>
         <div class="row"><span class="muted">Price</span><span id="w-price">…</span></div>
       </div>
-      <div class="card" id="w-rewards" hidden>
-        <span class="k">💎 Hold Rewards</span>
+      <!-- Personal rewards (only when connected) -->
+      <div class="card" id="w-rewards" hidden style="border-color:rgba(245,185,66,.25)">
+        <span class="k" style="color:var(--amber)">💎 Your Rewards</span>
         <div id="w-rew-status"></div>
         <div class="row"><span class="muted">Your balance</span><span id="w-rew-bal">…</span></div>
-        <div class="row"><span class="muted">Minimum to earn</span><span>1,000,000</span></div>
         <div class="row"><span class="muted">Current rate</span><span id="w-rew-rate">…</span></div>
-        <div class="row"><span class="muted">Est. this month</span><span id="w-reward" style="color:var(--cyan);font-weight:700">…</span></div>
-        <div class="row"><span class="muted">Cap per wallet</span><span>500,000 / month</span></div>
-        <div class="row"><span class="muted">Monthly pool</span><span>15,000,000</span></div>
-        <div class="row"><span class="muted">Next payout</span><span id="w-payday">…</span></div>
+        <div class="row"><span class="muted">Est. this month</span><span id="w-reward" style="color:var(--amber);font-weight:700">…</span></div>
         <div class="bar" aria-hidden="true" style="margin-top:4px"><i id="w-rew-bar"></i></div>
         <span class="fine" id="w-rew-fine"></span>
       </div>
@@ -596,15 +646,23 @@ function renderLive() {
   if (reserves) {
     const px = priceAlgoPerFq() * 1e6;
     $("l-price").textContent = `${fmt(px, 3)} ALGO`;
-    $("l-usd").textContent = U ? `≈ ${usd(px * usdPerAlgo())} · live from Tinyman` : "live from Tinyman";
+    $("l-usd").textContent = U ? `≈ ${usd(px * usdPerAlgo())}` : "";
     $("l-pool").textContent = fmt(Number(reserves.algo) / DEC, 0);
   }
+  // rewards rate + payday
+  const now = new Date(); const ym = now.toISOString().slice(0, 7);
+  const rate = ym <= "2026-11" ? "1%" : "0.5%";
+  $("l-rate").textContent = rate; $("l-rate2").textContent = rate;
+  const pay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + (now.getUTCDate() > 25 ? 1 : 0), 25));
+  const days = Math.ceil((pay - now) / 86400000);
+  $("l-payday").textContent = days <= 0 ? "🎉 Today!" : `${days}d · ${pay.toLocaleDateString(undefined, { day: "numeric", month: "short" })}`;
+  // welcome drop
   if (PROG) {
-    $("l-drop").textContent = fmt(PROG.n); const t = tierFor(PROG.n);
-    $("l-tier").textContent = t ? `of 1,000 paid` : "complete";
-    let lo = 0, h = "";
-    for (const [u] of TIERS) { const size = u - lo, done = Math.max(0, Math.min(size, PROG.n - lo)); h += `<div style="flex:${size}"><i style="width:${done / size * 100}%"></i></div>`; lo = u; }
-    $("l-segs").innerHTML = h; $("l-segs-t").textContent = t ? `Next account gets ${fmt(t)} FALQBIT · ${fmt(Math.max(0, 1000 - PROG.n))} spots left` : "Welcome drop complete";
+    const t = tierFor(PROG.n);
+    $("l-drop").textContent = `${fmt(PROG.n)} / 1,000`;
+    const pct = Math.min(100, PROG.n / 10);
+    $("l-drop-bar").style.width = pct + "%";
+    $("l-drop-info").textContent = t ? `Next: ${fmt(t)} FALQBIT · ${fmt(Math.max(0, 1000 - PROG.n))} spots left` : "Welcome drop complete";
   }
   if (STATS) { $("l-holders").textContent = fmt(STATS.holders); $("l-circ").textContent = STATS.circ >= 1e9 ? fmt(STATS.circ / 1e9, 2) + "B" : fmt(STATS.circ / 1e6) + "M"; $("l-circ-s").textContent = `${fmt(STATS.circ / 1e8, 1)}% of supply`; }
 }
@@ -708,8 +766,18 @@ function setAccount(a) {
   if (!a) { $("w-empty").hidden = false; $("w-main").hidden = true; $("w-more").hidden = true; $("w-rewards").hidden = true; $("w-drop").hidden = true; $("w-hist").hidden = true; MYDROP = null; renderReceive(); }
 }
 async function connect() {
-  try { const a = await c.connect(); c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); await refresh(); }
-  catch (e) { if (e?.data?.type !== "CONNECT_MODAL_CLOSED") say(e.message || String(e), "err"); }
+  try {
+    say("Connecting to Pera Wallet…");
+    const a = await c.connect();
+    c.pera.connector?.on("disconnect", () => setAccount(null));
+    setAccount(a[0]);
+    say("");
+    await refresh();
+  } catch (e) {
+    if (e?.data?.type === "CONNECT_MODAL_CLOSED") { say(""); return; }
+    say("Connection failed. Try again or refresh the page.", "err");
+    console.error("Pera connect error:", e);
+  }
 }
 $("w-connect").addEventListener("click", connect);
 $("acct").addEventListener("click", () => {
@@ -975,7 +1043,7 @@ let deferred = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("w-install-btn").hidden = false; $("w-install-text").textContent = "Install FALQBIT on this device for quick access."; });
 $("w-install-btn").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("w-install-btn").hidden = true; });
 if (window.matchMedia("(display-mode: standalone)").matches) $("w-install").hidden = true;
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=9").catch(() => {});
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=10").catch(() => {});
 
 // ---------- market: price chart ----------
 const IDX = c.n.indexer;
@@ -1131,7 +1199,16 @@ loadProgram().catch(() => {}); loadStats().catch(() => {});
 // Price chart & activity only load when market tab is opened (see show())
 setInterval(() => { loadProgram().catch(() => {}); loadStats().catch(() => {}); }, 1800000); // 30 min
 setDir("buy");
-c.reconnect().then((a) => { if (a.length) { c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); refresh(); } }).catch(() => {});
+// Pera reconnect with retry — sometimes the first attempt silently fails
+(async () => {
+  for (let i = 0; i < 3; i++) {
+    try {
+      const a = await Promise.race([c.reconnect(), new Promise((_, r) => setTimeout(() => r("timeout"), 4000))]);
+      if (a.length) { c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); refresh(); return; }
+      break; // empty means no saved session
+    } catch { await new Promise(r => setTimeout(r, 1500)); }
+  }
+})();
 setInterval(() => { loadReserves().then(quote).catch(() => {}); }, 300000); // reserves every 5 min
 setInterval(() => { if (account) refresh().catch(() => {}); }, 300000); // wallet refresh every 5 min (only if connected)
 </script>
