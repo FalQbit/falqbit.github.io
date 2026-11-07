@@ -68,7 +68,7 @@ input[type="text"], input[type="number"] { width: 100%; background: var(--ground
 .qr svg { display: block; width: 100%; height: auto; }
 .addr { font: 500 13px/1.5 var(--mono); color: var(--muted); overflow-wrap: anywhere; text-align: center; }
 video { width: 100%; border-radius: 14px; background: #000; aspect-ratio: 1; object-fit: cover; }
-nav.tabs { position: fixed; inset: auto 0 0 0; z-index: 6; display: grid; grid-template-columns: repeat(4, 1fr);
+nav.tabs { position: fixed; inset: auto 0 0 0; z-index: 6; display: grid; grid-template-columns: repeat(5, 1fr);
   padding: 8px max(8px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(8px, env(safe-area-inset-left, 0px));
   background: rgba(18,26,48,.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--line); }
 nav.tabs button { min-height: 56px; flex-direction: column; gap: 4px; background: transparent; color: var(--muted); font-size: 12px; border-radius: 12px; }
@@ -210,6 +210,54 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
 .forgot { background: none; border: 0; color: var(--muted); font-size: 13px; text-decoration: underline; cursor: pointer; margin-top: 6px; }
 button.sm { min-height: 34px !important; padding: 0 14px !important; font-size: 13px !important; }
 html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden; }
+
+/* ---- Market tab ---- */
+.mc { display: flex; flex-direction: column; gap: 4px; padding: 14px; border-radius: 18px; background: linear-gradient(180deg, rgba(18,27,52,.85), rgba(11,17,34,.9)); border: 1px solid rgba(63,224,208,.16); }
+.mc span.k { font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cyan); }
+.mc b { font: 800 24px/1.1 var(--display); color: var(--fg); text-shadow: 0 0 18px rgba(63,224,208,.2); }
+.mc small { font: 500 11.5px/1.3 var(--mono); color: var(--muted); }
+.m-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.m-chart { border-radius: 18px; overflow: hidden; background: linear-gradient(180deg, rgba(18,27,52,.85), rgba(11,17,34,.9)); border: 1px solid rgba(63,224,208,.16); padding: 14px; }
+.m-chart-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.m-chart-head .val { display: flex; flex-direction: column; gap: 2px; }
+.m-chart-head .val b { font: 800 28px/1.1 var(--display); }
+.m-chart-head .val small { font: 500 11px/1 var(--mono); color: var(--muted); }
+.m-tabs { display: flex; gap: 4px; }
+.m-tabs button { min-height: 30px; padding: 0 10px; border-radius: 8px; font: 500 12px/1 var(--mono); border: 1px solid rgba(255,255,255,.08); background: transparent; color: var(--muted); cursor: pointer; }
+.m-tabs button.active { background: rgba(63,224,208,.15); color: var(--cyan); border-color: rgba(63,224,208,.4); }
+.m-plot { position: relative; }
+.m-plot svg { display: block; width: 100%; height: auto; }
+.m-plot svg .grid { stroke: rgba(255,255,255,.06); stroke-width: 0.5; }
+.m-plot svg .line { fill: none; stroke: #3FE0D0; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.m-plot svg .area { fill: url(#mc-grad); }
+.m-plot svg .axlbl { fill: #6B7BA6; font: 500 11px/1 var(--mono); }
+.m-plot svg .barV { fill: rgba(63,224,208,.25); rx: 1; }
+.m-plot svg .pt { fill: #3FE0D0; opacity: 0; } .m-plot svg .pt.hot { opacity: 1; }
+.m-empty { text-align: center; padding: 40px 12px; color: var(--muted); font-size: 14px; }
+.m-tip { position: absolute; background: var(--surface); border: 1px solid rgba(63,224,208,.35); border-radius: 10px; padding: 8px 10px; font: 500 12px/1.4 var(--mono); pointer-events: none; z-index: 3; transform: translate(-50%, -100%); white-space: nowrap; }
+.m-tip b { font: 700 14px/1.2 var(--display); display: block; }
+.m-tip small { color: var(--muted); }
+.up { color: #3FE0D0; } .down { color: #FF7A7A; }
+.supply-bars { display: flex; flex-direction: column; gap: 8px; }
+.supply-bar { display: flex; flex-direction: column; gap: 4px; }
+.supply-bar .label { display: flex; justify-content: space-between; font: 500 12px/1 var(--mono); }
+.supply-bar .label span:last-child { color: var(--muted); }
+.supply-bar .track { height: 8px; border-radius: 999px; background: rgba(255,255,255,.06); overflow: hidden; }
+.supply-bar .fill { height: 100%; border-radius: 999px; transition: width 1s ease; }
+.fill.cyan { background: linear-gradient(90deg, #1F9E94, #3FE0D0); }
+.fill.violet { background: linear-gradient(90deg, #6B5BCD, #9C90FF); }
+.fill.amber { background: linear-gradient(90deg, #C98B20, #F5B942); }
+.fill.teal { background: linear-gradient(90deg, #15665F, #1F8F86); }
+.m-act { list-style: none; margin: 0; padding: 0; }
+.m-act li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.m-act li:last-child { border-bottom: 0; }
+.m-act .day { font: 500 12px/1 var(--mono); color: var(--muted); min-width: 52px; }
+.m-act .bars { display: flex; gap: 4px; flex: 1; margin: 0 10px; }
+.m-act .bars span { height: 16px; border-radius: 4px; min-width: 2px; }
+.m-act .b-buy { background: rgba(63,224,208,.5); }
+.m-act .b-sell { background: rgba(255,122,122,.5); }
+.m-act .b-unlock { background: rgba(156,144,255,.5); }
+.m-act .cnt { font: 500 11px/1 var(--mono); color: var(--muted); min-width: 30px; text-align: right; }
 </style>
 <link rel="stylesheet" href="./fxu.css">
 </head>
@@ -355,6 +403,62 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
     </div>
   </section>
 
+  <!-- MARKET -->
+  <section id="v-market" data-view hidden>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <h1>FALQBIT <em>market</em>.</h1>
+      <div class="m-chart">
+        <div class="m-chart-head">
+          <div class="val"><span class="k">Price · 1M</span><b id="mc-now">…</b><small>ALGO per 1M FALQBIT</small></div>
+          <div class="val" style="text-align:right"><span class="k">Change</span><b id="mc-chg">…</b></div>
+        </div>
+        <div class="m-tabs" role="tablist">
+          <button type="button" class="mc-tab" data-r="1">24h</button>
+          <button type="button" class="mc-tab active" data-r="7">7d</button>
+          <button type="button" class="mc-tab" data-r="30">30d</button>
+          <button type="button" class="mc-tab" data-r="0">All</button>
+        </div>
+        <div class="m-plot">
+          <svg id="mc-svg" viewBox="0 0 800 280" preserveAspectRatio="none" aria-label="Price chart"></svg>
+          <div class="m-tip" id="mc-tip" hidden></div>
+          <div class="m-empty" id="mc-empty" hidden>No swaps in this window yet.</div>
+        </div>
+      </div>
+      <div class="m-grid">
+        <div class="mc"><span class="k">Volume</span><b id="mc-vol">…</b><small>FALQBIT traded</small></div>
+        <div class="mc"><span class="k">Pool</span><b id="mc-pool">…</b><small>ALGO liquidity</small></div>
+        <div class="mc"><span class="k">Holders</span><b id="mc-holders">…</b><small>wallets</small></div>
+        <div class="mc"><span class="k">Circulating</span><b id="mc-circ">…</b><small id="mc-circ-s">of total supply</small></div>
+      </div>
+      <div class="card">
+        <span class="k">Supply · 10,000,000,000</span>
+        <div class="supply-bars" id="mc-supply">
+          <div class="supply-bar"><div class="label"><span>Community pool</span><span>40%</span></div><div class="track"><div class="fill cyan" style="width:40%"></div></div></div>
+          <div class="supply-bar"><div class="label"><span>Liquidity</span><span>25%</span></div><div class="track"><div class="fill teal" style="width:25%"></div></div></div>
+          <div class="supply-bar"><div class="label"><span>Team</span><span>20%</span></div><div class="track"><div class="fill violet" style="width:20%"></div></div></div>
+          <div class="supply-bar"><div class="label"><span>Rewards</span><span>15%</span></div><div class="track"><div class="fill amber" style="width:15%"></div></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <span class="k">Activity · 14 days</span>
+        <ul class="m-act" id="mc-act"><li class="muted" style="justify-content:center">Loading…</li></ul>
+      </div>
+      <div class="card">
+        <span class="k">Contract</span>
+        <div class="row"><span class="muted">ASA ID</span><span>3760920399</span></div>
+        <div class="row"><span class="muted">Gate App</span><span>3760919863</span></div>
+        <div class="row"><span class="muted">Signature</span><span>Falcon-1024</span></div>
+        <div class="row"><span class="muted">Clawback</span><span style="color:var(--cyan)">Disabled</span></div>
+        <div class="row"><span class="muted">Manager</span><span style="color:var(--cyan)">Renounced</span></div>
+      </div>
+      <div class="links">
+        <a href="https://lora.algokit.io/mainnet/asset/3760920399" target="_blank" rel="noopener">Lora</a>
+        <a href="https://app.tinyman.org/#/swap?asset_in=0&asset_out=3760920399" target="_blank" rel="noopener">Tinyman</a>
+        <a href="https://vestige.fi/asset/3760920399" target="_blank" rel="noopener">Vestige</a>
+      </div>
+    </div>
+  </section>
+
   <div id="msg" class="msg" hidden></div>
 </main>
 
@@ -378,6 +482,7 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
   <button role="tab" type="button" id="tab-trade" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3.5-3.5"/><path d="M20 16H6l3.5 3.5"/></svg>Trade</button>
   <button role="tab" type="button" id="tab-receive" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg>Receive</button>
   <button role="tab" type="button" id="tab-pay" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><path d="M4 12h16"/></svg>Pay</button>
+  <button role="tab" type="button" id="tab-market" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5 17V10"/><path d="M9 17V6"/><path d="M13 17V13"/><path d="M17 17V8"/><path d="M21 17V4"/></svg>Market</button>
 </nav>
 
 <script type="module">
@@ -402,10 +507,11 @@ const fmt = (n, d = 0) => Number(n).toLocaleString("en-US", { maximumFractionDig
 const lora = (id) => `<a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">View on Lora</a>`;
 
 // ---------- tabs ----------
-const views = ["wallet", "trade", "receive", "pay"];
+const views = ["wallet", "trade", "receive", "pay", "market"];
 function show(v) {
   views.forEach((x) => { $("v-" + x).hidden = x !== v; $("tab-" + x).setAttribute("aria-selected", String(x === v)); });
   if (v !== "pay") stopScan();
+  if (v === "market" && !MC_RAW) { loadPriceChart(); loadMCActivity(); }
   say("");
   try { history.replaceState(null, "", "#" + v); } catch {}
 }
@@ -822,10 +928,160 @@ $("w-install-btn").addEventListener("click", async () => { if (!deferred) return
 if (window.matchMedia("(display-mode: standalone)").matches) $("w-install").hidden = true;
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});
 
+// ---------- market: price chart ----------
+const IDX = c.n.indexer;
+function fmt(n, d) { return (d !== undefined ? n.toFixed(d) : Math.round(n)).toLocaleString(); }
+const POOL_ADDR = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
+let MC_RAW = null, MC_RANGE = 7, MC_LOAD = 0;
+const _mcCache = {};
+function mcFetch(url) {
+  const hit = _mcCache[url];
+  if (hit && Date.now() - hit.t < 120000) return Promise.resolve(hit.data);
+  return fetch(url).then(r => r.ok ? r.json() : { transactions: [] }).then(data => { _mcCache[url] = { t: Date.now(), data }; return data; });
+}
+async function loadPriceChart() {
+  const since = new Date(Date.now() - 60 * 86400000).toISOString();
+  let acc = [], seen = {};
+  MC_LOAD = Date.now(); const mine = MC_LOAD;
+  async function page(next) {
+    const j = await mcFetch(`${IDX}/v2/accounts/${POOL_ADDR}/transactions?limit=1000&after-time=${encodeURIComponent(since)}${next ? "&next=" + encodeURIComponent(next) : ""}`);
+    acc = acc.concat(j.transactions || []);
+    if (j["next-token"] && (j.transactions || []).length && acc.length < 6000) return page(j["next-token"]);
+    return acc;
+  }
+  try {
+    const txs = await page();
+    if (mine !== MC_LOAD) return;
+    const byGroup = {};
+    txs.forEach(t => {
+      if (seen[t.id]) return; seen[t.id] = 1;
+      const g = t.group || t.id;
+      if (!byGroup[g]) byGroup[g] = { t: t["round-time"], algoIn: 0, algoOut: 0, fqIn: 0, fqOut: 0 };
+      const bg = byGroup[g];
+      function walk(x) {
+        const p = x["payment-transaction"], a = x["asset-transfer-transaction"];
+        if (p && (p.amount || 0) > 0) { if (p.receiver === POOL_ADDR) bg.algoIn += p.amount; else if (x.sender === POOL_ADDR) bg.algoOut += p.amount; }
+        if (a && a["asset-id"] === cfg.asset_id && (a.amount || 0) > 0) { if (a.receiver === POOL_ADDR) bg.fqIn += a.amount; else if (x.sender === POOL_ADDR) bg.fqOut += a.amount; }
+        (x["inner-txns"] || []).forEach(walk);
+      }
+      walk(t);
+    });
+    const trades = [];
+    for (const g in byGroup) {
+      const b = byGroup[g];
+      if (b.algoIn > 0 && b.fqOut > 0 && b.algoOut === 0) trades.push({ t: b.t, price: (b.algoIn / b.fqOut) * 1e6, vol: b.fqOut / 1e6, side: "buy" });
+      else if (b.fqIn > 0 && b.algoOut > 0 && b.fqOut === 0) trades.push({ t: b.t, price: (b.algoOut / b.fqIn) * 1e6, vol: b.fqIn / 1e6, side: "sell" });
+    }
+    trades.sort((a, b) => a.t - b.t);
+    MC_RAW = trades;
+    drawMC();
+  } catch { if (mine === MC_LOAD) { $("mc-empty").hidden = false; $("mc-empty").textContent = "Could not load chart."; } }
+}
+function drawMC() {
+  if (!MC_RAW) return;
+  const now = Math.floor(Date.now() / 1000);
+  const from = MC_RANGE ? now - MC_RANGE * 86400 : 0;
+  const pts = MC_RAW.filter(p => p.t >= from);
+  const svg = $("mc-svg"), empty = $("mc-empty");
+  if (!pts.length) { svg.innerHTML = ""; empty.hidden = false; empty.textContent = "No swaps in this window yet."; $("mc-now").textContent = "…"; $("mc-chg").textContent = "–"; $("mc-vol").textContent = "–"; return; }
+  empty.hidden = true;
+  const W = 800, H = 280, L = 50, R = 12, T = 14, B = 40, pw = W - L - R, ph = H - T - B, bh = 28;
+  const ts = pts.map(p => p.t), ps = pts.map(p => p.price), vs = pts.map(p => p.vol);
+  const t0 = MC_RANGE ? from : ts[0], t1 = now;
+  let pmin = Math.min(...ps), pmax = Math.max(...ps), pad = (pmax - pmin) * 0.12 || pmax * 0.05;
+  pmin = Math.max(0, pmin - pad); pmax += pad;
+  const vmax = Math.max(...vs) || 1;
+  const xf = t => L + (t - t0) / (t1 - t0 || 1) * pw;
+  const yf = p => T + ph - (p - pmin) / (pmax - pmin || 1) * (ph - bh);
+  const yv = v => T + ph - (v / vmax) * bh;
+  let path = "", area = "", bars = "", first = null, last = null;
+  pts.forEach((p, i) => {
+    const x = xf(p.t), y = yf(p.price);
+    if (i === 0) { path = `M${x},${y}`; area = `M${x},${T + ph} L${x},${y}`; first = p; } else { path += ` L${x},${y}`; area += ` L${x},${y}`; }
+    last = p;
+    bars += `<rect class="barV" x="${xf(p.t) - 1.5}" y="${yv(p.vol)}" width="3" height="${T + ph - yv(p.vol)}"/>`;
+  });
+  area += ` L${xf(last.t)},${T + ph} Z`;
+  let gridY = "", labY = "", gridX = "", labX = "";
+  for (let i = 0; i <= 4; i++) { const y = T + i * (ph - bh) / 4, v = pmax - i * (pmax - pmin) / 4; gridY += `<line class="grid" x1="${L}" y1="${y}" x2="${W - R}" y2="${y}"/>`; labY += `<text class="axlbl" x="${L - 6}" y="${y + 3}" text-anchor="end">${v.toFixed(2)}</text>`; }
+  for (let i = 0; i <= 5; i++) { const x = L + i * pw / 5, t = t0 + i * (t1 - t0) / 5, d = new Date(t * 1000); gridX += `<line class="grid" x1="${x}" y1="${T}" x2="${x}" y2="${T + ph}"/>`; const lab = MC_RANGE && MC_RANGE <= 1 ? d.getHours() + ":00" : (d.getDate() + "/" + (d.getMonth() + 1)); labX += `<text class="axlbl" x="${x}" y="${H - 8}" text-anchor="middle">${lab}</text>`; }
+  svg.innerHTML = `<defs><linearGradient id="mc-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3FE0D0" stop-opacity="0.5"/><stop offset="100%" stop-color="#3FE0D0" stop-opacity="0"/></linearGradient></defs>${gridY}${gridX}${bars}<path class="area" d="${area}"/><path class="line" d="${path}"/>${labY}${labX}<circle id="mc-hC" class="pt" r="4"/><rect id="mc-hit" x="${L}" y="${T}" width="${pw}" height="${ph}" fill="transparent" style="cursor:crosshair"/>`;
+  const totalVol = vs.reduce((s, v) => s + v, 0);
+  const chg = ((last.price - first.price) / first.price) * 100;
+  $("mc-now").textContent = last.price.toFixed(3);
+  $("mc-vol").textContent = totalVol >= 1e9 ? (totalVol / 1e9).toFixed(2) + "B" : totalVol >= 1e6 ? (totalVol / 1e6).toFixed(1) + "M" : totalVol >= 1e3 ? (totalVol / 1e3).toFixed(1) + "k" : totalVol.toFixed(0);
+  const chgEl = $("mc-chg"); chgEl.textContent = (chg >= 0 ? "+" : "") + chg.toFixed(2) + "%"; chgEl.className = chg >= 0 ? "up" : "down";
+  // touch/mouse hover
+  const hit = document.getElementById("mc-hit"), hC = document.getElementById("mc-hC"), tip = $("mc-tip");
+  const onMove = e => {
+    const r = svg.getBoundingClientRect();
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX);
+    const mx = (cx - r.left) * (W / r.width);
+    const t = t0 + (mx - L) / pw * (t1 - t0);
+    let bi = 0, best = Infinity; for (let k = 0; k < pts.length; k++) { const dd = Math.abs(pts[k].t - t); if (dd < best) { best = dd; bi = k; } }
+    const p = pts[bi], x = xf(p.t), y = yf(p.price);
+    hC.setAttribute("cx", x); hC.setAttribute("cy", y); hC.classList.add("hot");
+    tip.hidden = false;
+    const d = new Date(p.t * 1000);
+    tip.innerHTML = `<b>${p.price.toFixed(3)} ALGO</b>per 1M · ${p.side}<small>${d.toLocaleDateString([], { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</small>`;
+    const left = L + (x - L) / pw * r.width;
+    tip.style.left = Math.max(60, Math.min(r.width - 60, left)) + "px";
+    tip.style.top = ((y / H) * r.height - 12) + "px";
+  };
+  const onLeave = () => { hC.classList.remove("hot"); tip.hidden = true; };
+  hit.addEventListener("mousemove", onMove);
+  hit.addEventListener("touchmove", e => { e.preventDefault(); onMove(e); }, { passive: false });
+  hit.addEventListener("mouseleave", onLeave);
+  hit.addEventListener("touchend", onLeave);
+  // update pool & holders on market tab too
+  if (reserves) $("mc-pool").textContent = fmt(Number(reserves.algo) / DEC, 0);
+  if (STATS) { $("mc-holders").textContent = fmt(STATS.holders); $("mc-circ").textContent = STATS.circ >= 1e9 ? fmt(STATS.circ / 1e9, 2) + "B" : fmt(STATS.circ / 1e6) + "M"; $("mc-circ-s").textContent = `${fmt(STATS.circ / 1e8, 1)}% of supply`; }
+}
+document.querySelectorAll(".mc-tab").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll(".mc-tab").forEach(x => x.classList.remove("active"));
+    b.classList.add("active"); MC_RANGE = parseInt(b.dataset.r, 10); drawMC();
+  });
+});
+
+// ---------- market: activity feed ----------
+async function loadMCActivity() {
+  const now = new Date(), start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 6));
+  const days = [];
+  for (let d = 0; d < 7; d++) { const x = new Date(start.getTime() + d * 86400000); days.push({ key: x.toISOString().slice(0, 10), date: x, buys: 0, sells: 0, unlocks: 0 }); }
+  const byKey = {}; days.forEach(d => byKey[d.key] = d);
+  try {
+    const since = start.toISOString();
+    const j = await mcFetch(`${IDX}/v2/accounts/${POOL_ADDR}/transactions?limit=500&after-time=${encodeURIComponent(since)}`);
+    (j.transactions || []).forEach(t => {
+      const d = new Date((t["round-time"] || 0) * 1000).toISOString().slice(0, 10);
+      if (!byKey[d]) return;
+      const a = t["asset-transfer-transaction"], p = t["payment-transaction"];
+      if (p && p.receiver === POOL_ADDR && (p.amount || 0) > 0) byKey[d].buys++;
+      if (a && a.receiver !== POOL_ADDR && a["asset-id"] === cfg.asset_id) byKey[d].sells++;
+    });
+    // unlocks from gate app
+    const j2 = await mcFetch(`${IDX}/v2/transactions?application-id=${cfg.app_id}&limit=200&after-time=${encodeURIComponent(since)}`).catch(() => ({ transactions: [] }));
+    (j2.transactions || []).forEach(t => {
+      const d = new Date((t["round-time"] || 0) * 1000).toISOString().slice(0, 10);
+      if (byKey[d]) byKey[d].unlocks++;
+    });
+  } catch {}
+  const maxT = Math.max(1, ...days.map(d => d.buys + d.sells + d.unlocks));
+  const list = $("mc-act");
+  list.innerHTML = days.map(d => {
+    const total = d.buys + d.sells + d.unlocks;
+    const bw = d.buys / maxT * 100, sw = d.sells / maxT * 100, uw = d.unlocks / maxT * 100;
+    const label = d.date.toLocaleDateString([], { weekday: "short", day: "numeric" });
+    return `<li><span class="day">${label}</span><span class="bars"><span class="b-buy" style="width:${bw}%" title="${d.buys} buys"></span><span class="b-sell" style="width:${sw}%" title="${d.sells} sells"></span><span class="b-unlock" style="width:${uw}%" title="${d.unlocks} unlocks"></span></span><span class="cnt">${total}</span></li>`;
+  }).join("");
+}
+
 // ---------- start ----------
 loadReserves().then(quote).catch(() => {});
 loadProgram().catch(() => {}); loadStats().catch(() => {});
-setInterval(() => { loadProgram().catch(() => {}); loadStats().catch(() => {}); }, 300000);
+loadPriceChart().catch(() => {}); loadMCActivity().catch(() => {});
+setInterval(() => { loadProgram().catch(() => {}); loadStats().catch(() => {}); loadPriceChart().catch(() => {}); loadMCActivity().catch(() => {}); }, 300000);
 setDir("buy");
 c.reconnect().then((a) => { if (a.length) { c.pera.connector?.on("disconnect", () => setAccount(null)); setAccount(a[0]); refresh(); } }).catch(() => {});
 setInterval(() => { refresh().catch(() => {}); }, 60000);
