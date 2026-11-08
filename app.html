@@ -349,6 +349,16 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
         </div>
         <div class="bar" style="margin:8px 0 4px"><i id="l-drop-bar"></i></div>
         <small id="l-drop-info" class="fine"></small>
+        <div id="l-drop-track" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <span class="pill ok" style="font-size:11px" id="l-tk-kept">…</span>
+            <span class="pill" style="font-size:11px;background:rgba(245,185,66,.12);color:var(--amber);border-color:rgba(245,185,66,.25)" id="l-tk-part">…</span>
+            <span class="pill" style="font-size:11px;background:rgba(255,122,122,.1);color:var(--red);border-color:rgba(255,122,122,.2)" id="l-tk-sold">…</span>
+          </div>
+          <small class="fine" style="margin-top:4px;display:block">
+            <a href="./rewards.html" style="color:var(--cyan);text-decoration:none">View full list →</a>
+          </small>
+        </div>
       </div>
 
       <!-- CIRCULATING -->
@@ -618,7 +628,7 @@ let STATS = null;
 async function loadStats() {
   // Try cache first (valid 30 min)
   const cached = pGet("stats", 30 * 60000);
-  if (cached) { STATS = cached; renderLive(); return; }
+  if (cached) { STATS = cached; renderLive(); const tc = pGet("droptrack", 30 * 60000); if (tc) { $("l-drop-track").style.display = ""; $("l-tk-kept").textContent = `✅ ${tc.k} kept`; $("l-tk-part").style.display = "none"; $("l-tk-sold").textContent = `👋 ${tc.s} sold all`; } return; }
   const skip = new Set([cfg.pool, cfg.rewards, cfg.project, cfg.team, cfg.app_address].filter(Boolean));
   let all = [], next = "";
   for (let i = 0; i < 20; i++) {
@@ -627,9 +637,12 @@ async function loadStats() {
   }
   const live = all.filter((b) => !b.deleted && b.amount > 0);
   const comm = live.filter((b) => !skip.has(b.address));
-  STATS = { holders: live.length, circ: comm.reduce((t, b) => t + b.amount / DEC, 0) };
-  pSet("stats", STATS);
-  renderLive();
+  // build a balance map for drop tracker
+  const balMap = new Map();
+  for (const b of live) balMap.set(b.address, b.amount);
+  STATS = { holders: live.length, circ: comm.reduce((t, b) => t + b.amount / DEC, 0), balMap };
+  pSet("stats", { holders: STATS.holders, circ: STATS.circ });
+  renderLive(); renderDropTracker();
 }
 async function loadProgram() {
   // Try cache first (valid 60 min — drops happen weekly)
@@ -645,7 +658,7 @@ async function loadProgram() {
   for (const t of b) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.project && x && sizes.has(String(x.amount)) && !note(t).startsWith("FALQBIT hold") && !skip.has(x.receiver)) seen.add(x.receiver); }
   PROG = { n: seen.size, paid: seen };
   pSet("prog", { n: seen.size, list: [...seen] });
-  renderLive(); renderDrop();
+  renderLive(); renderDrop(); renderDropTracker();
 }
 function renderLive() {
   if (reserves) {
@@ -685,6 +698,26 @@ function renderDrop() {
   else if (algoBal < 2_000_000n) b.innerHTML = `<b class="wait">⚠️ Need more ALGO</b><span class="muted">You need <b style="color:var(--amber)">${fmt((2_000_000 - Number(algoBal)) / DEC, 2)} more ALGO</b> to receive the airdrop. Send at least 2 ALGO to this wallet and you'll be paid in the next round.</span>`;
   else if (t) b.innerHTML = `<b class="ok">In line ✓</b><span class="muted">You qualify for the next weekly round: ${fmt(t)} FALQBIT. One drop per person.</span>`;
   else b.innerHTML = `<b class="wait">Drop complete</b><span class="muted">All 1,000 welcome drops have been paid.</span>`;
+}
+// Drop tracker: shows kept / sold part / sold all counts
+function renderDropTracker() {
+  if (!PROG || !STATS?.balMap || PROG.n < 1) return;
+  const balMap = STATS.balMap;
+  let kept = 0, part = 0, sold = 0;
+  for (const addr of PROG.paid) {
+    const bal = balMap.get(addr) || 0;
+    if (bal > 0) kept++; else sold++;
+  }
+  // We can't distinguish "sold part" without knowing original amount in this simple version
+  // But we can show kept vs sold all
+  const el = $("l-drop-track");
+  if (el) {
+    el.style.display = "";
+    $("l-tk-kept").textContent = `✅ ${kept} kept`;
+    $("l-tk-part").style.display = "none";
+    $("l-tk-sold").textContent = `👋 ${sold} sold all`;
+    pSet("droptrack", { k: kept, s: sold });
+  }
 }
 async function loadHistory() {
   if (!account) return;
@@ -1048,7 +1081,7 @@ let deferred = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("w-install-btn").hidden = false; $("w-install-text").textContent = "Install FALQBIT on this device for quick access."; });
 $("w-install-btn").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("w-install-btn").hidden = true; });
 if (window.matchMedia("(display-mode: standalone)").matches) $("w-install").hidden = true;
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=11").catch(() => {});
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=12").catch(() => {});
 
 // ---------- market: price chart ----------
 const IDX = c.n.indexer;
