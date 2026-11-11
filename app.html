@@ -310,7 +310,7 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
           <span style="font-size:28px">💎</span>
           <div>
             <span class="k" style="color:var(--amber)">Hold Rewards</span>
-            <div style="font:800 22px/1.1 var(--display);margin-top:2px"><span id="l-rate" style="color:var(--amber)">1%</span> <span style="color:var(--fg);font-size:16px">/ month</span></div>
+            <div style="font:800 22px/1.1 var(--display);margin-top:2px"><span id="l-rate" style="color:var(--amber)">…</span> <span style="color:var(--fg);font-size:16px">/ month</span></div>
           </div>
           <div style="margin-left:auto;text-align:right">
             <span class="k">Next payout</span>
@@ -332,7 +332,7 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
           </div>
         </div>
         <div style="font:500 12px/1.4 var(--body);color:var(--muted);margin-top:8px;text-align:center">
-          Hold <b style="color:var(--fg)">1,000,000+ FALQBIT</b> → earn <b style="color:var(--amber)" id="l-rate2">1%</b> monthly, paid automatically on the 25th
+          Hold <b style="color:var(--fg)">1,000,000+ FALQBIT</b> → earn <b style="color:var(--amber)" id="l-rate2">…</b> monthly, paid automatically on the 25th
         </div>
         <div style="display:flex;gap:8px;margin-top:4px;justify-content:center">
           <span class="pill ok" style="font-size:11px">No staking</span>
@@ -567,7 +567,8 @@ import qrcode from "https://esm.sh/qrcode-generator@1.4.4";
 import jsQR from "https://esm.sh/jsqr@1.4.0";
 
 const net = "mainnet";
-const cfg = (await loadConfig())[net];
+const _cfgAll = await loadConfig();
+const cfg = _cfgAll[net];
 const c = client(net);
 const T = NETWORKS[net].tinyman;
 const DEC = 1e6;
@@ -575,7 +576,7 @@ const $ = (id) => document.getElementById(id);
 let account = null, fqBal = 0n, unlocked = false, reserves = null, dir = "buy", cur = "algo";
 let U = null, algoBal = 0n, minBal = 0n, usdcBal = 0n, usdcOpt = false, PROG = null;
 const USDC = 31566704, USDC_POOL = "2PIFZW53RHCSFSYMCFUBW4XOCXOMB7XOYQSQ6KGT3KVGJTL4HM6COZRNMM";
-const TIERS = [[200, 1000000], [600, 500000], [800, 250000], [1000, 100000]];
+const TIERS = _cfgAll.welcome_tiers || [[200, 1000000], [600, 500000], [800, 250000], [1000, 100000]];
 const tierFor = (n) => { for (const [u, v] of TIERS) if (n < u) return v; return 0; };
 
 const say = (html, kind = "") => { const m = $("msg"); m.hidden = !html; m.className = "msg " + kind; m.innerHTML = html; if (html) m.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
@@ -1081,7 +1082,7 @@ let deferred = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("w-install-btn").hidden = false; $("w-install-text").textContent = "Install FALQBIT on this device for quick access."; });
 $("w-install-btn").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("w-install-btn").hidden = true; });
 if (window.matchMedia("(display-mode: standalone)").matches) $("w-install").hidden = true;
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=12").catch(() => {});
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=14").catch(() => {});
 
 // ---------- market: price chart ----------
 const IDX = c.n.indexer;

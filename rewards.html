@@ -156,7 +156,10 @@ const DEC = 1_000_000n;                    // 6 decimals
 const WELCOME = 1_000_000n * DEC;          // 1,000,000 FALQBIT for accounts 1-200
 const WELCOME_CAP = 1000;                  // first 1,000 accounts, in tiers
 // Tiers by welcome number (0-based): 1-200 get 1M, 201-600 500k, 601-800 250k, 801-1000 100k.
-const TIERS = [[200, 1_000_000n], [600, 500_000n], [800, 250_000n], [1000, 100_000n]];
+// Reads from config with hardcoded fallback.
+const cfgAll = await loadConfig();
+const _rawTiers = cfgAll.welcome_tiers || [[200, 1000000], [600, 500000], [800, 250000], [1000, 100000]];
+const TIERS = _rawTiers.map(([u, v]) => [u, BigInt(v)]);
 const tierAmount = (n) => { for (const [upTo, v] of TIERS) if (n < upTo) return v * DEC; return 0n; };
 const WELCOME_MIN_ALGO = 2_000_000;
 const EXCHANGE_MIN = 100_000 * 1_000_000;  // a funder with 100,000+ ALGO is treated as an exchange
@@ -174,7 +177,6 @@ const NOTE_WELCOME = "FALQBIT welcome";
 const month = new Date().toISOString().slice(0, 7);
 const NOTE_HOLD = `FALQBIT hold ${month}`;
 
-const cfgAll = await loadConfig();
 const net = pickNetwork() || "mainnet";
 const cfg = cfgAll[net];
 const c = client(net);
@@ -564,12 +566,37 @@ function render() {
 function renderSkipped() {
   const box = $("skipped");
   box.hidden = !SKIP.size;
+  const backupBtns = `<div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="ghost small" id="b-skip-export">Export skip list</button><button type="button" class="ghost small" id="b-skip-import">Import skip list</button></div>`;
   box.innerHTML = SKIP.size ? `<details><summary>Skipped in this browser (${SKIP.size})</summary><div class="chips">` + [...SKIP].map((a) =>
-    `<button type="button" class="unskip${SKIP_WHY.has(a) ? " w-" + SKIP_WHY.get(a)[0] : ""}" data-a="${a}" title="Put back on the list">${short(a)}${SKIP_WHY.has(a) ? `<small>${SKIP_WHY.get(a)[1]}</small>` : ""} ✕</button>`).join("") + `</div></details>` + (SKIP_WHY.size ? `<p class="detail" style="margin:8px 0 0">Red: likely farm · Amber: big wallet (yours) · Grey: already paid or not unlocked. Exchange-funded accounts are put back automatically.</p>` : "") : "";
+    `<button type="button" class="unskip${SKIP_WHY.has(a) ? " w-" + SKIP_WHY.get(a)[0] : ""}" data-a="${a}" title="Put back on the list">${short(a)}${SKIP_WHY.has(a) ? `<small>${SKIP_WHY.get(a)[1]}</small>` : ""} ✕</button>`).join("") + `</div>${backupBtns}</details>` + (SKIP_WHY.size ? `<p class="detail" style="margin:8px 0 0">Red: likely farm · Amber: big wallet (yours) · Grey: already paid or not unlocked. Exchange-funded accounts are put back automatically.</p>` : "") : "";
   box.querySelectorAll(".unskip").forEach((b) => b.addEventListener("click", () => {
     SKIP.delete(b.dataset.a); saveSkip(); renderSkipped();
     say("Put back. Press \"Check the chain\" to refresh the list.");
   }));
+  const expBtn = $("b-skip-export");
+  if (expBtn) expBtn.addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify([...SKIP], null, 2)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = `falqbit-skip-${net}-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+    URL.revokeObjectURL(a.href);
+    log("Skip list exported.");
+  });
+  const impBtn = $("b-skip-import");
+  if (impBtn) impBtn.addEventListener("click", () => {
+    const input = document.createElement("input"); input.type = "file"; input.accept = ".json";
+    input.addEventListener("change", async () => {
+      try {
+        const text = await input.files[0].text();
+        const arr = JSON.parse(text);
+        if (!Array.isArray(arr)) throw new Error("Expected a JSON array");
+        let added = 0;
+        for (const a of arr) { if (typeof a === "string" && a.length === 58 && !SKIP.has(a)) { SKIP.add(a); added++; } }
+        saveSkip(); renderSkipped();
+        log(`Imported ${added} new address${added !== 1 ? "es" : ""} into skip list.`);
+      } catch (e) { say("Could not import: " + (e.message || String(e)), "err"); }
+    });
+    input.click();
+  });
 }
 
 async function scan() {

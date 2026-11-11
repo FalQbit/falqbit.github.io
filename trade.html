@@ -81,6 +81,9 @@
   .wallet .st.warn i { background: var(--amber); }
   .note { font-size: 13px; color: var(--muted); margin: 22px 0 0; }
 
+  .loading span { animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+
   @media (prefers-reduced-motion: no-preference) {
     .swap { animation: edge 8s ease-in-out infinite; }
     @keyframes edge { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
@@ -99,7 +102,7 @@
 <div class="wrap">
   <header class="top">
     <a class="brand" href="./" style="display:inline-flex;align-items:center;gap:10px"><img src="./icon.png" alt="" width="34" height="34" style="width:34px;height:34px;border-radius:50%;box-shadow:0 0 18px rgba(63,224,208,.35)">FALQBIT</a>
-    <span class="ticker" id="ticker"><i></i><span>Reading the pools…</span></span>
+    <span class="ticker loading" id="ticker"><i></i><span>Reading the pools…</span></span>
   </header>
 
   <p class="kicker">Post-quantum swap · Falcon-1024</p>
@@ -145,7 +148,7 @@
   </div></div>
 
   <div id="msg" class="msg" hidden style="margin-top:16px"></div>
-  <p class="note">Your account must be a Pera Quantum Account unlocked at <a href="./unlock.html?net=mainnet">falqbit.com/unlock</a>. Swaps are atomic: if any step fails, nothing happens. Max 1% slippage per hop. Prices move with every trade. Not investment advice.</p>
+  <p class="note">Your account must be a Pera Quantum Account unlocked at <a href="./unlock.html?net=mainnet">falqbit.com/unlock</a>. Swaps are atomic: if any step fails, nothing happens. Max 1% slippage per hop. USDC swaps go through two Tinyman pools (USDC↔ALGO↔FALQBIT) in one approval. Prices move with every trade. Not investment advice.</p>
   <p class="foot" id="foot"></p>
 </div>
 
@@ -209,6 +212,7 @@ async function loadPools() {
   R = { fq: p.a1, algo: p.a2, fee: p.fee };
   U = { usdc: u.a1, algo: u.a2, fee: u.fee };
   const px = Number(R.algo) / Number(R.fq) * 1e6;
+  $("ticker").classList.remove("loading");
   $("ticker").innerHTML = `<i></i><span>1M FALQBIT · ${fmt(px, 3)} ALGO · ≈$${fmt(px * Number(U.usdc) / Number(U.algo), 3)}</span>`;
 }
 function swapOut(x, rIn, rOut, feeBps) {
@@ -290,16 +294,21 @@ $("b-max").onclick = () => {
 };
 
 async function refresh() {
-  try { await loadPools(); } catch (e) { $("ticker").innerHTML = `<i></i><span>Pools unavailable</span>`; }
+  try { await loadPools(); } catch (e) { $("ticker").innerHTML = `<i></i><span>Pools unavailable — retrying…</span>`; }
   if (account) {
-    const info = await c.algodGet(`/v2/accounts/${account}`);
-    const a = info?.assets || [];
-    const h = a.find((x) => x["asset-id"] === cfg.asset_id), u = a.find((x) => x["asset-id"] === USDC);
-    bal = { algo: BigInt(info?.amount || 0), minBal: BigInt(info?.["min-balance"] || 0), fq: h ? BigInt(h.amount) : 0n, unlocked: !!h && !h["is-frozen"], usdc: u ? BigInt(u.amount) : 0n, usdcOpt: !!u };
-    $("w-st").className = "st " + (bal.unlocked ? "ok" : "warn");
-    $("w-txt").textContent = `${short(account)} · ${bal.unlocked ? "unlocked" : "not unlocked"}`;
-    $("w-bal").textContent = `${fmt(Number(bal.algo) / DEC, 3)} ALGO`;
-    $("b-connect").hidden = true; $("b-disconnect").hidden = false; $("b-swap").hidden = false;
+    try {
+      const info = await c.algodGet(`/v2/accounts/${account}`);
+      const a = info?.assets || [];
+      const h = a.find((x) => x["asset-id"] === cfg.asset_id), u = a.find((x) => x["asset-id"] === USDC);
+      bal = { algo: BigInt(info?.amount || 0), minBal: BigInt(info?.["min-balance"] || 0), fq: h ? BigInt(h.amount) : 0n, unlocked: !!h && !h["is-frozen"], usdc: u ? BigInt(u.amount) : 0n, usdcOpt: !!u };
+      $("w-st").className = "st " + (bal.unlocked ? "ok" : "warn");
+      $("w-txt").textContent = `${short(account)} · ${bal.unlocked ? "unlocked" : "not unlocked"}`;
+      $("w-bal").textContent = `${fmt(Number(bal.algo) / DEC, 3)} ALGO`;
+      $("b-connect").hidden = true; $("b-disconnect").hidden = false; $("b-swap").hidden = false;
+    } catch (e) {
+      $("w-st").className = "st warn";
+      $("w-txt").textContent = `${short(account)} · balance unavailable`;
+    }
   }
   quote();
 }
@@ -308,7 +317,7 @@ $("b-swap").addEventListener("click", async () => {
   if (!Q) return;
   const btn = $("b-swap");
   try {
-    btn.disabled = true; say("Approve the swap in Pera…");
+    btn.disabled = true; btn.textContent = "Swapping…"; say("Approve the swap in Pera…");
     await loadPools(); quote(); if (!Q) return;
     const { x, min, midMin } = Q;
     const sp = await c.params(FEE_PQ), spc = await c.params(FEE_CALL);
@@ -330,7 +339,13 @@ $("b-swap").addEventListener("click", async () => {
     const { id } = await c.signAndSend(txns, {}, txns.length - 1);
     say(`Swap done. ${lora(id)}`, "ok");
     $("in-amt").value = ""; await refresh();
-  } catch (e) { say(e.message || String(e), "err"); quote(); }
+  } catch (e) {
+    let msg = e.message || String(e);
+    if (e?.data?.type === "CONNECT_MODAL_CLOSED" || msg.includes("cancelled") || msg.includes("rejected")) msg = "Transaction cancelled in Pera.";
+    else if (msg.includes("overspend")) msg = "Not enough balance to cover this swap plus fees.";
+    else if (msg.includes("below min")) msg = "Pool reserves changed — try a smaller amount or refresh.";
+    say(msg, "err"); quote();
+  }
 });
 
 function disconnect() {
