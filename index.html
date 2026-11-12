@@ -767,6 +767,70 @@ body { background-image: none; }
 
 @media (prefers-reduced-motion: reduce) { .stat .v, .sec.scan::before, .fx2 .hero h1 em::after, .fx2 .stat::after, .fx2 .road::before, .fx2 .road li.now::before, .qp { animation: none; } .stat .v { color: var(--fg); background: none; } }
 @media (max-width: 860px) { #constel { display: none; } .qp { display: none; } }
+
+/* ---- v18: futuristic extras ---- */
+
+/* 1. periodic glitch on hero h1 */
+.glitch-active { position: relative; }
+.glitch-active::before, .glitch-active::after {
+  content: attr(data-text); position: absolute; left: 0; top: 0; width: 100%;
+  overflow: hidden; pointer-events: none; opacity: 0;
+}
+.glitch-active::before { color: #3FE0D0; z-index: -1; }
+.glitch-active::after  { color: #9C90FF; z-index: -1; }
+.glitch-active.glitching::before {
+  opacity: .7; animation: glitchTop .3s steps(2) forwards;
+}
+.glitch-active.glitching::after {
+  opacity: .7; animation: glitchBot .3s steps(3) forwards;
+}
+@keyframes glitchTop {
+  0%   { clip-path: inset(10% 0 60% 0); transform: translateX(-4px); }
+  25%  { clip-path: inset(40% 0 20% 0); transform: translateX(3px); }
+  50%  { clip-path: inset(70% 0 5% 0);  transform: translateX(-2px); }
+  75%  { clip-path: inset(15% 0 50% 0); transform: translateX(4px); }
+  100% { clip-path: inset(0); transform: none; opacity: 0; }
+}
+@keyframes glitchBot {
+  0%   { clip-path: inset(60% 0 10% 0); transform: translateX(3px); }
+  33%  { clip-path: inset(20% 0 40% 0); transform: translateX(-4px); }
+  66%  { clip-path: inset(5% 0 70% 0);  transform: translateX(2px); }
+  100% { clip-path: inset(0); transform: none; opacity: 0; }
+}
+
+/* 2. neon pulse on cyan-colored text elements */
+@keyframes neonPulse { 0%, 100% { text-shadow: 0 0 6px rgba(63,224,208,.3); } 50% { text-shadow: 0 0 16px rgba(63,224,208,.7), 0 0 30px rgba(63,224,208,.3); } }
+.neon-pulse { animation: neonPulse 3s ease-in-out infinite; }
+
+/* 3. hero scan lines */
+.hero::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 2; opacity: .03;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(63,224,208,.8) 2px, rgba(63,224,208,.8) 3px);
+  mix-blend-mode: screen;
+}
+
+/* 4. typing cursor */
+.type-cursor::after { content: "▌"; color: var(--cyan); animation: blinker 1s step-end infinite; margin-left: 2px; }
+@keyframes blinker { 50% { opacity: 0; } }
+
+/* 5. counter animation glow */
+.counting { color: var(--cyan) !important; text-shadow: 0 0 20px rgba(63,224,208,.5); transition: color .3s, text-shadow .3s; }
+
+/* 6. FAQ hover glow */
+.faq details:hover > summary { text-shadow: 0 0 12px rgba(63,224,208,.25); }
+.faq details[open] > summary { color: var(--cyan); transition: color .3s; }
+
+/* 7. section divider glow lines */
+.sec-glow { position: relative; }
+.sec-glow::before { content: ""; position: absolute; top: -44px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(63,224,208,.4) 20%, rgba(156,144,255,.4) 80%, transparent);
+  box-shadow: 0 0 12px rgba(63,224,208,.3); }
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch-active::before, .glitch-active::after { display: none; }
+  .neon-pulse, .type-cursor::after { animation: none; }
+  .hero::after { display: none; }
+}
 </style>
 <link rel="stylesheet" href="./fxu.css">
 </head><body id="top">
@@ -2100,7 +2164,7 @@ document.documentElement.classList.add("js");
   }
   var IDX = "https://mainnet-idx.algonode.cloud";
   var IDX_FB = "https://mainnet-idx.algonode.cloud";
-  var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": "Liquidity pool", "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": "Rewards", "YW5KDPBJ7YO7ZCPIBNEA33RZPPUOXGJVFWRZSM6JKRVQ3FJE5UHXZMJQYY": "Liquidity reserve" };
+  var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": "Liquidity pool", "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": "Rewards", "YW5KDBPXOFQUDLAXBLSTMGB7TH77Y6HUNVVG4FLWYSKKCHLLYYCR5UHXZM": "Liquidity reserve" };
   var RANGES = [[0, 1e6, "Under 1M"], [1e6, 1e7, "1M – 10M"], [1e7, 1e8, "10M – 100M"], [1e8, 1e9, "100M – 1B"], [1e9, Infinity, "1B+"]];
   function allBalances(next, acc) {
     acc = acc || [];
@@ -2604,4 +2668,120 @@ document.documentElement.classList.add("js");
 <script src="./fx.js" defer></script>
 <script src="./fx3.js" defer></script>
 <script src="./fx2.js" defer></script>
+<script>
+// ---- v18: futuristic extras ----
+(function () {
+  var still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (still) return;
+
+  // 1. periodic glitch on hero heading
+  var heroH1 = document.querySelector(".hero h1");
+  if (heroH1) {
+    heroH1.classList.add("glitch-active");
+    heroH1.dataset.text = heroH1.textContent;
+    setInterval(function () {
+      heroH1.classList.add("glitching");
+      setTimeout(function () { heroH1.classList.remove("glitching"); }, 350);
+    }, 6000 + Math.random() * 2000);
+  }
+
+  // 2. neon pulse on cyan elements
+  document.querySelectorAll(".eyebrow, .dk, .stat .k, .lock.on").forEach(function (el) {
+    el.classList.add("neon-pulse");
+  });
+
+  // 3. typing effect on the .lede paragraph
+  var lede = document.querySelector(".hero .lede");
+  if (lede && !lede.dataset.typed) {
+    lede.dataset.typed = "1";
+    var full = lede.textContent;
+    lede.textContent = "";
+    lede.classList.add("type-cursor");
+    lede.style.opacity = "1";
+    lede.style.animation = "none";
+    var idx = 0;
+    function typeNext() {
+      if (idx < full.length) {
+        lede.textContent += full[idx++];
+        setTimeout(typeNext, 18 + Math.random() * 16);
+      } else {
+        setTimeout(function () { lede.classList.remove("type-cursor"); }, 1200);
+      }
+    }
+    // start after hero title animation finishes (~1.2s)
+    setTimeout(typeNext, 1300);
+  }
+
+  // 4. animated number counters on stat values
+  function animateCount(el) {
+    if (el.dataset.counting) return;
+    var text = el.textContent.trim();
+    // parse number: handle "1,234.56" formats
+    var numMatch = text.match(/[\d,.]+/);
+    if (!numMatch) return;
+    var numStr = numMatch[0];
+    var target = parseFloat(numStr.replace(/,/g, ""));
+    if (isNaN(target) || target === 0) return;
+    el.dataset.counting = "1";
+    var prefix = text.slice(0, text.indexOf(numStr));
+    var suffix = text.slice(text.indexOf(numStr) + numStr.length);
+    var hasCommas = numStr.indexOf(",") !== -1;
+    var decimals = numStr.indexOf(".") !== -1 ? numStr.split(".")[1].length : 0;
+    var start = performance.now(), dur = 1200;
+    el.classList.add("counting");
+    function step(now) {
+      var p = Math.min(1, (now - start) / dur);
+      // ease out cubic
+      var ep = 1 - Math.pow(1 - p, 3);
+      var v = target * ep;
+      var formatted = v.toFixed(decimals);
+      if (hasCommas) formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      el.textContent = prefix + formatted + suffix;
+      if (p < 1) requestAnimationFrame(step);
+      else {
+        el.textContent = text; // restore exact original
+        el.classList.remove("counting");
+        delete el.dataset.counting;
+      }
+    }
+    requestAnimationFrame(step);
+  }
+
+  // observe stat values: when they get content (loaded), trigger count
+  var statVals = document.querySelectorAll(".stat .v");
+  var mo = new MutationObserver(function (muts) {
+    muts.forEach(function (m) {
+      var el = m.target.nodeType === 1 ? m.target : m.target.parentElement;
+      if (el && el.classList.contains("v") && !el.classList.contains("loading")) {
+        animateCount(el);
+      }
+    });
+  });
+  statVals.forEach(function (el) {
+    mo.observe(el, { childList: true, characterData: true, subtree: true });
+  });
+
+  // 5. section glow dividers
+  document.querySelectorAll(".sec").forEach(function (sec, i) {
+    if (i > 0) sec.classList.add("sec-glow");
+  });
+
+  // 6. FAQ items: subtle stagger reveal
+  var faqIO = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        e.target.style.opacity = "1";
+        e.target.style.transform = "none";
+        faqIO.unobserve(e.target);
+      }
+    });
+  }, { rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll(".faq details").forEach(function (d, i) {
+    d.style.opacity = "0";
+    d.style.transform = "translateY(14px)";
+    d.style.transition = "opacity .5s ease " + (i * 0.06) + "s, transform .5s ease " + (i * 0.06) + "s";
+    faqIO.observe(d);
+  });
+})();
+</script>
 </body></html>

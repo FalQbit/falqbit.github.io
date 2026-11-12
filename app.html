@@ -308,12 +308,119 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
 .m-act .b-sell { background: rgba(255,122,122,.5); }
 .m-act .b-unlock { background: rgba(156,144,255,.5); }
 .m-act .cnt { font: 500 11px/1 var(--mono); color: var(--muted); min-width: 30px; text-align: right; }
+
+/* ===== FUTURISTIC LAYER v2 ===== */
+
+/* --- scan line overlay --- */
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 999; pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(63,224,208,.015) 2px,
+    rgba(63,224,208,.015) 4px
+  );
+  mix-blend-mode: screen;
+}
+
+/* --- particle canvas --- */
+#particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+
+/* --- swipe container --- */
+.swipe-track {
+  display: flex; flex-wrap: nowrap; width: 500%;
+  transition: transform .35s cubic-bezier(.4,0,.2,1);
+  will-change: transform;
+  min-height: 0;
+}
+.swipe-track.dragging { transition: none; }
+.swipe-track > section[data-view] {
+  width: 100%; flex: 0 0 100%; min-width: 0;
+  display: flex !important; flex-direction: column; gap: 16px;
+}
+.swipe-track > section[data-view][hidden] { visibility: hidden; height: 0; overflow: hidden; }
+.swipe-track > section[data-view]:not([hidden]) { visibility: visible; height: auto; overflow: visible; }
+
+/* --- swipe hint arrows --- */
+.swipe-hint {
+  position: fixed; top: 50%; left: 0; right: 0; z-index: 40; pointer-events: none;
+  display: flex; justify-content: space-between; padding: 0 8px;
+  opacity: 0; animation: hintFade 3s ease-in-out 1.5s 1 forwards;
+}
+.swipe-hint.gone { display: none; }
+.swipe-hint span {
+  font-size: 28px; color: var(--cyan); opacity: .5;
+  animation: hintBounce 1.2s ease-in-out infinite alternate;
+  filter: drop-shadow(0 0 8px rgba(63,224,208,.6));
+}
+.swipe-hint span:last-child { animation-delay: .3s; }
+@keyframes hintFade { 0% { opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes hintBounce { 0% { transform: translateX(0); } 100% { transform: translateX(6px); } }
+.swipe-hint span:first-child { animation-name: hintBounceL; }
+@keyframes hintBounceL { 0% { transform: translateX(0); } 100% { transform: translateX(-6px); } }
+
+/* --- glowing active tab pulse --- */
+nav.tabs button[aria-selected="true"]::after {
+  content: ""; position: absolute; bottom: -2px; left: 25%; right: 25%; height: 6px;
+  background: radial-gradient(ellipse, rgba(63,224,208,.6), transparent 70%);
+  animation: tabGlow 2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes tabGlow { 0%, 100% { opacity: .4; } 50% { opacity: .9; } }
+nav.tabs button { position: relative; }
+
+/* --- pull to refresh --- */
+.ptr-spinner {
+  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 50px); left: 50%; z-index: 30;
+  transform: translateX(-50%) translateY(-60px) scale(.7);
+  width: 42px; height: 42px; border-radius: 50%;
+  border: 3px solid rgba(63,224,208,.2); border-top-color: var(--cyan);
+  opacity: 0; transition: transform .3s ease, opacity .3s ease;
+  pointer-events: none;
+}
+.ptr-spinner.pulling { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+.ptr-spinner.refreshing { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: translateX(-50%) translateY(0) scale(1) rotate(360deg); } }
+
+/* --- animated number counter --- */
+.counting { transition: none; }
+
+/* --- haptic micro-animations --- */
+button:active:not(:disabled), .btn:active { transform: scale(.94); }
+button { transition: transform .1s ease; }
+.success-pop { animation: successPop .5s ease; }
+@keyframes successPop { 0% { transform: scale(1); } 30% { transform: scale(1.08); } 60% { transform: scale(.96); } 100% { transform: scale(1); } }
+
+/* --- card swipe-to-reveal (history items) --- */
+.hist li { position: relative; overflow: hidden; }
+.hist li .reveal-action {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 70px;
+  display: grid; place-items: center;
+  background: linear-gradient(90deg, transparent, rgba(63,224,208,.15));
+  color: var(--cyan); font: 500 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .08em;
+  opacity: 0; transform: translateX(70px);
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+}
+.hist li.swiped .reveal-action { opacity: 1; transform: translateX(0); }
+
+@media (prefers-reduced-motion: reduce) {
+  .swipe-track { transition: none; }
+  .swipe-hint { animation: none; display: none; }
+  .ptr-spinner { animation: none; }
+  nav.tabs button[aria-selected="true"]::after { animation: none; }
+  body::after { display: none; }
+}
 </style>
 <link rel="stylesheet" href="./fxu.css">
 </head>
 <body>
 <script>try { if (localStorage.getItem("fq-pin-v1")) document.documentElement.classList.add("locked"); } catch (e) {}</script>
 <canvas id="lattice" aria-hidden="true"></canvas>
+<canvas id="particles" aria-hidden="true"></canvas>
+<div class="ptr-spinner" id="ptr"></div>
+<div class="swipe-hint" id="swipe-hint"><span>‹</span><span>›</span></div>
 <div class="glow1"></div><div class="glow2"></div>
 <script>
 (function () {
@@ -1363,5 +1470,289 @@ setInterval(() => { if (account) refresh().then(() => toast("✓ Data refreshed"
 </script>
 <script src="./fx.js" defer></script>
 <script src="./fx3.js" defer></script>
+<script>
+/* ===== FUTURISTIC INTERACTIVE LAYER v2 ===== */
+(function () {
+  "use strict";
+  var still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* --- 1. Particle background --- */
+  (function () {
+    var cv = document.getElementById("particles"), ctx = cv.getContext("2d");
+    var W, H, dpr, dots = [];
+    function size() {
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr;
+    }
+    function spawn() {
+      dots = [];
+      for (var i = 0; i < 18; i++) {
+        dots.push({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - .5) * .3 * dpr, vy: (Math.random() - .5) * .3 * dpr,
+          r: (1.2 + Math.random() * 2) * dpr,
+          color: Math.random() > .5 ? "63,224,208" : "156,144,255",
+          alpha: .15 + Math.random() * .25
+        });
+      }
+    }
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      for (var i = 0; i < dots.length; i++) {
+        var d = dots[i];
+        d.x += d.vx; d.y += d.vy;
+        if (d.x < 0) d.x = W; if (d.x > W) d.x = 0;
+        if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
+        ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.283);
+        ctx.fillStyle = "rgba(" + d.color + "," + d.alpha + ")";
+        ctx.shadowBlur = 12 * dpr; ctx.shadowColor = "rgba(" + d.color + ",.3)";
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+      // connection lines
+      for (var a = 0; a < dots.length; a++) {
+        for (var b = a + 1; b < dots.length; b++) {
+          var dx = dots[a].x - dots[b].x, dy = dots[a].y - dots[b].y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 120 * dpr) {
+            ctx.beginPath();
+            ctx.moveTo(dots[a].x, dots[a].y); ctx.lineTo(dots[b].x, dots[b].y);
+            ctx.strokeStyle = "rgba(63,224,208," + (.08 * (1 - dist / (120 * dpr))) + ")";
+            ctx.lineWidth = .5 * dpr; ctx.stroke();
+          }
+        }
+      }
+      if (!still) requestAnimationFrame(draw);
+    }
+    size(); spawn();
+    addEventListener("resize", function () { size(); spawn(); if (still) draw(); });
+    draw();
+  })();
+
+  /* --- 2. Swipe navigation --- */
+  (function () {
+    var main = document.querySelector("main");
+    var views = ["wallet", "trade", "receive", "pay", "market"];
+    var currentIdx = 0;
+
+    // Touch tracking
+    var startX = 0, startY = 0, deltaX = 0, tracking = false, scrolling = false;
+    var THRESHOLD = 50, VEL_THRESHOLD = .3;
+    var startTime = 0;
+
+    function getCurrent() {
+      for (var i = 0; i < views.length; i++) {
+        var s = document.getElementById("v-" + views[i]);
+        if (s && !s.hidden) return i;
+      }
+      return 0;
+    }
+
+    function tabClick(v) {
+      // Call the existing show() if available in module scope — we use the tab buttons
+      var btn = document.getElementById("tab-" + v);
+      if (btn) btn.click();
+    }
+
+    main.addEventListener("touchstart", function (e) {
+      // Don't capture swipes on input fields, video, chart SVGs, sliders
+      var tag = e.target.tagName;
+      if (tag === "INPUT" || tag === "VIDEO" || tag === "SVG" || tag === "CANVAS" || e.target.closest(".m-plot") || e.target.closest(".seg") || e.target.closest(".pad")) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      deltaX = 0; tracking = true; scrolling = false;
+      startTime = Date.now();
+    }, { passive: true });
+
+    main.addEventListener("touchmove", function (e) {
+      if (!tracking) return;
+      var dx = e.touches[0].clientX - startX;
+      var dy = e.touches[0].clientY - startY;
+      // Determine if vertical scroll
+      if (!scrolling && Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 10) {
+        tracking = false; return;
+      }
+      scrolling = false;
+      deltaX = dx;
+      // Visual feedback — shift content slightly as user drags
+      if (Math.abs(deltaX) > 10) {
+        var shift = deltaX * .15;
+        var cur = getCurrent();
+        var section = document.getElementById("v-" + views[cur]);
+        if (section) {
+          section.style.transform = "translateX(" + shift + "px)";
+          section.style.opacity = String(Math.max(.7, 1 - Math.abs(deltaX) / 600));
+        }
+      }
+    }, { passive: true });
+
+    main.addEventListener("touchend", function () {
+      if (!tracking) return;
+      tracking = false;
+      var cur = getCurrent();
+      var section = document.getElementById("v-" + views[cur]);
+      if (section) { section.style.transform = ""; section.style.opacity = ""; }
+
+      var elapsed = Date.now() - startTime;
+      var velocity = Math.abs(deltaX) / (elapsed || 1);
+      var shouldSwipe = Math.abs(deltaX) > THRESHOLD || velocity > VEL_THRESHOLD;
+
+      if (shouldSwipe) {
+        var next;
+        if (deltaX < 0 && cur < views.length - 1) next = cur + 1;
+        else if (deltaX > 0 && cur > 0) next = cur - 1;
+        if (next != null) {
+          tabClick(views[next]);
+          // Hide swipe hint after first interaction
+          var hint = document.getElementById("swipe-hint");
+          if (hint) hint.classList.add("gone");
+        }
+      }
+    }, { passive: true });
+
+    // Also hide hint on any tab click
+    document.querySelectorAll("nav.tabs button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var hint = document.getElementById("swipe-hint");
+        if (hint) hint.classList.add("gone");
+      });
+    });
+  })();
+
+  /* --- 3. Pull-to-refresh --- */
+  (function () {
+    var main = document.querySelector("main");
+    var ptr = document.getElementById("ptr");
+    var startY = 0, pulling = false, refreshing = false;
+
+    main.addEventListener("touchstart", function (e) {
+      if (refreshing) return;
+      if (main.scrollTop > 5 || window.scrollY > 5) return;
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }, { passive: true });
+
+    main.addEventListener("touchmove", function (e) {
+      if (!pulling || refreshing) return;
+      var dy = e.touches[0].clientY - startY;
+      if (dy > 20 && dy < 160) {
+        ptr.classList.add("pulling");
+        ptr.style.transform = "translateX(-50%) translateY(" + Math.min(dy * .4, 40) + "px) scale(" + Math.min(1, dy / 80) + ")";
+      }
+    }, { passive: true });
+
+    main.addEventListener("touchend", function () {
+      if (!pulling) return;
+      pulling = false;
+      if (!ptr.classList.contains("pulling")) return;
+      // Trigger refresh
+      ptr.classList.remove("pulling"); ptr.classList.add("refreshing");
+      refreshing = true;
+      // Dispatch a custom event the module script can listen to, or just reload data
+      window.dispatchEvent(new CustomEvent("falqbit-refresh"));
+      setTimeout(function () {
+        ptr.classList.remove("refreshing");
+        ptr.style.transform = "";
+        refreshing = false;
+      }, 2000);
+    }, { passive: true });
+
+    // Listen for refresh event — will reload reserves
+    window.addEventListener("falqbit-refresh", function () {
+      // The module might not expose refresh(), so we reload the page data gently
+      try { document.querySelector("#acct.on") && location.reload(); } catch {}
+    });
+  })();
+
+  /* --- 4. Animated number counters --- */
+  (function () {
+    var observed = {};
+    function animateNumber(el) {
+      var text = el.textContent.replace(/[^0-9.]/g, "");
+      var target = parseFloat(text);
+      if (isNaN(target) || target <= 0) return;
+      var start = 0, dur = 600, t0 = null;
+      var original = el.textContent;
+      var suffix = el.textContent.replace(/[0-9.,]+/, "");
+      function step(ts) {
+        if (!t0) t0 = ts;
+        var p = Math.min(1, (ts - t0) / dur);
+        var ease = 1 - Math.pow(1 - p, 3); // easeOutCubic
+        var v = start + (target - start) * ease;
+        el.textContent = Number(v).toLocaleString("en-US", { maximumFractionDigits: text.indexOf(".") > -1 ? 3 : 0 }) + suffix;
+        if (p < 1) requestAnimationFrame(step);
+        else el.textContent = original;
+      }
+      requestAnimationFrame(step);
+    }
+    // Observe mutations on key stat elements
+    var targets = ["l-price", "l-pool", "l-holders", "w-fq", "w-algo"];
+    var observer = new MutationObserver(function (muts) {
+      muts.forEach(function (m) {
+        if (m.type === "childList" || m.type === "characterData") {
+          var el = m.target.nodeType === 3 ? m.target.parentElement : m.target;
+          if (el && el.id && targets.indexOf(el.id) > -1 && el.textContent !== "…" && !observed[el.id]) {
+            observed[el.id] = true;
+            setTimeout(function () { observed[el.id] = false; }, 700);
+            if (!still) animateNumber(el);
+          }
+        }
+      });
+    });
+    targets.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) observer.observe(el, { childList: true, characterData: true, subtree: true });
+    });
+  })();
+
+  /* --- 5. Card swipe-to-reveal on history items --- */
+  (function () {
+    document.addEventListener("touchstart", function (e) {
+      var li = e.target.closest(".hist li");
+      if (!li || li.querySelector(".reveal-action")) return;
+      // Add reveal panel
+      var rev = document.createElement("span");
+      rev.className = "reveal-action";
+      rev.textContent = "view";
+      li.appendChild(rev);
+    }, { passive: true });
+
+    var swipeLi = null, sStartX = 0;
+    document.addEventListener("touchstart", function (e) {
+      var li = e.target.closest(".hist li");
+      if (!li) return;
+      swipeLi = li; sStartX = e.touches[0].clientX;
+    }, { passive: true });
+
+    document.addEventListener("touchmove", function (e) {
+      if (!swipeLi) return;
+      var dx = e.touches[0].clientX - sStartX;
+      if (dx < -30) swipeLi.classList.add("swiped");
+      else swipeLi.classList.remove("swiped");
+    }, { passive: true });
+
+    document.addEventListener("touchend", function () {
+      if (swipeLi) {
+        setTimeout(function () {
+          if (swipeLi) swipeLi.classList.remove("swiped");
+          swipeLi = null;
+        }, 1500);
+      }
+    }, { passive: true });
+  })();
+
+  /* --- 6. Haptic success animation helper --- */
+  window._fqSuccess = function (el) {
+    if (el) { el.classList.add("success-pop"); setTimeout(function () { el.classList.remove("success-pop"); }, 500); }
+  };
+
+  /* --- 7. Remove swipe hint after 6 seconds automatically --- */
+  setTimeout(function () {
+    var hint = document.getElementById("swipe-hint");
+    if (hint && !hint.classList.contains("gone")) hint.classList.add("gone");
+  }, 7000);
+
+})();
+</script>
 </body>
 </html>
