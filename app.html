@@ -122,11 +122,55 @@ nav.tabs button[aria-selected="true"] { color: var(--cyan); background: rgba(63,
 nav.tabs button[aria-selected="true"] svg { filter: drop-shadow(0 0 6px rgba(63,224,208,.8)); }
 main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
 .pill.ok { box-shadow: 0 0 14px rgba(63,224,208,.5); }
+/* --- skeleton shimmer --- */
+.skel { position: relative; overflow: hidden; color: transparent !important; background: rgba(255,255,255,.06); border-radius: 8px; pointer-events: none; user-select: none; }
+.skel * { visibility: hidden; }
+.skel::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,.07) 50%, transparent 70%); background-size: 200% 100%; animation: shimmer 1.6s ease infinite; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* --- card press effect --- */
+.card { transition: transform .12s ease, box-shadow .12s ease; }
+.card:active { transform: scale(.985); box-shadow: 0 8px 24px -12px rgba(0,0,0,.6) !important; }
+
+/* --- section transition (fade+slide) --- */
+section[data-view] { will-change: opacity, transform; }
+
+/* --- toast notification --- */
+.toast { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 72px); left: 50%; transform: translateX(-50%) translateY(-20px); z-index: 50;
+  background: rgba(18,26,48,.92); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(63,224,208,.35); border-radius: 14px; padding: 10px 18px;
+  font: 500 13px/1.3 var(--mono); color: var(--cyan); box-shadow: 0 12px 40px -12px rgba(0,0,0,.7);
+  opacity: 0; pointer-events: none; transition: opacity .3s ease, transform .3s ease; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+
+/* --- tab bar sliding indicator --- */
+nav.tabs { position: fixed; }
+nav.tabs .tab-indicator { position: absolute; height: 3px; bottom: calc(env(safe-area-inset-bottom, 0px) + 4px); border-radius: 999px; background: var(--cyan); box-shadow: 0 0 12px rgba(63,224,208,.7); transition: left .3s cubic-bezier(.4,0,.2,1), width .3s cubic-bezier(.4,0,.2,1); pointer-events: none; }
+
+/* --- reward history mini bars --- */
+.rew-bar-row { display: flex; align-items: center; gap: 10px; }
+.rew-bar-row .rew-bar { flex: 1; height: 6px; background: rgba(255,255,255,.06); border-radius: 999px; overflow: hidden; }
+.rew-bar-row .rew-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--amber), #FFD770); transition: width .6s ease; }
+
+/* --- number change flash --- */
+@keyframes numFlash { 0% { color: var(--cyan); text-shadow: 0 0 12px rgba(63,224,208,.5); } 100% { color: inherit; text-shadow: none; } }
+.num-flash { animation: numFlash .6s ease; }
+
+/* --- live stats pulse dot --- */
+.live-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 8px rgba(63,224,208,.7); animation: livePulse 2s ease infinite; margin-right: 4px; vertical-align: middle; }
+@keyframes livePulse { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+
 @media (prefers-reduced-motion: no-preference) {
   .primary:not(:disabled) { animation: shine 3.5s linear infinite; }
   @keyframes shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
   section[data-view]:not([hidden]) > div { animation: rise .35s ease; }
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel::after { animation: none; }
+  .card:active { transform: none; }
+  .num-flash { animation: none; }
+  .live-dot { animation: none; }
 }
 
 /* ---- app v4: live strip, drop, history, pair ---- */
@@ -300,7 +344,7 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
       <h1>Your <em>quantum</em> wallet.</h1>
       <!-- LIVE STATS — always visible -->
       <div class="live">
-        <div><span>Price · 1M</span><b id="l-price">…</b><small id="l-usd"></small></div>
+        <div><span><i class="live-dot"></i>Price · 1M</span><b id="l-price">…</b><small id="l-usd"></small></div>
         <div><span>Pool</span><b id="l-pool">…</b><small>ALGO</small></div>
         <div><span>Holders</span><b id="l-holders">…</b><small>wallets</small></div>
       </div>
@@ -569,7 +613,9 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
     <button type="button" class="forgot" id="lock-forgot">Forgot PIN?</button>
   </div>
 </div>
+<div class="toast" id="toast"></div>
 <nav class="tabs" role="tablist" aria-label="App sections">
+  <span class="tab-indicator" id="tab-ind"></span>
   <button role="tab" type="button" id="tab-wallet" aria-selected="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="3"/><path d="M3 10h18"/><circle cx="16.5" cy="14.5" r="1.3"/></svg>Wallet</button>
   <button role="tab" type="button" id="tab-trade" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M4 8h14l-3.5-3.5"/><path d="M20 16H6l3.5 3.5"/></svg>Trade</button>
   <button role="tab" type="button" id="tab-receive" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><path d="M14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg>Receive</button>
@@ -599,10 +645,26 @@ const say = (html, kind = "") => { const m = $("msg"); m.hidden = !html; m.class
 const fmt = (n, d = 0) => Number(n).toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: 0 });
 const lora = (id) => `<a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">View on Lora</a>`;
 
+// ---------- toast ----------
+let _toastTimer = 0;
+function toast(msg, ms) { ms = ms || 2200; const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(_toastTimer); _toastTimer = setTimeout(() => t.classList.remove("show"), ms); }
+
+// ---------- tab indicator ----------
+function moveIndicator(v) {
+  const btn = $("tab-" + v), bar = $("tab-ind");
+  if (!btn || !bar) return;
+  requestAnimationFrame(() => {
+    const nav = btn.parentElement, nr = nav.getBoundingClientRect(), br = btn.getBoundingClientRect();
+    bar.style.left = (br.left - nr.left + br.width * 0.2) + "px";
+    bar.style.width = (br.width * 0.6) + "px";
+  });
+}
+
 // ---------- tabs ----------
 const views = ["wallet", "trade", "receive", "pay", "market"];
 function show(v) {
   views.forEach((x) => { $("v-" + x).hidden = x !== v; $("tab-" + x).setAttribute("aria-selected", String(x === v)); });
+  moveIndicator(v);
   if (v !== "pay") stopScan();
   if (v === "market" && !MC_RAW) { loadPriceChart(); loadMCActivity(); }
   say("");
@@ -611,6 +673,9 @@ function show(v) {
 views.forEach((v) => $("tab-" + v).addEventListener("click", () => show(v)));
 const start = (location.hash || "").slice(1);
 if (views.includes(start)) show(start);
+// position indicator on load
+requestAnimationFrame(() => moveIndicator(views.includes(start) ? start : "wallet"));
+window.addEventListener("resize", () => { const cur = views.find(v => !$("v-" + v).hidden) || "wallet"; moveIndicator(cur); });
 
 // ---------- persistent cache (survives page reload) ----------
 const _pCache = {};
@@ -773,15 +838,17 @@ function loadRewardHistory(txs) {
   if (!rewards.length) { el.hidden = true; return; }
   el.hidden = false;
   let totalRew = 0;
-  const rows = rewards.map((t) => {
-    const x = t["asset-transfer-transaction"], amt = x.amount / DEC;
+  const amts = rewards.map(t => t["asset-transfer-transaction"].amount / DEC);
+  const maxAmt = Math.max(...amts) || 1;
+  const rows = rewards.map((t, i) => {
+    const x = t["asset-transfer-transaction"], amt = amts[i];
     totalRew += amt;
     const d = new Date((t["round-time"] || 0) * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short" });
     const n = note(t);
     const isHold = n.startsWith("FALQBIT hold");
     const label = isHold ? "Hold reward" : "Welcome drop";
-    const cls = isHold ? "gift" : "gift";
-    return `<li><span class="ic ${cls}">★</span><span class="t"><a href="${c.n.lora}/transaction/${t.id}" target="_blank" rel="noopener">${label}</a><small>${d}</small></span><span class="v plus">+${fmt(amt)}</span></li>`;
+    const pct = Math.max(4, (amt / maxAmt) * 100);
+    return `<li><span class="ic gift">★</span><span class="t"><a href="${c.n.lora}/transaction/${t.id}" target="_blank" rel="noopener">${label}</a><small>${d}</small></span><span class="v plus">+${fmt(amt)}</span></li><li class="rew-bar-row" style="padding:0 0 6px 30px"><span class="rew-bar"><i style="width:${pct}%"></i></span></li>`;
   });
   $("w-rew-hist-list").innerHTML = rows.join("");
   $("w-rew-total").innerHTML = `Total received: <b style="color:var(--amber)">${fmt(totalRew)} FALQBIT</b> · ${rewards.length} payout${rewards.length > 1 ? "s" : ""}`;
@@ -835,6 +902,8 @@ async function refresh() {
   const days = Math.ceil((pay - now) / 86400000);
   $("w-payday").textContent = days <= 0 ? "🎉 Today!" : `${pay.toLocaleDateString(undefined, { day: "numeric", month: "short" })} · in ${days} day${days === 1 ? "" : "s"}`;
   renderReceive(); quote(); checkPay(); renderDrop(); loadHistory();
+  // flash updated numbers
+  ["w-fq", "w-algo", "l-price", "l-pool", "l-holders"].forEach(id => { const el = $(id); if (el && el.textContent !== "…") { el.classList.remove("num-flash"); void el.offsetWidth; el.classList.add("num-flash"); } });
 }
 
 // ---------- connect ----------
@@ -1123,7 +1192,7 @@ let deferred = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("w-install-btn").hidden = false; $("w-install-text").textContent = "Install FALQBIT on this device for quick access."; });
 $("w-install-btn").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("w-install-btn").hidden = true; });
 if (window.matchMedia("(display-mode: standalone)").matches) $("w-install").hidden = true;
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=15").catch(() => {});
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=17").catch(() => {});
 
 // ---------- market: price chart ----------
 const IDX = c.n.indexer;
@@ -1290,7 +1359,7 @@ setDir("buy");
   }
 })();
 setInterval(() => { loadReserves().then(quote).catch(() => {}); }, 300000); // reserves every 5 min
-setInterval(() => { if (account) refresh().catch(() => {}); }, 300000); // wallet refresh every 5 min (only if connected)
+setInterval(() => { if (account) refresh().then(() => toast("✓ Data refreshed")).catch(() => {}); }, 300000); // wallet refresh every 5 min (only if connected)
 </script>
 <script src="./fx.js" defer></script>
 <script src="./fx3.js" defer></script>

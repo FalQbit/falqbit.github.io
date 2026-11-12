@@ -246,8 +246,14 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 @media (max-width: 560px) { .proof.held li { grid-template-columns: minmax(0, 1fr) auto; } .proof.held .what { grid-column: 1 / -1; } }
 .faq { display: flex; flex-direction: column; gap: 0; }
 .faq details { border-top: 1px solid var(--line); padding-block: 16px; }
-.faq summary { cursor: pointer; font-weight: 600; font-size: 18px; list-style-position: outside; }
+.faq summary { cursor: pointer; font-weight: 600; font-size: 18px; list-style: none; display: flex; align-items: center; gap: 12px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::before { content: ""; flex: none; width: 20px; height: 20px; border-radius: 50%; background: rgba(63,224,208,.08); border: 1px solid rgba(63,224,208,.25); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='none'%3E%3Cpath d='M5 2v6M2 5h6' stroke='%233FE0D0' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: center; transition: transform .35s cubic-bezier(.4,0,.2,1), background-color .35s ease, border-color .35s ease; }
+.faq details[open] > summary::before { transform: rotate(45deg); background-color: rgba(63,224,208,.16); border-color: rgba(63,224,208,.5); }
 .faq summary:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-radius: 4px; }
+.faq details .faq-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s cubic-bezier(.4,0,.2,1), opacity .35s ease; opacity: 0; }
+.faq details[open] .faq-body { grid-template-rows: 1fr; opacity: 1; }
+.faq details .faq-body > div { overflow: hidden; }
 .faq p { color: var(--muted); margin: 10px 0 0; max-width: 46em; }
 @media (max-width: 560px) { .proof li { grid-template-columns: 26px minmax(0, 1fr); } .proof a, .proof .tag { grid-column: 2; } }
 
@@ -422,8 +428,9 @@ body { overflow-x: clip; }
 .stats-note i { width: 7px; height: 7px; border-radius: 50%; background: var(--cyan); flex: none; }
 .stat { position: relative; overflow: hidden; transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease; }
 .stat::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--cyan), transparent); opacity: .7; }
-.stat:hover { transform: translateY(-3px); border-color: rgba(63,224,208,.5); box-shadow: 0 18px 40px -22px rgba(63,224,208,.55); }
-.stat .v.loading { color: transparent; width: 70%; border-radius: 8px; background: linear-gradient(90deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,.05) 100%); background-size: 200% 100%; min-height: 1em; }
+.stat:hover { transform: translateY(-3px); border-color: rgba(63,224,208,.5); box-shadow: 0 18px 40px -22px rgba(63,224,208,.55), inset 0 0 30px -10px rgba(63,224,208,.15); }
+.stat .v.loading { color: transparent; width: 70%; border-radius: 8px; background: linear-gradient(90deg, rgba(255,255,255,.05) 0%, rgba(255,255,255,.14) 50%, rgba(255,255,255,.05) 100%); background-size: 200% 100%; min-height: 1em; animation: shimmer 1.6s ease infinite; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 .stat .meter { height: 6px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; margin-top: 4px; }
 .stat .meter span { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--cyan), #8B7CFF); transition: width 1.4s cubic-bezier(.2,.8,.2,1); }
 .stat .v.flash { animation: flash 1s ease; }
@@ -505,13 +512,14 @@ body { background-image: none; }
 .top-list .val { text-align: right; position: relative; font-variant-numeric: tabular-nums; }
 .top-list .val b { display: block; font: 600 15px/1.2 var(--mono); }
 .top-list .val span { color: var(--muted); font-size: 12px; }
-@media (max-width: 600px) { .top-list li { grid-template-columns: 26px minmax(0, 1fr); } .top-list .val { grid-column: 2; text-align: left; display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; } .top-list .val b { display: inline; } }
+@media (max-width: 600px) { .top-list li { grid-template-columns: 26px minmax(0, 1fr); padding: 14px 12px; gap: 8px 12px; } .top-list .val { grid-column: 2; text-align: left; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; } .top-list .val b { display: inline; font-size: 14px; } .top-list .who { font-size: 13px; } .top-list .who small { font-size: 11px; line-height: 1.3; margin-top: 2px; } .top-list .proj-tag { font-size: 9px; padding: 3px 6px 3px 5px; margin-left: 4px; } .top-list .rk { font-size: 13px; } }
 .d-lp { grid-area: lp; }
 #lp-list li:nth-child(1) .rk { color: #FFD66B; } #lp-list li:nth-child(2) .rk { color: #D7E0F2; } #lp-list li:nth-child(3) .rk { color: #E8A06A; }
 .pager { display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin-top: 14px; }
 .top-list .under { color: #F5B942; }
-.top-list .proj-row { opacity: .7; }
-.top-list .proj-tag { display: inline-block; font: 500 9px/1 var(--mono); letter-spacing: .5px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(156,144,255,.15); color: #B8B0FF; border: 1px solid rgba(156,144,255,.25); margin-left: 6px; vertical-align: middle; }
+.top-list .proj-row { opacity: .75; }
+.top-list .proj-tag { display: inline-flex; align-items: center; gap: 3px; font: 500 10px/1 var(--mono); letter-spacing: .5px; text-transform: uppercase; padding: 4px 8px 4px 6px; border-radius: 8px; background: linear-gradient(135deg, rgba(156,144,255,.22), rgba(63,224,208,.12)); color: #C9C0FF; border: 1px solid rgba(156,144,255,.4); margin-left: 6px; vertical-align: middle; box-shadow: 0 0 10px -3px rgba(156,144,255,.3); }
+.top-list .proj-tag::before { content: ""; width: 10px; height: 10px; flex: none; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='none'%3E%3Crect x='2' y='4' width='6' height='5' rx='1' stroke='%23B8B0FF' stroke-width='.8'/%3E%3Cpath d='M3.5 4V3a1.5 1.5 0 013 0v1' stroke='%23B8B0FF' stroke-width='.8' stroke-linecap='round'/%3E%3C/svg%3E") center/contain no-repeat; }
 .top-list .no-rew { color: #FF7A7A; }
 .pg-info { font: 500 13px/1 var(--mono); color: var(--muted); }
 .pg-btns { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -541,6 +549,9 @@ body { background-image: none; }
 @keyframes orbit2 { to { transform: rotate(360deg); } }
 .hero-art svg { animation: breathe 6s ease-in-out infinite; }
 @keyframes breathe { 50% { transform: scale(1.025); filter: drop-shadow(0 0 60px rgba(63,224,208,.32)); } }
+/* falcon eye glow */
+.falcon-eye { animation: eyeGlow 3.2s ease-in-out infinite; filter: url(#eye-blur); }
+@keyframes eyeGlow { 0%, 100% { opacity: .65; filter: url(#eye-blur) drop-shadow(0 0 4px rgba(63,224,208,.3)); } 50% { opacity: 1; filter: url(#eye-blur) drop-shadow(0 0 12px rgba(63,224,208,.8)); } }
 /* primary button shine */
 .btn.primary { position: relative; overflow: hidden; }
 .btn.primary::after { content: ""; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.55), transparent); transform: skewX(-20deg); animation: btnShine 4.5s ease-in-out infinite; }
@@ -1179,7 +1190,7 @@ body { background-image: none; }
       <p class="hero-meta"><a href="https://x.com/FalQbit" target="_blank" rel="noopener">Follow @FalQbit on X</a><span aria-hidden="true">·</span><a href="https://t.me/falqbit" target="_blank" rel="noopener">Join the Telegram</a><span aria-hidden="true">·</span><span>Official ID <a href="https://lora.algokit.io/mainnet/asset/3760920399" target="_blank" rel="noopener">3760920399</a></span></p>
       <p class="formula" aria-label="How a post-quantum address is derived on Algorand"><span style="display:block;color:var(--cyan);font-size:12px;letter-spacing:.1em;margin-bottom:4px">HOW A QUANTUM ADDRESS IS MADE</span>address = SHA512-256(<b>"PQA"</b> ‖ scheme ‖ salt ‖ falcon_public_key)</p>
     </div>
-    <div class="hero-art"><svg viewBox="0 0 200 200" role="img" aria-label="FALQBIT falcon logo made of lattice dots"><g class="hot"><circle cx="100" cy="100" r="98" fill="#0A0F1E"/>
+    <div class="hero-art"><svg viewBox="0 0 200 200" role="img" aria-label="FALQBIT falcon logo made of lattice dots"><defs><filter id="eye-blur"><feGaussianBlur stdDeviation="3"/></filter></defs><g class="hot"><circle cx="100" cy="100" r="98" fill="#0A0F1E"/>
 <circle cx="76" cy="12" r="1.2" fill="#2A3556"/>
 <circle cx="84" cy="12" r="1.2" fill="#2A3556"/>
 <circle cx="92" cy="12" r="1.2" fill="#2A3556"/>
@@ -1563,7 +1574,7 @@ body { background-image: none; }
 <path d="M 52 172 C 40 122 54 76 94 56 C 124 42 160 48 173 68 L 184 80 C 191 89 190 101 181 109 L 176 99 C 171 103 165 105 159 105 C 149 121 136 138 130 172 Z" fill="none" stroke="#3FE0D0" stroke-width="1.6" stroke-linejoin="round" opacity="0.9"/>
 <circle cx="141" cy="78" r="6.5" fill="#8B7CFF"/>
 <circle cx="100" cy="100" r="97" fill="none" stroke="#3FE0D0" stroke-width="2.5"/>
-</g></svg></div>
+</g><circle class="falcon-eye" cx="140" cy="68" r="5" fill="#3FE0D0" opacity=".8"/><circle class="falcon-eye" cx="140" cy="68" r="9" fill="none" stroke="#3FE0D0" stroke-width=".5" opacity=".4"/></svg></div>
   </section>
 
   <div class="ticker" aria-label="Highlights"><div class="ticker-track"><span>Live on Algorand MainNet</span><span>Verified on Pera</span><span>Welcome drop for 1,000 accounts</span><span>0.5% a month for holders</span><span>Trade with ALGO or USDC</span><span>QR payments in the app</span><span>Live market in the app</span><span>Open-source gate contract</span><span>No clawback · no admin key</span><span>Official Telegram t.me/falqbit</span><span aria-hidden="true">Live on Algorand MainNet</span><span aria-hidden="true">Verified on Pera</span><span aria-hidden="true">Welcome drop for 1,000 accounts</span><span aria-hidden="true">0.5% a month for holders</span><span aria-hidden="true">Trade with ALGO or USDC</span><span aria-hidden="true">QR payments in the app</span><span aria-hidden="true">Live market in the app</span><span aria-hidden="true">Open-source gate contract</span><span aria-hidden="true">No clawback · no admin key</span><span aria-hidden="true">Official Telegram t.me/falqbit</span></div></div>
@@ -1946,6 +1957,18 @@ document.documentElement.classList.add("js");
     els.forEach(function (el) { io.observe(el); });
   } else { els.forEach(function (el) { el.classList.add("in"); }); }
 
+  // smooth FAQ open/close
+  document.querySelectorAll(".faq details").forEach(function (d) {
+    var sum = d.querySelector("summary");
+    var body = d.querySelector("p");
+    if (!body) return;
+    var wrap = document.createElement("div"); wrap.className = "faq-body";
+    var inner = document.createElement("div");
+    wrap.appendChild(inner);
+    while (d.childNodes.length > 1) inner.appendChild(d.childNodes[1]);
+    d.appendChild(wrap);
+  });
+
   // live numbers from Algorand MainNet
   var ALGOD = "https://mainnet-api.algonode.cloud";
   var ALGOD_FB = "https://mainnet-api.algonode.cloud";
@@ -2077,7 +2100,7 @@ document.documentElement.classList.add("js");
   }
   var IDX = "https://mainnet-idx.algonode.cloud";
   var IDX_FB = "https://mainnet-idx.algonode.cloud";
-  var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": "Liquidity pool", "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": "Rewards" };
+  var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": "Liquidity pool", "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": "Rewards", "YW5KDPBJ7YO7ZCPIBNEA33RZPPUOXGJVFWRZSM6JKRVQ3FJE5UHXZMJQYY": "Liquidity reserve" };
   var RANGES = [[0, 1e6, "Under 1M"], [1e6, 1e7, "1M – 10M"], [1e7, 1e8, "10M – 100M"], [1e8, 1e9, "100M – 1B"], [1e9, Infinity, "1B+"]];
   function allBalances(next, acc) {
     acc = acc || [];
@@ -2156,10 +2179,11 @@ document.documentElement.classList.add("js");
       var big = by === "al" ? fmt(al || 0, 2) + " ALGO" : fmt(fq, 0) + " FALQBIT";
       var rw = estReward(fq);
       var projLabel = PROJECT[b.address];
-      var noRewards = !!projLabel; // only pool and rewards wallets don't receive rewards
+      var noRewards = !!projLabel; // pool, rewards and liquidity reserve don't receive rewards
       var rewardNote = {
         "Liquidity pool": "liquidity pool · no rewards",
-        "Rewards": "pays rewards · does not receive"
+        "Rewards": "pays rewards · does not receive",
+        "Liquidity reserve": "liquidity reserve · no rewards"
       };
       // when sorting by ALGO, the small line shows the FALQBIT held; by FALQBIT we drop the small line entirely (ALGO amounts aren't useful here)
       var small = by === "al" ? "<span>" + fmt(fq, 0) + " FALQBIT</span>" : "";
