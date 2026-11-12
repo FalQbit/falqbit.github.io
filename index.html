@@ -2245,8 +2245,8 @@ document.documentElement.classList.add("js");
     function note(t) { try { return t.note ? atob(t.note) : ""; } catch (e) { return ""; } }
     Promise.all([all(RW), all(PR).catch(function () { return []; })]).then(function (x) {
       var seen = {}, sum = 0;
-      x[0].forEach(function (t) { var a = t["asset-transfer-transaction"]; if (t.sender === RW && a && a.amount > 0 && note(t).indexOf("FALQBIT hold") !== 0 && !PROJECT[a.receiver] && !seen[a.receiver]) { seen[a.receiver] = 1; sum += a.amount / 1e6; } });
-      x[1].forEach(function (t) { var a = t["asset-transfer-transaction"]; if (t.sender === PR && a && SIZES[String(a.amount)] && note(t).indexOf("FALQBIT hold") !== 0 && !PROJECT[a.receiver] && !seen[a.receiver]) { seen[a.receiver] = 1; sum += a.amount / 1e6; } });
+      x[0].forEach(function (t) { var a = t["asset-transfer-transaction"]; if (t.sender === RW && a && a.amount > 0 && note(t).indexOf("FALQBIT welcome") === 0 && !PROJECT[a.receiver] && !seen[a.receiver]) { seen[a.receiver] = 1; sum += a.amount / 1e6; } });
+      x[1].forEach(function (t) { var a = t["asset-transfer-transaction"]; if (t.sender === PR && a && SIZES[String(a.amount)] && note(t).indexOf("FALQBIT welcome") === 0 && !PROJECT[a.receiver] && !seen[a.receiver]) { seen[a.receiver] = 1; sum += a.amount / 1e6; } });
       var n = Object.keys(seen).length, next = 0;
       for (var k = 0; k < WD_TIERS.length; k++) if (n < WD_TIERS[k][0]) { next = WD_TIERS[k][1]; break; }
       countUp("wd-paid", n, function (v) { return fmt(Math.round(v), 0); });
