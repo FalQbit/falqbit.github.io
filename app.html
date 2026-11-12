@@ -169,6 +169,7 @@ main { padding-bottom: calc(130px + env(safe-area-inset-bottom, 0px)); }
 .dc:nth-child(2)::before { animation-delay: -1.4s; } .dc:nth-child(3)::before { animation-delay: -2.8s; } .dc:nth-child(4)::before { animation-delay: -4.2s; } .dc:nth-child(5)::before { animation-delay: -5.6s; }
 @property --ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
 @keyframes spinA { to { --ang: 360deg; } }
+@keyframes pulse-gift { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
 .dc span { font: 500 10px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cyan); }
 .dc b { font: 800 26px/1.1 var(--display); color: var(--fg); text-shadow: 0 0 22px rgba(63,224,208,.3); }
 .dc.wide b { font-size: 32px; }
@@ -342,22 +343,26 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
       </div>
 
       <!-- WELCOME DROP — always visible -->
-      <div class="card" style="padding:14px 18px">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <span class="k">🎁 Welcome Drop</span>
-          <span style="font:700 14px/1 var(--mono);color:var(--violet)" id="l-drop">…</span>
-        </div>
-        <div class="bar" style="margin:8px 0 4px"><i id="l-drop-bar"></i></div>
-        <small id="l-drop-info" class="fine"></small>
-        <div id="l-drop-track" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">
-          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-            <span class="pill ok" style="font-size:11px" id="l-tk-kept">…</span>
-            <span class="pill" style="font-size:11px;background:rgba(245,185,66,.12);color:var(--amber);border-color:rgba(245,185,66,.25)" id="l-tk-part">…</span>
-            <span class="pill" style="font-size:11px;background:rgba(255,122,122,.1);color:var(--red);border-color:rgba(255,122,122,.2)" id="l-tk-sold">…</span>
+      <div class="card" style="padding:14px 18px;position:relative;overflow:hidden">
+        <div style="position:absolute;inset:-1px;border-radius:13px;z-index:0;background:conic-gradient(from var(--ang),transparent 35%,rgba(156,144,255,.4) 50%,rgba(63,224,208,.3) 65%,transparent 75%);animation:spinA 8s linear infinite;pointer-events:none"></div>
+        <div style="position:relative;z-index:1">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="k" style="display:flex;align-items:center;gap:6px"><span style="font-size:18px;animation:pulse-gift 2s ease infinite">🎁</span> Welcome Drop</span>
+            <span style="font:700 14px/1 var(--mono);color:var(--violet)" id="l-drop">…</span>
           </div>
-          <small class="fine" style="margin-top:4px;display:block">
-            <a href="./rewards.html" style="color:var(--cyan);text-decoration:none">View full list →</a>
-          </small>
+          <div class="bar" style="margin:8px 0 4px"><i id="l-drop-bar" style="background:linear-gradient(90deg,var(--violet),var(--cyan));box-shadow:0 0 8px rgba(63,224,208,.3)"></i></div>
+          <small id="l-drop-info" class="fine"></small>
+          <div id="l-drop-track" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)">
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+              <span class="pill ok" style="font-size:11px" id="l-tk-kept">…</span>
+              <span class="pill" style="font-size:11px;background:rgba(245,185,66,.12);color:var(--amber);border-color:rgba(245,185,66,.25)" id="l-tk-part">…</span>
+              <span class="pill" style="font-size:11px;background:rgba(255,122,122,.1);color:var(--red);border-color:rgba(255,122,122,.2)" id="l-tk-sold">…</span>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:6px;align-items:center">
+              <small><a href="./rewards.html" style="color:var(--cyan);text-decoration:none">View full list →</a></small>
+              <small><a href="./calculator.html" style="color:var(--muted);text-decoration:none">Calculator →</a></small>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -400,11 +405,22 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
         <div class="bar" aria-hidden="true"><i id="w-drop-bar"></i></div>
         <span class="fine" id="w-drop-fine"></span>
       </div>
+      <!-- Reward History -->
+      <div class="card" id="w-rew-hist" hidden>
+        <span class="k" style="color:var(--amber)">📜 Reward History</span>
+        <ul class="hist" id="w-rew-hist-list"><li class="muted">Loading…</li></ul>
+        <div style="margin-top:8px;display:flex;gap:12px;align-items:center" id="w-rew-totals">
+          <span class="fine" id="w-rew-total"></span>
+          <a href="./calculator.html" class="fine" style="color:var(--cyan);text-decoration:none;margin-left:auto">Calculator →</a>
+        </div>
+      </div>
       <div class="card" id="w-hist" hidden>
         <span class="k">Activity</span>
         <ul class="hist" id="w-hist-list"><li class="muted">Loading…</li></ul>
       </div>
       <div class="links">
+        <a href="./calculator.html">Calculator</a>
+        <a href="./trade.html">Trade</a>
         <a href="https://t.me/falqbit" target="_blank" rel="noopener">Telegram</a>
         <a href="https://x.com/FalQbit" target="_blank" rel="noopener">X</a>
         <a href="./" target="_blank" rel="noopener">falqbit.com</a>
@@ -743,7 +759,32 @@ async function loadHistory() {
       return `<li><span class="ic ${cls}">${ic}</span><span class="t"><a href="${c.n.lora}/transaction/${t.id}" target="_blank" rel="noopener">${label}</a><small>${d}</small></span><span class="v ${inn ? "plus" : ""}">${inn ? "+" : "−"}${amt}</span></li>`;
     });
     $("w-hist-list").innerHTML = list.join("") || `<li class="muted">No FALQBIT activity yet.</li>`;
+    // Load reward history
+    loadRewardHistory(j?.transactions || []);
   } catch { $("w-hist-list").innerHTML = `<li class="muted">Could not read your activity right now.</li>`; }
+}
+function loadRewardHistory(txs) {
+  const el = $("w-rew-hist"); if (!el) return;
+  const note = (t) => { try { return t.note ? atob(t.note) : ""; } catch { return ""; } };
+  const rewards = txs.filter((t) => {
+    const x = t["asset-transfer-transaction"];
+    return x && x.receiver === account && (t.sender === cfg.rewards || t.sender === cfg.project) && x.amount > 0;
+  }).sort((a, b) => (b["round-time"] || 0) - (a["round-time"] || 0));
+  if (!rewards.length) { el.hidden = true; return; }
+  el.hidden = false;
+  let totalRew = 0;
+  const rows = rewards.map((t) => {
+    const x = t["asset-transfer-transaction"], amt = x.amount / DEC;
+    totalRew += amt;
+    const d = new Date((t["round-time"] || 0) * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+    const n = note(t);
+    const isHold = n.startsWith("FALQBIT hold");
+    const label = isHold ? "Hold reward" : "Welcome drop";
+    const cls = isHold ? "gift" : "gift";
+    return `<li><span class="ic ${cls}">★</span><span class="t"><a href="${c.n.lora}/transaction/${t.id}" target="_blank" rel="noopener">${label}</a><small>${d}</small></span><span class="v plus">+${fmt(amt)}</span></li>`;
+  });
+  $("w-rew-hist-list").innerHTML = rows.join("");
+  $("w-rew-total").innerHTML = `Total received: <b style="color:var(--amber)">${fmt(totalRew)} FALQBIT</b> · ${rewards.length} payout${rewards.length > 1 ? "s" : ""}`;
 }
 const priceAlgoPerFq = () => reserves ? Number(reserves.algo) / Number(reserves.fq) : 0;
 
@@ -1082,7 +1123,7 @@ let deferred = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("w-install-btn").hidden = false; $("w-install-text").textContent = "Install FALQBIT on this device for quick access."; });
 $("w-install-btn").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("w-install-btn").hidden = true; });
 if (window.matchMedia("(display-mode: standalone)").matches) $("w-install").hidden = true;
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=14").catch(() => {});
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=15").catch(() => {});
 
 // ---------- market: price chart ----------
 const IDX = c.n.indexer;

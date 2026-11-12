@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FALQBIT Rewards Calculator</title>
+<meta name="description" content="Estimate your monthly FALQBIT hold-to-earn rewards. Live data from Algorand MainNet.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔷</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --ground: #0A0F1E; --surface: #121A30; --raise: #18223E; --line: #24304F;
+  --fg: #E8ECF6; --muted: #A9B4D0; --cyan: #3FE0D0; --violet: #9C90FF;
+  --amber: #F5B942; --red: #FF7A7A; --green: #4ADE80;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; }
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  background: var(--ground); color: var(--fg);
+  min-height: 100dvh; line-height: 1.55;
+}
+a { color: var(--cyan); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* lattice bg */
+.lattice { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
+/* header */
+.hdr { position: sticky; top: 0; z-index: 20; background: rgba(10,15,30,.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); padding: 12px 24px; display: flex; align-items: center; gap: 12px; }
+.hdr .brand { font-family: 'Bricolage Grotesque', sans-serif; font-weight: 700; font-size: 1.1rem; color: var(--fg); }
+.hdr .brand span { color: var(--cyan); }
+.hdr nav { margin-left: auto; display: flex; gap: 16px; font-size: .85rem; }
+.hdr nav a { color: var(--muted); }
+.hdr nav a:hover { color: var(--fg); text-decoration: none; }
+
+/* main */
+.wrap { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 48px 20px 80px; }
+h1 { font-family: 'Bricolage Grotesque', sans-serif; font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 700; margin-bottom: 8px; }
+h1 em { font-style: normal; background: linear-gradient(135deg, var(--cyan), var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.sub { color: var(--muted); margin-bottom: 32px; font-size: .95rem; }
+
+/* card */
+@property --ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.card {
+  background: var(--surface); border-radius: 16px; padding: 28px 24px; position: relative;
+}
+.card::before {
+  content: ''; position: absolute; inset: -1px; border-radius: 17px; z-index: -1;
+  background: conic-gradient(from var(--ang), transparent 40%, var(--cyan) 50%, var(--violet) 60%, transparent 70%);
+  animation: spin 6s linear infinite;
+}
+@keyframes spin { to { --ang: 360deg; } }
+
+/* input group */
+.inp-group { margin-bottom: 24px; }
+.inp-group label { display: block; font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 8px; }
+.inp-row { display: flex; align-items: center; gap: 12px; }
+.inp-row input {
+  flex: 1; background: var(--raise); border: 1px solid var(--line); border-radius: 10px;
+  color: var(--fg); font-family: 'IBM Plex Mono', monospace; font-size: 1.25rem; padding: 12px 16px;
+  outline: none; transition: border-color .2s;
+}
+.inp-row input:focus { border-color: var(--cyan); }
+.inp-row .unit { font-family: 'IBM Plex Mono', monospace; font-size: .85rem; color: var(--muted); white-space: nowrap; }
+
+/* slider */
+.range-wrap { margin-top: 8px; }
+.range-wrap input[type=range] {
+  width: 100%; -webkit-appearance: none; appearance: none; height: 6px; border-radius: 3px;
+  background: linear-gradient(90deg, var(--cyan), var(--violet));
+  outline: none; cursor: pointer;
+}
+.range-wrap input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--fg); border: 3px solid var(--cyan); cursor: grab;
+}
+.range-wrap input[type=range]::-moz-range-thumb {
+  width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--cyan);
+  background: var(--fg); cursor: grab;
+}
+.presets { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.presets button {
+  background: var(--raise); border: 1px solid var(--line); border-radius: 8px;
+  color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: .78rem;
+  padding: 4px 12px; cursor: pointer; transition: all .2s;
+}
+.presets button:hover, .presets button.active { border-color: var(--cyan); color: var(--cyan); }
+
+/* results */
+.results { margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 480px) { .results { grid-template-columns: 1fr; } }
+.res {
+  background: var(--raise); border-radius: 12px; padding: 16px 18px;
+  border: 1px solid var(--line); transition: border-color .3s;
+}
+.res.highlight { border-color: var(--cyan); }
+.res .rk { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+.res .rv {
+  font-family: 'IBM Plex Mono', monospace; font-size: 1.3rem; font-weight: 600;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.res .rv.zero { -webkit-text-fill-color: var(--muted); background: none; }
+.res .rs { font-size: .78rem; color: var(--muted); margin-top: 4px; }
+
+/* full-span result */
+.res.wide { grid-column: 1 / -1; }
+
+/* info section */
+.info { margin-top: 40px; }
+.info h2 { font-family: 'Bricolage Grotesque', sans-serif; font-size: 1.2rem; margin-bottom: 16px; }
+.rules-grid { display: grid; gap: 14px; }
+.rule-item {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 16px 18px;
+}
+.rule-item h3 { font-size: .85rem; color: var(--cyan); margin-bottom: 4px; }
+.rule-item p { font-size: .85rem; color: var(--muted); line-height: 1.5; }
+
+/* warning */
+.warn-bar {
+  margin-top: 12px; background: rgba(245,185,66,.08); border: 1px solid rgba(245,185,66,.2);
+  border-radius: 10px; padding: 12px 16px; font-size: .82rem; color: var(--amber);
+}
+
+/* live pill */
+.live { display: inline-flex; align-items: center; gap: 6px; font-size: .75rem; color: var(--green); margin-bottom: 20px; }
+.live i { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse-dot 2s ease infinite; }
+@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+
+/* footer */
+.foot { text-align: center; margin-top: 60px; font-size: .8rem; color: var(--muted); }
+.foot a { color: var(--muted); }
+</style>
+</head>
+<body>
+<canvas class="lattice" id="lattice"></canvas>
+<header class="hdr">
+  <a href="./index.html" class="brand">FAL<span>Q</span>BIT</a>
+  <nav>
+    <a href="./index.html">Home</a>
+    <a href="./app.html">App</a>
+    <a href="./trade.html">Trade</a>
+  </nav>
+</header>
+<main class="wrap">
+  <h1>Rewards <em>Calculator</em></h1>
+  <p class="sub">Estimate your monthly hold-to-earn reward. Live pool data from Algorand MainNet.</p>
+  <div class="live"><i></i> <span id="live-status">Connecting to MainNet…</span></div>
+
+  <div class="card">
+    <div class="inp-group">
+      <label for="balance">Your FALQBIT balance</label>
+      <div class="inp-row">
+        <input type="text" id="balance" inputmode="numeric" value="1,000,000" autocomplete="off">
+        <span class="unit">FALQBIT</span>
+      </div>
+      <div class="range-wrap">
+        <input type="range" id="slider" min="0" max="500000000" step="100000" value="1000000">
+      </div>
+      <div class="presets">
+        <button data-v="1000000">1M</button>
+        <button data-v="5000000">5M</button>
+        <button data-v="10000000">10M</button>
+        <button data-v="50000000">50M</button>
+        <button data-v="100000000">100M</button>
+        <button data-v="500000000">500M</button>
+      </div>
+    </div>
+
+    <div class="results">
+      <div class="res highlight">
+        <div class="rk">Monthly reward</div>
+        <div class="rv" id="r-monthly">5,000</div>
+        <div class="rs" id="r-monthly-s">0.5% of balance, capped at 500K</div>
+      </div>
+      <div class="res">
+        <div class="rk">Yearly estimate</div>
+        <div class="rv" id="r-yearly">60,000</div>
+        <div class="rs">12 payouts per year</div>
+      </div>
+      <div class="res">
+        <div class="rk">Reward in ALGO</div>
+        <div class="rv" id="r-algo">…</div>
+        <div class="rs" id="r-algo-s">at current pool rate</div>
+      </div>
+      <div class="res">
+        <div class="rk">Reward in USD</div>
+        <div class="rv" id="r-usd">…</div>
+        <div class="rs" id="r-usd-s">estimated from ALGO/USDC</div>
+      </div>
+      <div class="res wide">
+        <div class="rk">Pool scaling</div>
+        <div class="rv" id="r-scale">…</div>
+        <div class="rs" id="r-scale-s">If total eligible rewards exceed 15M, everyone scales proportionally.</div>
+      </div>
+    </div>
+    <div class="warn-bar" id="warn" hidden></div>
+  </div>
+
+  <section class="info">
+    <h2>How hold-to-earn works</h2>
+    <div class="rules-grid">
+      <div class="rule-item">
+        <h3>Minimum 1,000,000 FALQBIT</h3>
+        <p>Your wallet needs at least 1M FALQBIT on payout day to receive any reward.</p>
+      </div>
+      <div class="rule-item">
+        <h3>0.5% monthly (1% in Nov 2026)</h3>
+        <p>Each payout is 0.5% of your lowest balance since the 1st. The launch month (November 2026) pays 1%.</p>
+      </div>
+      <div class="rule-item">
+        <h3>Cap: 500,000 per wallet</h3>
+        <p>No single wallet gets more than 500K FALQBIT per month, regardless of balance.</p>
+      </div>
+      <div class="rule-item">
+        <h3>Monthly pool: 15,000,000</h3>
+        <p>The total paid out each month is capped at 15M FALQBIT, shared proportionally among all holders.</p>
+      </div>
+      <div class="rule-item">
+        <h3>Paid on the 25th</h3>
+        <p>Rewards are paid on the 25th of every month, straight to your account from the public Rewards wallet.</p>
+      </div>
+      <div class="rule-item">
+        <h3>No staking needed</h3>
+        <p>Tokens stay in your own quantum account. You can trade or send at any time — the payout uses your lowest balance since the 1st.</p>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">
+    <a href="./index.html">falqbit.com</a> · <a href="./app.html">Open the app</a> · <a href="./whitepaper.html">Whitepaper</a>
+  </p>
+</main>
+
+<script>
+(function () {
+  // Lattice background
+  var c = document.getElementById("lattice"), ctx = c.getContext("2d");
+  function resizeLattice() { c.width = innerWidth; c.height = innerHeight; }
+  resizeLattice(); addEventListener("resize", resizeLattice);
+  var dots = [];
+  (function initDots() {
+    var cols = Math.ceil(innerWidth / 40), rows = Math.ceil(innerHeight / 40);
+    for (var r = 0; r < rows; r++) for (var cl = 0; cl < cols; cl++) dots.push({ x: cl * 40 + 20, y: r * 40 + 20, a: Math.random() * .15 + .03 });
+  })();
+  var still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!still) {
+    (function frame() {
+      ctx.clearRect(0, 0, c.width, c.height);
+      var t = Date.now() / 6000;
+      dots.forEach(function (d) {
+        var a = d.a + Math.sin(t + d.x * .01 + d.y * .01) * .04;
+        ctx.fillStyle = "rgba(63,224,208," + Math.max(0, a) + ")";
+        ctx.fillRect(d.x - 1, d.y - 1, 2, 2);
+      });
+      requestAnimationFrame(frame);
+    })();
+  }
+
+  // Constants
+  var ALGOD = "https://mainnet-api.algonode.cloud";
+  var TINYMAN = 1002541853, ASSET = 3760920399;
+  var POOL = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
+  var USDC_POOL = "2PIFZW53RHCSFSYMCFUBW4XOCXOMB7XOYQSQ6KGT3KVGJTL4HM6COZRNMM";
+  var IDX = "https://mainnet-idx.algonode.cloud";
+  var REWARDS = "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q";
+  var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": 1, "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": 1 };
+  var SUPPLY = 10e9, CAP = 500000, POOL_LIMIT = 15e6;
+  var px = { algoPerFq: 0, usdPerAlgo: 0, totalEligible: 0, scale: 1 };
+
+  function $(id) { return document.getElementById(id); }
+  function fmt(n, d) { return n.toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+
+  // Fetch JSON with error handling
+  function fetchJ(url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+
+  function rewardRate() {
+    var d = new Date();
+    return d.getUTCFullYear() === 2026 && d.getUTCMonth() === 10 ? 0.01 : 0.005;
+  }
+
+  function rawReward(v) { return v >= 1e6 ? Math.min(CAP, v * rewardRate()) : 0; }
+
+  // Load live data
+  function loadLive() {
+    var rate = rewardRate();
+    // Get pool reserves for price
+    var p1 = fetchJ(ALGOD + "/v2/accounts/" + POOL + "/applications/" + TINYMAN).then(function (j) {
+      var kv = (j["app-local-state"] || {})["key-value"] || [], r = {};
+      kv.forEach(function (x) { r[atob(x.key)] = x.value.uint; });
+      px.algoPerFq = (r.asset_2_reserves / r.asset_1_reserves);
+      return px.algoPerFq;
+    });
+    // Get USDC/ALGO price
+    var p2 = fetchJ(ALGOD + "/v2/accounts/" + USDC_POOL + "/applications/" + TINYMAN).then(function (j) {
+      var kv = (j["app-local-state"] || {})["key-value"] || [], r = {};
+      kv.forEach(function (x) { r[atob(x.key)] = x.value.uint; });
+      px.usdPerAlgo = r.asset_1_reserves / r.asset_2_reserves;
+    }).catch(function () {});
+    // Get all balances to calculate pool scaling
+    var p3 = allBalances().then(function (list) {
+      var sum = 0;
+      list.forEach(function (b) {
+        if (PROJECT[b.address] || b.deleted || b.amount <= 0) return;
+        sum += rawReward(b.amount / 1e6);
+      });
+      px.totalEligible = sum;
+      px.scale = sum > POOL_LIMIT ? POOL_LIMIT / sum : 1;
+    });
+
+    Promise.allSettled([p1, p2, p3]).then(function () {
+      $("live-status").textContent = "Live from MainNet · rate " + (rate * 100) + "% / month";
+      calc();
+    });
+  }
+
+  function allBalances(next, acc) {
+    acc = acc || [];
+    return fetchJ(IDX + "/v2/assets/" + ASSET + "/balances?limit=1000&currency-greater-than=0" + (next ? "&next=" + encodeURIComponent(next) : ""))
+      .then(function (j) { acc = acc.concat(j.balances || []); return j["next-token"] && (j.balances || []).length ? allBalances(j["next-token"], acc) : acc; });
+  }
+
+  // Parse formatted number
+  function parseNum(s) { return parseInt(s.replace(/[^0-9]/g, ""), 10) || 0; }
+
+  // Format input as user types
+  var balInput = $("balance"), slider = $("slider");
+  balInput.addEventListener("input", function () {
+    var v = parseNum(this.value);
+    var pos = this.selectionStart;
+    var before = this.value.slice(0, pos).replace(/[^0-9]/g, "").length;
+    this.value = fmt(v);
+    // restore cursor
+    var count = 0, newPos = 0;
+    for (var i = 0; i < this.value.length; i++) { if (/\d/.test(this.value[i])) count++; if (count === before) { newPos = i + 1; break; } }
+    this.setSelectionRange(newPos, newPos);
+    slider.value = Math.min(v, 500000000);
+    calc();
+  });
+
+  slider.addEventListener("input", function () {
+    balInput.value = fmt(parseInt(this.value));
+    calc();
+  });
+
+  document.querySelectorAll(".presets button").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var v = parseInt(b.dataset.v);
+      balInput.value = fmt(v);
+      slider.value = Math.min(v, 500000000);
+      calc();
+    });
+  });
+
+  function calc() {
+    var balance = parseNum(balInput.value);
+    var rate = rewardRate();
+    var raw = rawReward(balance);
+    var scaled = Math.floor(raw * px.scale);
+    var monthly = scaled;
+    var yearly = monthly * 12;
+    var warn = $("warn");
+
+    // Update presets active state
+    document.querySelectorAll(".presets button").forEach(function (b) { b.classList.toggle("active", parseInt(b.dataset.v) === balance); });
+
+    // Monthly
+    $("r-monthly").textContent = fmt(monthly);
+    $("r-monthly").className = monthly > 0 ? "rv" : "rv zero";
+    if (balance < 1e6) {
+      $("r-monthly-s").textContent = "Need at least 1,000,000 FALQBIT";
+      warn.hidden = true;
+    } else if (raw >= CAP) {
+      $("r-monthly-s").textContent = (rate * 100) + "% = " + fmt(Math.floor(balance * rate)) + " → capped at " + fmt(CAP);
+      warn.hidden = true;
+    } else {
+      $("r-monthly-s").textContent = (rate * 100) + "% of balance" + (px.scale < 1 ? ", scaled by pool" : "");
+      warn.hidden = true;
+    }
+
+    // Show scaling warning
+    if (px.scale < 1 && balance >= 1e6) {
+      warn.hidden = false;
+      warn.textContent = "⚠ Pool scaling active: total eligible (" + fmt(Math.round(px.totalEligible)) + ") exceeds the 15M monthly pool. Everyone gets " + fmt(px.scale * 100, 1) + "% of their raw reward.";
+    }
+
+    // Yearly
+    $("r-yearly").textContent = fmt(yearly);
+    $("r-yearly").className = yearly > 0 ? "rv" : "rv zero";
+
+    // ALGO value
+    if (px.algoPerFq > 0) {
+      var algoVal = monthly * px.algoPerFq;
+      $("r-algo").textContent = algoVal >= 0.001 ? fmt(algoVal, 3) : "< 0.001";
+      $("r-algo-s").textContent = "at " + fmt(px.algoPerFq * 1e6, 3) + " ALGO per 1M FALQBIT";
+    } else {
+      $("r-algo").textContent = "…";
+    }
+
+    // USD value
+    if (px.algoPerFq > 0 && px.usdPerAlgo > 0) {
+      var usdVal = monthly * px.algoPerFq * px.usdPerAlgo;
+      $("r-usd").textContent = usdVal >= 0.01 ? "$" + fmt(usdVal, 2) : "< $0.01";
+      $("r-usd-s").textContent = "ALGO ≈ $" + fmt(px.usdPerAlgo, 2);
+    } else {
+      $("r-usd").textContent = "…";
+    }
+
+    // Scale info
+    if (px.totalEligible > 0) {
+      $("r-scale").textContent = px.scale < 1 ? fmt(px.scale * 100, 1) + "%" : "None needed";
+      $("r-scale-s").textContent = px.scale < 1
+        ? "Total eligible: " + fmt(Math.round(px.totalEligible)) + " FALQBIT. Pool cap: " + fmt(POOL_LIMIT) + ". Your raw " + fmt(Math.floor(raw)) + " → " + fmt(scaled) + "."
+        : "Total eligible (" + fmt(Math.round(px.totalEligible)) + ") is under the " + fmt(POOL_LIMIT) + " monthly pool. Everyone gets 100%.";
+    }
+  }
+
+  loadLive();
+  setInterval(loadLive, 300000); // refresh every 5 min
+  calc(); // initial calc with defaults
+})();
+</script>
+</body>
+</html>

@@ -510,6 +510,9 @@ body { background-image: none; }
 #lp-list li:nth-child(1) .rk { color: #FFD66B; } #lp-list li:nth-child(2) .rk { color: #D7E0F2; } #lp-list li:nth-child(3) .rk { color: #E8A06A; }
 .pager { display: flex; justify-content: space-between; align-items: center; gap: 10px 16px; flex-wrap: wrap; margin-top: 14px; }
 .top-list .under { color: #F5B942; }
+.top-list .proj-row { opacity: .7; }
+.top-list .proj-tag { display: inline-block; font: 500 9px/1 var(--mono); letter-spacing: .5px; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; background: rgba(156,144,255,.15); color: #B8B0FF; border: 1px solid rgba(156,144,255,.25); margin-left: 6px; vertical-align: middle; }
+.top-list .no-rew { color: #FF7A7A; }
 .pg-info { font: 500 13px/1 var(--mono); color: var(--muted); }
 .pg-btns { display: flex; gap: 6px; flex-wrap: wrap; }
 .pager button { min-width: 38px; height: 38px; padding: 0 10px; border-radius: 10px; border: 1px solid rgba(60,78,122,.6); background: rgba(255,255,255,.03); color: var(--fg); font: 600 14px/1 var(--mono); cursor: pointer; transition: border-color .2s, background .2s; }
@@ -1152,6 +1155,7 @@ body { background-image: none; }
       <a href="#holders">Holders</a>
       <a href="#proof">Proof</a>
       <a href="./trade.html">Trade</a>
+      <a href="./calculator.html">Calculator</a>
       <a href="#app">App</a>
       <a href="#faq">FAQ</a>
       <a href="./whitepaper.html">Whitepaper</a>
@@ -1884,6 +1888,8 @@ body { background-image: none; }
       <li class="done"><span class="state">Done</span><h3>FALQBIT app</h3><p>Wallet, USDC swaps, QR payments, live market with price chart and activity feed. <a href="#app">Get the app</a></p></li>
       <li class="now"><span class="state">In progress</span><h3>Verified everywhere</h3><p>Logo on Tinyman and Vestige, Algorand project directories, more wallets and explorers.</p></li>
       <li class="done"><span class="state">Done</span><h3>Community live</h3><p>Official Telegram group and channel, with anti-scam rules and a public Rewards page.</p></li>
+      <li class="done"><span class="state">Done</span><h3>Rewards calculator</h3><p>Estimate hold-to-earn rewards with live pool data, scaling, and ALGO/USD values. <a href="./calculator.html">Try it</a></p></li>
+      <li><span class="state">Next</span><h3>Reward history</h3><p>Track every reward payout you've received, with dates, amounts and running totals, right in the app.</p></li>
       <li><span class="state">Next</span><h3>Shops</h3><p>A shop mode with prices in local currency, and weekly welcome rounds. <a href="./whitepaper.html#roadmap">Full roadmap</a></p></li>
     </ol>
   </section>
@@ -1900,6 +1906,10 @@ body { background-image: none; }
       <details><summary>What happens if I switch back to a classic key?</summary><p>Anyone can relock your holding. Your tokens stay yours, and you can unlock again after switching back to a Falcon key.</p></details>
       <details><summary>Why are the fees higher?</summary><p>A Falcon-1024 signature is much larger than a classic one, so Algorand charges about three minimum fees for it: around 0.003 ALGO per transaction.</p></details>
       <details><summary>Can FALQBIT be listed on other exchanges?</summary><p>Centralized exchanges can list it: they hold FALQBIT in quantum accounts and unlock them the same way you do. On-chain, it trades in Tinyman v2 pools, and Tinyman is the place to trade it today: some aggregators do not yet set the higher fees that quantum accounts need. Pools on other DEXs cannot hold it, because the gate's approved list is final.</p></details>
+      <details><summary>Is the welcome drop still active?</summary><p>Yes. Check the <a href="#welcome">progress bar</a> above — it shows how many of the 1,000 spots are taken and what the next drop size is. As long as spots remain, every new quantum account that unlocks gets its drop automatically.</p></details>
+      <details><summary>What's the utility beyond quantum accounts?</summary><p>FALQBIT is designed for post-quantum payments: you can send it to any Falcon-1024 account, pay with QR codes in the app, and trade it on Tinyman. Hold-to-earn rewards incentivize long-term holding, and the shop mode on the roadmap will let merchants price goods in local currency and accept FALQBIT. The token is also a proof of concept: the first frozen ASA that only quantum accounts can hold, proving Algorand's post-quantum stack works end-to-end.</p></details>
+      <details><summary>Can I buy with USDC?</summary><p>Yes. The app and the <a href="./trade.html">swap page</a> support USDC → FALQBIT swaps through a 2-hop route: USDC → ALGO → FALQBIT, done in a single transaction group. You can also sell back to USDC the same way.</p></details>
+      <details><summary>How do I estimate my rewards?</summary><p>Use the <a href="./calculator.html">rewards calculator</a>. Enter your balance and it shows your estimated monthly reward with live pool scaling, plus the ALGO and USD value at the current rate.</p></details>
     </div>
   </section>
 
@@ -1920,6 +1930,7 @@ body { background-image: none; }
       <a href="https://github.com/FalQbit/falqbit.github.io" target="_blank" rel="noopener">GitHub</a>
       <a href="https://www.vestige.fi/asset/3760920399" target="_blank" rel="noopener">Vestige</a>
       <a href="./whitepaper.html">Whitepaper</a>
+      <a href="./calculator.html">Calculator</a>
       <a href="./app.html">App</a>
       <a href="https://algorand.co/technology/post-quantum" target="_blank" rel="noopener">Algorand post-quantum</a>
     </nav>
@@ -2056,31 +2067,24 @@ document.documentElement.classList.add("js");
     });
   }
   function loadHeld() {
-    // the Team wallet is folded into the Project reserve line so the three listed balances sum to Total Reserved
-    var TEAM = "XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q", PROJ = "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU";
+    // loads balances for any .res-list .bal[data-addr] elements (pool + rewards only now)
     document.querySelectorAll(".res-list .bal[data-addr]").forEach(function (el) {
       var addr = el.dataset.addr;
-      if (addr === PROJ) {
-        Promise.all([get("/v2/accounts/" + PROJ + "/assets/" + ASSET), get("/v2/accounts/" + TEAM + "/assets/" + ASSET).catch(function () { return { "asset-holding": { amount: 0 } }; })])
-          .then(function (xs) { el.textContent = fmt((xs[0]["asset-holding"].amount + xs[1]["asset-holding"].amount) / 1e6, 0); })
-          .catch(function () { el.textContent = "–"; });
-      } else {
-        get("/v2/accounts/" + addr + "/assets/" + ASSET).then(function (j) {
-          el.textContent = fmt(j["asset-holding"].amount / 1e6, 0);
-        }).catch(function () { el.textContent = "–"; });
-      }
+      get("/v2/accounts/" + addr + "/assets/" + ASSET).then(function (j) {
+        el.textContent = fmt(j["asset-holding"].amount / 1e6, 0);
+      }).catch(function () { el.textContent = "–"; });
     });
   }
   var IDX = "https://mainnet-idx.algonode.cloud";
   var IDX_FB = "https://mainnet-idx.algonode.cloud";
-  var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": "Liquidity pool", "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": "Rewards", "XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q": "Team", "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU": "Project" };
+  var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": "Liquidity pool", "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": "Rewards" };
   var RANGES = [[0, 1e6, "Under 1M"], [1e6, 1e7, "1M – 10M"], [1e7, 1e8, "10M – 100M"], [1e8, 1e9, "100M – 1B"], [1e9, Infinity, "1B+"]];
   function allBalances(next, acc) {
     acc = acc || [];
     return fetchJSON(IDX + "/v2/assets/" + ASSET + "/balances?limit=1000&currency-greater-than=0" + (next ? "&next=" + encodeURIComponent(next) : ""))
       .then(function (j) { acc = acc.concat(j.balances || []); return j["next-token"] && (j.balances || []).length ? allBalances(j["next-token"], acc) : acc; });
   }
-  var RES = [["CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", "Liquidity pool", "#1F9E94"], ["V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", "Rewards", "#7A6EE6"], ["OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU", "Project reserve", "#C98500"]];
+  var RES = [["CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", "Liquidity pool", "#1F9E94"], ["V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q", "Rewards", "#7A6EE6"]];
   function arc(cx, cy, r0, r1, a0, a1) {
     var big = a1 - a0 > Math.PI ? 1 : 0, c0 = Math.cos(a0), s0 = Math.sin(a0), c1 = Math.cos(a1), s1 = Math.sin(a1);
     return "M" + (cx + r1 * c0) + " " + (cy + r1 * s0) + "A" + r1 + " " + r1 + " 0 " + big + " 1 " + (cx + r1 * c1) + " " + (cy + r1 * s1) +
@@ -2151,10 +2155,19 @@ document.documentElement.classList.add("js");
       var fq = b.amount / 1e6, al = TOP.algo[b.address], main = by === "al" ? (al || 0) : b.amount;
       var big = by === "al" ? fmt(al || 0, 2) + " ALGO" : fmt(fq, 0) + " FALQBIT";
       var rw = estReward(fq);
+      var projLabel = PROJECT[b.address];
+      var noRewards = !!projLabel; // only pool and rewards wallets don't receive rewards
+      var rewardNote = {
+        "Liquidity pool": "liquidity pool · no rewards",
+        "Rewards": "pays rewards · does not receive"
+      };
       // when sorting by ALGO, the small line shows the FALQBIT held; by FALQBIT we drop the small line entirely (ALGO amounts aren't useful here)
       var small = by === "al" ? "<span>" + fmt(fq, 0) + " FALQBIT</span>" : "";
-      return "<li><span class=\"fill\" style=\"width:" + Math.max(2, Math.round(100 * main / (maxV || 1))) + "%\"></span><span class=\"rk" + (off + i < 3 ? " m" + (off + i + 1) : "") + "\">" + (off + i + 1) + "</span>" +
-        "<span class=\"who\"><a href=\"https://lora.algokit.io/mainnet/account/" + b.address + "\" target=\"_blank\" rel=\"noopener\">" + shortA(b.address) + "</a><small>" + pctS(fq) + " of supply" + (rw ? " · next reward ≈ " + fmt(rw, 0) : " · <span class=\"under\">under 1M, no reward yet</span>") + "</small></span>" +
+      var rewardInfo = noRewards
+        ? " · <span class=\"no-rew\">" + (rewardNote[projLabel] || "project · no rewards") + "</span>"
+        : (rw ? " · next reward ≈ " + fmt(rw, 0) : " · <span class=\"under\">under 1M, no reward yet</span>");
+      return "<li" + (noRewards ? " class=\"proj-row\"" : "") + "><span class=\"fill\" style=\"width:" + Math.max(2, Math.round(100 * main / (maxV || 1))) + "%\"></span><span class=\"rk" + (off + i < 3 ? " m" + (off + i + 1) : "") + "\">" + (off + i + 1) + "</span>" +
+        "<span class=\"who\"><a href=\"https://lora.algokit.io/mainnet/account/" + b.address + "\" target=\"_blank\" rel=\"noopener\">" + shortA(b.address) + "</a>" + (projLabel ? "<span class=\"proj-tag\">" + projLabel + "</span>" : "") + "<small>" + pctS(fq) + " of supply" + rewardInfo + "</small></span>" +
         "<span class=\"val\"><b>" + big + "</b>" + small + "</span></li>";
     }).join("") || "<li><span></span><span class=\"muted\">No wallets yet.</span></li>";
   }
@@ -2179,7 +2192,7 @@ document.documentElement.classList.add("js");
   function rawReward(v) { return v >= 1e6 ? Math.min(500000, v * rewardRate()) : 0; }
   function estReward(v) {
     if (TOP.scale === undefined) {
-      // only real community wallets share the monthly pool; project and founder wallets are left out, so exclude them from the sum
+      // only real community wallets share the monthly pool; pool, rewards and founder wallets are left out
       var sum = TOP.comm.reduce(function (t, b) { return (PROJECT[b.address] || (window.FOUNDER_SET && FOUNDER_SET[b.address])) ? t : t + rawReward(b.amount / 1e6); }, 0);
       TOP.scale = sum > 15e6 ? 15e6 / sum : 1;
     }
@@ -2280,13 +2293,13 @@ document.documentElement.classList.add("js");
       var list = x.list, FOUNDER = x.founder;
       var fsum = list.filter(function (b) { return FOUNDER[b.address]; }).reduce(function (s, b) { return s + b.amount / 1e6; }, 0);
       var fn = list.filter(function (b) { return FOUNDER[b.address] && b.amount > 0; }).length;
-      window.FOUNDER_SET = FOUNDER; // drawTop needs it to skip the "next reward" line on project and founder wallets
+      window.FOUNDER_SET = FOUNDER; // drawTop needs it to skip the "next reward" line on founder wallets
       var comm = list.filter(function (b) { return !PROJECT[b.address] && !FOUNDER[b.address] && !b.deleted && b.amount > 0; });
-      // the public ranking shows every holder, like Pera's explorer: project and reward wallets appear mixed in, unlabeled
+      // the public ranking shows every holder; pool and rewards wallets appear mixed in, labelled
       var allHolders = list.filter(function (b) { return !b.deleted && b.amount > 0; });
       var rows = RANGES.map(function (r) { return { label: r[2], n: 0, sum: 0, lo: r[0], hi: r[1] }; });
       var total = 0;
-      // distribution counts every wallet, same as the ranking above (project and founder wallets included)
+      // distribution counts every wallet (pool, rewards, project, team and founder wallets included)
       allHolders.forEach(function (b) { var v = b.amount / 1e6; rows.forEach(function (r) { if (v >= r.lo && v < r.hi) { r.n++; r.sum += v; } }); });
       comm.forEach(function (b) { total += b.amount / 1e6; });
       var max = Math.max.apply(null, rows.map(function (r) { return r.sum; }).concat([1]));
