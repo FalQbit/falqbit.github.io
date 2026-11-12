@@ -1467,6 +1467,13 @@ setDir("buy");
 })();
 setInterval(() => { loadReserves().then(quote).catch(() => {}); }, 300000); // reserves every 5 min
 setInterval(() => { if (account) refresh().then(() => toast("✓ Data refreshed")).catch(() => {}); }, 300000); // wallet refresh every 5 min (only if connected)
+
+// Expose refresh to pull-to-refresh and other non-module scripts
+window._fqRefresh = async () => {
+  try { await loadReserves(); } catch {}
+  try { await loadStats(); } catch {}
+  if (account) try { await refresh(); } catch {}
+};
 </script>
 <script src="./fx.js" defer></script>
 <script src="./fx3.js" defer></script>
@@ -1657,10 +1664,13 @@ setInterval(() => { if (account) refresh().then(() => toast("✓ Data refreshed"
       }, 2000);
     }, { passive: true });
 
-    // Listen for refresh event — will reload reserves
+    // Listen for refresh event — call the app's own refresh
     window.addEventListener("falqbit-refresh", function () {
-      // The module might not expose refresh(), so we reload the page data gently
-      try { document.querySelector("#acct.on") && location.reload(); } catch {}
+      if (typeof window._fqRefresh === "function") {
+        window._fqRefresh().then(function () {
+          try { toast("✓ Data refreshed"); } catch(e) {}
+        }).catch(function () {});
+      }
     });
   })();
 
