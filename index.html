@@ -2549,7 +2549,15 @@ document.documentElement.classList.add("js");
       trades.sort(function (a, b) { return a.t - b.t; });
       PC_RAW = trades;
       drawPrice();
-    }).catch(function () { if (mine !== PC_LOAD) return; $("pc-empty").hidden = false; $("pc-empty").textContent = "Could not read the chain right now."; });
+    }).catch(function () {
+      if (mine !== PC_LOAD) return;
+      // retry up to 2 times with increasing delay
+      var retries = (loadPrice._retries || 0) + 1;
+      loadPrice._retries = retries;
+      if (retries <= 2) { setTimeout(function () { loadPrice(); }, retries * 3000); return; }
+      loadPrice._retries = 0;
+      $("pc-empty").hidden = false; $("pc-empty").textContent = "Could not read the chain right now.";
+    });
   }
   function drawPrice() {
     if (!PC_RAW) return;
