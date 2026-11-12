@@ -2509,12 +2509,15 @@ document.documentElement.classList.add("js");
   var PC_RAW = null, PC_RANGE = 7, PC_LOAD = null;
   function loadPrice() {
     var PFX = "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA";
-    var since = new Date(Date.now() - 60 * 86400000).toISOString();
+    var since = new Date(Date.now() - 30 * 86400000).toISOString();
     var acc = [], seen = {};
     PC_LOAD = Date.now(); var mine = PC_LOAD;
     function page(next) {
-      return fetchJSON(IDX + "/v2/accounts/" + PFX + "/transactions?limit=1000&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
-        .then(function (j) { j = j || { transactions: [] }; acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 6000 ? page(j["next-token"]) : acc; });
+      var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      var tid = ctrl ? setTimeout(function () { ctrl.abort(); }, 10000) : null;
+      return fetch(IDX + "/v2/accounts/" + PFX + "/transactions?limit=500&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""), ctrl ? { signal: ctrl.signal } : {})
+        .then(function (r) { if (tid) clearTimeout(tid); if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (j) { j = j || { transactions: [] }; acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 3000 ? page(j["next-token"]) : acc; });
     }
     page().then(function (txs) {
       if (mine !== PC_LOAD) return;

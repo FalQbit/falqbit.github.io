@@ -1312,13 +1312,19 @@ function mcFetch(url) {
   return c.getJSON(url).then(data => { data = data || { transactions: [] }; _mcCache[url] = { t: Date.now(), data }; return data; }).catch(() => ({ transactions: [] }));
 }
 async function loadPriceChart() {
-  const since = new Date(Date.now() - 60 * 86400000).toISOString();
+  const since = new Date(Date.now() - 30 * 86400000).toISOString();
   let acc = [], seen = {};
   MC_LOAD = Date.now(); const mine = MC_LOAD;
   async function page(next) {
-    const j = await mcFetch(`${IDX}/v2/accounts/${POOL_ADDR}/transactions?limit=1000&after-time=${encodeURIComponent(since)}${next ? "&next=" + encodeURIComponent(next) : ""}`);
+    const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const tid = ctrl ? setTimeout(() => ctrl.abort(), 10000) : null;
+    const url = `${IDX}/v2/accounts/${POOL_ADDR}/transactions?limit=500&after-time=${encodeURIComponent(since)}${next ? "&next=" + encodeURIComponent(next) : ""}`;
+    const r = await fetch(url, ctrl ? { signal: ctrl.signal } : {});
+    if (tid) clearTimeout(tid);
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
     acc = acc.concat(j.transactions || []);
-    if (j["next-token"] && (j.transactions || []).length && acc.length < 6000) return page(j["next-token"]);
+    if (j["next-token"] && (j.transactions || []).length && acc.length < 3000) return page(j["next-token"]);
     return acc;
   }
   try {
@@ -1347,7 +1353,14 @@ async function loadPriceChart() {
     trades.sort((a, b) => a.t - b.t);
     MC_RAW = trades;
     drawMC();
-  } catch { if (mine === MC_LOAD) { $("mc-empty").hidden = false; $("mc-empty").textContent = "Could not load chart."; } }
+  } catch {
+    if (mine !== MC_LOAD) return;
+    const retries = (loadPriceChart._retries || 0) + 1;
+    loadPriceChart._retries = retries;
+    if (retries <= 2) { setTimeout(() => { loadPriceChart(); }, retries * 3000); return; }
+    loadPriceChart._retries = 0;
+    $("mc-empty").hidden = false; $("mc-empty").textContent = "Could not load chart.";
+  }
 }
 function drawMC() {
   if (!MC_RAW) return;
@@ -1483,27 +1496,32 @@ window._fqRefresh = async () => {
   "use strict";
   var still = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* --- 1. Particle background --- */
+  /* --- 1. Particle background (lightweight) --- */
   (function () {
     var cv = document.getElementById("particles"), ctx = cv.getContext("2d");
     var W, H, dpr, dots = [];
     function size() {
-      dpr = Math.min(2, window.devicePixelRatio || 1);
-      W = cv.width = innerWidth * dpr; H = cv.height = innerHeight * dpr;
+      dpr = 1; // always 1x for performance on mobile
+      W = cv.width = innerWidth; H = cv.height = innerHeight;
     }
     function spawn() {
       dots = [];
-      for (var i = 0; i < 18; i++) {
+      var count = innerWidth < 600 ? 5 : 8; // fewer particles on mobile
+      for (var i = 0; i < count; i++) {
         dots.push({
           x: Math.random() * W, y: Math.random() * H,
-          vx: (Math.random() - .5) * .3 * dpr, vy: (Math.random() - .5) * .3 * dpr,
-          r: (1.2 + Math.random() * 2) * dpr,
+          vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25,
+          r: 1.2 + Math.random() * 1.5,
           color: Math.random() > .5 ? "63,224,208" : "156,144,255",
-          alpha: .15 + Math.random() * .25
+          alpha: .12 + Math.random() * .2
         });
       }
     }
-    function draw() {
+    var last = 0;
+    function draw(ts) {
+      // throttle to ~20fps to save battery
+      if (ts - last < 50) { if (!still) requestAnimationFrame(draw); return; }
+      last = ts;
       ctx.clearRect(0, 0, W, H);
       for (var i = 0; i < dots.length; i++) {
         var d = dots[i];
@@ -1512,28 +1530,13 @@ window._fqRefresh = async () => {
         if (d.y < 0) d.y = H; if (d.y > H) d.y = 0;
         ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, 6.283);
         ctx.fillStyle = "rgba(" + d.color + "," + d.alpha + ")";
-        ctx.shadowBlur = 12 * dpr; ctx.shadowColor = "rgba(" + d.color + ",.3)";
         ctx.fill();
-      }
-      ctx.shadowBlur = 0;
-      // connection lines
-      for (var a = 0; a < dots.length; a++) {
-        for (var b = a + 1; b < dots.length; b++) {
-          var dx = dots[a].x - dots[b].x, dy = dots[a].y - dots[b].y;
-          var dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120 * dpr) {
-            ctx.beginPath();
-            ctx.moveTo(dots[a].x, dots[a].y); ctx.lineTo(dots[b].x, dots[b].y);
-            ctx.strokeStyle = "rgba(63,224,208," + (.08 * (1 - dist / (120 * dpr))) + ")";
-            ctx.lineWidth = .5 * dpr; ctx.stroke();
-          }
-        }
       }
       if (!still) requestAnimationFrame(draw);
     }
     size(); spawn();
-    addEventListener("resize", function () { size(); spawn(); if (still) draw(); });
-    draw();
+    addEventListener("resize", function () { size(); spawn(); });
+    if (!still) requestAnimationFrame(draw); else draw(0);
   })();
 
   /* --- 2. Swipe navigation --- */
@@ -1674,46 +1677,7 @@ window._fqRefresh = async () => {
     });
   })();
 
-  /* --- 4. Animated number counters --- */
-  (function () {
-    var observed = {};
-    function animateNumber(el) {
-      var text = el.textContent.replace(/[^0-9.]/g, "");
-      var target = parseFloat(text);
-      if (isNaN(target) || target <= 0) return;
-      var start = 0, dur = 600, t0 = null;
-      var original = el.textContent;
-      var suffix = el.textContent.replace(/[0-9.,]+/, "");
-      function step(ts) {
-        if (!t0) t0 = ts;
-        var p = Math.min(1, (ts - t0) / dur);
-        var ease = 1 - Math.pow(1 - p, 3); // easeOutCubic
-        var v = start + (target - start) * ease;
-        el.textContent = Number(v).toLocaleString("en-US", { maximumFractionDigits: text.indexOf(".") > -1 ? 3 : 0 }) + suffix;
-        if (p < 1) requestAnimationFrame(step);
-        else el.textContent = original;
-      }
-      requestAnimationFrame(step);
-    }
-    // Observe mutations on key stat elements
-    var targets = ["l-price", "l-pool", "l-holders", "w-fq", "w-algo"];
-    var observer = new MutationObserver(function (muts) {
-      muts.forEach(function (m) {
-        if (m.type === "childList" || m.type === "characterData") {
-          var el = m.target.nodeType === 3 ? m.target.parentElement : m.target;
-          if (el && el.id && targets.indexOf(el.id) > -1 && el.textContent !== "…" && !observed[el.id]) {
-            observed[el.id] = true;
-            setTimeout(function () { observed[el.id] = false; }, 700);
-            if (!still) animateNumber(el);
-          }
-        }
-      });
-    });
-    targets.forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) observer.observe(el, { childList: true, characterData: true, subtree: true });
-    });
-  })();
+  /* --- 4. Animated number counters (removed MutationObserver for performance) --- */
 
   /* --- 5. Card swipe-to-reveal on history items --- */
   (function () {
