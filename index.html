@@ -2712,54 +2712,7 @@ document.documentElement.classList.add("js");
     setTimeout(typeNext, 1300);
   }
 
-  // 4. animated number counters on stat values
-  function animateCount(el) {
-    if (el.dataset.counting) return;
-    var text = el.textContent.trim();
-    // parse number: handle "1,234.56" formats
-    var numMatch = text.match(/[\d,.]+/);
-    if (!numMatch) return;
-    var numStr = numMatch[0];
-    var target = parseFloat(numStr.replace(/,/g, ""));
-    if (isNaN(target) || target === 0) return;
-    el.dataset.counting = "1";
-    var prefix = text.slice(0, text.indexOf(numStr));
-    var suffix = text.slice(text.indexOf(numStr) + numStr.length);
-    var hasCommas = numStr.indexOf(",") !== -1;
-    var decimals = numStr.indexOf(".") !== -1 ? numStr.split(".")[1].length : 0;
-    var start = performance.now(), dur = 1200;
-    el.classList.add("counting");
-    function step(now) {
-      var p = Math.min(1, (now - start) / dur);
-      // ease out cubic
-      var ep = 1 - Math.pow(1 - p, 3);
-      var v = target * ep;
-      var formatted = v.toFixed(decimals);
-      if (hasCommas) formatted = formatted.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-      el.textContent = prefix + formatted + suffix;
-      if (p < 1) requestAnimationFrame(step);
-      else {
-        el.textContent = text; // restore exact original
-        el.classList.remove("counting");
-        delete el.dataset.counting;
-      }
-    }
-    requestAnimationFrame(step);
-  }
-
-  // observe stat values: when they get content (loaded), trigger count
-  var statVals = document.querySelectorAll(".stat .v");
-  var mo = new MutationObserver(function (muts) {
-    muts.forEach(function (m) {
-      var el = m.target.nodeType === 1 ? m.target : m.target.parentElement;
-      if (el && el.classList.contains("v") && !el.classList.contains("loading")) {
-        animateCount(el);
-      }
-    });
-  });
-  statVals.forEach(function (el) {
-    mo.observe(el, { childList: true, characterData: true, subtree: true });
-  });
+  // stat count animation handled by existing countUp() function
 
   // 5. section glow dividers
   document.querySelectorAll(".sec").forEach(function (sec, i) {
