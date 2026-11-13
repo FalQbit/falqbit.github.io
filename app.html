@@ -308,6 +308,29 @@ html.locked main, html.locked header, html.locked nav.tabs { visibility: hidden;
 .m-act .b-sell { background: rgba(255,122,122,.5); }
 .m-act .b-unlock { background: rgba(156,144,255,.5); }
 .m-act .cnt { font: 500 11px/1 var(--mono); color: var(--muted); min-width: 30px; text-align: right; }
+/* recent trades feed */
+.tf-list { list-style: none; margin: 0; padding: 0; max-height: 380px; overflow-y: auto; }
+.tf-list li { display: grid; grid-template-columns: 48px 1fr auto; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.tf-list li:last-child { border-bottom: 0; }
+.tf-badge { font: 600 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px; text-align: center; }
+.tf-badge.buy { background: rgba(63,224,208,.15); color: #3FE0D0; }
+.tf-badge.sell { background: rgba(156,144,255,.15); color: #9C90FF; }
+.tf-mid { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow: hidden; }
+.tf-mid .tf-amounts { font-size: 12px; color: var(--muted); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.tf-mid .tf-amounts b { color: var(--fg); font-weight: 600; }
+.tf-mid .tf-addr { font: 500 12px/1 var(--mono); color: var(--muted); }
+.tf-right { text-align: right; white-space: nowrap; font-size: 11px; color: var(--muted); }
+/* top holders in app */
+.th-list { list-style: none; margin: 0; padding: 0; counter-reset: rank; }
+.th-list li { display: grid; grid-template-columns: 24px 1fr auto; gap: 8px; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.05); font-size: 13px; }
+.th-list li:last-child { border-bottom: 0; }
+.th-list .rk { font: 700 12px/1 var(--mono); color: var(--muted); text-align: center; }
+.th-list .rk.m1 { color: #FFD700; } .th-list .rk.m2 { color: #C0C0C0; } .th-list .rk.m3 { color: #CD7F32; }
+.th-list .who { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow: hidden; }
+.th-list .who a { font: 500 12px/1 var(--mono); color: var(--cyan); text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.th-list .who small { font-size: 11px; color: var(--muted); }
+.th-list .val { text-align: right; font: 600 12px/1 var(--mono); white-space: nowrap; }
+.th-list .proj-tag { font: 500 10px/1 var(--mono); background: rgba(156,144,255,.15); color: #9C90FF; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
 
 /* ===== FUTURISTIC LAYER v2 ===== */
 
@@ -687,6 +710,14 @@ button { transition: transform .1s ease; }
         <ul class="m-act" id="mc-act"><li class="muted" style="justify-content:center">Loading…</li></ul>
       </div>
       <div class="card">
+        <span class="k">Recent swaps</span>
+        <ul class="tf-list" id="mc-trades"><li style="justify-content:center;grid-column:1/-1"><span class="muted">Loading…</span></li></ul>
+      </div>
+      <div class="card">
+        <span class="k">Top holders</span>
+        <ol class="th-list" id="mc-top"><li style="grid-column:1/-1;justify-content:center"><span class="muted">Loading…</span></li></ol>
+      </div>
+      <div class="card">
         <span class="k">Contract</span>
         <div class="row"><span class="muted">ASA ID</span><span>3760920399</span></div>
         <div class="row"><span class="muted">Gate App</span><span>3760919863</span></div>
@@ -773,7 +804,7 @@ function show(v) {
   views.forEach((x) => { $("v-" + x).hidden = x !== v; $("tab-" + x).setAttribute("aria-selected", String(x === v)); });
   moveIndicator(v);
   if (v !== "pay") stopScan();
-  if (v === "market" && !MC_RAW) { loadPriceChart(); loadMCActivity(); }
+  if (v === "market" && !MC_RAW) { loadPriceChart(); loadMCActivity(); loadMCTrades(); renderMCHolders(); }
   say("");
   try { history.replaceState(null, "", "#" + v); } catch {}
 }
@@ -831,7 +862,7 @@ async function loadStats() {
   for (const b of live) balMap.set(b.address, b.amount);
   STATS = { holders: live.length, circ: comm.reduce((t, b) => t + b.amount / DEC, 0), balMap };
   pSet("stats", { holders: STATS.holders, circ: STATS.circ });
-  renderLive(); renderDropTracker();
+  renderLive(); renderDropTracker(); renderMCHolders();
 }
 async function loadProgram() {
   // Try cache first (valid 60 min — drops happen weekly)
@@ -1459,6 +1490,101 @@ async function loadMCActivity() {
     const bw = d.buys / maxT * 100, sw = d.sells / maxT * 100, uw = d.unlocks / maxT * 100;
     const label = d.date.toLocaleDateString([], { weekday: "short", day: "numeric" });
     return `<li><span class="day">${label}</span><span class="bars"><span class="b-buy" style="width:${bw}%" title="${d.buys} buys"></span><span class="b-sell" style="width:${sw}%" title="${d.sells} sells"></span><span class="b-unlock" style="width:${uw}%" title="${d.unlocks} unlocks"></span></span><span class="cnt">${total}</span></li>`;
+  }).join("");
+}
+
+// ---------- recent trades feed ----------
+function timeAgo(ts) {
+  const s = Math.floor(Date.now() / 1000 - ts);
+  if (s < 60) return s + "s ago";
+  if (s < 3600) return Math.floor(s / 60) + "m ago";
+  if (s < 86400) return Math.floor(s / 3600) + "h ago";
+  return Math.floor(s / 86400) + "d ago";
+}
+async function loadMCTrades() {
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 10000);
+    const r = await fetch(`${IDX}/v2/accounts/${POOL_ADDR}/transactions?limit=100`, { signal: ctrl.signal });
+    clearTimeout(tid);
+    if (!r.ok) throw new Error(r.status);
+    const j = await r.json();
+    const txs = j.transactions || [], byGroup = {}, seen = {};
+    txs.forEach(t => {
+      if (seen[t.id]) return; seen[t.id] = 1;
+      const g = t.group || t.id;
+      if (!byGroup[g]) byGroup[g] = { t: t["round-time"], algoIn: 0, algoOut: 0, fqIn: 0, fqOut: 0, sender: "", receiver: "" };
+      const bg = byGroup[g];
+      function walk(x) {
+        const p = x["payment-transaction"], a = x["asset-transfer-transaction"];
+        if (p && (p.amount || 0) > 0) {
+          if (p.receiver === POOL_ADDR) { bg.algoIn += p.amount; bg.sender = x.sender; }
+          else if (x.sender === POOL_ADDR) { bg.algoOut += p.amount; bg.receiver = p.receiver; }
+        }
+        if (a && a["asset-id"] === cfg.asset_id && (a.amount || 0) > 0) {
+          if (a.receiver === POOL_ADDR) { bg.fqIn += a.amount; bg.sender = x.sender; }
+          else if (x.sender === POOL_ADDR) { bg.fqOut += a.amount; bg.receiver = a.receiver; }
+        }
+        (x["inner-txns"] || []).forEach(walk);
+      }
+      walk(t);
+    });
+    const trades = [];
+    for (const g in byGroup) {
+      const b = byGroup[g];
+      if (b.algoIn > 0 && b.fqOut > 0 && b.algoOut === 0) trades.push({ t: b.t, side: "buy", algo: b.algoIn / 1e6, fq: b.fqOut / 1e6, addr: b.sender || b.receiver });
+      else if (b.fqIn > 0 && b.algoOut > 0 && b.fqOut === 0) trades.push({ t: b.t, side: "sell", algo: b.algoOut / 1e6, fq: b.fqIn / 1e6, addr: b.sender || b.receiver });
+    }
+    trades.sort((a, b) => b.t - a.t);
+    const list = $("mc-trades");
+    if (!trades.length) { list.innerHTML = `<li style="justify-content:center;grid-column:1/-1"><span class="muted">No recent swaps.</span></li>`; return; }
+    list.innerHTML = trades.slice(0, 15).map(tr => {
+      const shortAddr = tr.addr ? tr.addr.slice(0, 4) + "…" + tr.addr.slice(-4) : "…";
+      const fqFmt = tr.fq >= 1e6 ? fmt(tr.fq / 1e6, 2) + "M" : tr.fq >= 1e3 ? fmt(tr.fq / 1e3, 1) + "k" : fmt(tr.fq, 0);
+      const algoFmt = fmt(tr.algo, 2);
+      return `<li><span class="tf-badge ${tr.side}">${tr.side === "buy" ? "Buy" : "Sell"}</span>` +
+        `<div class="tf-mid"><span class="tf-amounts"><b>${fqFmt}</b> FALQBIT → <b>${algoFmt}</b> ALGO</span>` +
+        `<span class="tf-addr">${shortAddr}</span></div>` +
+        `<div class="tf-right">${timeAgo(tr.t)}</div></li>`;
+    }).join("");
+  } catch {
+    const list = $("mc-trades");
+    if (list.querySelector(".muted")) list.innerHTML = `<li style="justify-content:center;grid-column:1/-1"><span class="muted">Could not load trades.</span></li>`;
+  }
+}
+
+// ---------- top holders in app ----------
+function renderMCHolders() {
+  if (!STATS || !STATS.balMap) return;
+  const skip = new Set([cfg.pool, cfg.rewards, cfg.project, cfg.team, cfg.app_address].filter(Boolean));
+  const PROJECT_LABELS = {};
+  PROJECT_LABELS[cfg.pool] = "Liquidity pool";
+  PROJECT_LABELS[cfg.rewards] = "Rewards";
+  PROJECT_LABELS["YW5KDBPXOFQUDLAXBLSTMGB7TH77Y6HUNVVG4FLWYSKKCHLLYYCR5UHXZM"] = "Liquidity reserve";
+  if (cfg.project) PROJECT_LABELS[cfg.project] = "Project";
+  if (cfg.team) PROJECT_LABELS[cfg.team] = "Team";
+  // Build sorted list from balMap
+  const entries = [];
+  for (const [addr, amount] of STATS.balMap) {
+    if (amount > 0) entries.push({ address: addr, amount });
+  }
+  entries.sort((a, b) => b.amount - a.amount);
+  const top = entries.slice(0, 15);
+  const list = $("mc-top");
+  if (!top.length) { list.innerHTML = `<li style="grid-column:1/-1;justify-content:center"><span class="muted">No holders yet.</span></li>`; return; }
+  const SUPPLY = 10e9;
+  list.innerHTML = top.map((b, i) => {
+    const fq = b.amount / DEC;
+    const pct = (fq / SUPPLY * 100);
+    const pctStr = pct >= 0.01 ? fmt(pct, 2) + "%" : "<0.01%";
+    const fqStr = fq >= 1e9 ? fmt(fq / 1e9, 2) + "B" : fq >= 1e6 ? fmt(fq / 1e6, 1) + "M" : fq >= 1e3 ? fmt(fq / 1e3, 1) + "k" : fmt(fq, 0);
+    const shortAddr = b.address.slice(0, 6) + "…" + b.address.slice(-4);
+    const label = PROJECT_LABELS[b.address];
+    const rkClass = i < 3 ? ` m${i + 1}` : "";
+    return `<li><span class="rk${rkClass}">${i + 1}</span>` +
+      `<div class="who"><a href="https://lora.algokit.io/mainnet/account/${b.address}" target="_blank" rel="noopener">${shortAddr}</a>` +
+      `${label ? `<small>${label}</small>` : `<small>${pctStr} of supply</small>`}</div>` +
+      `<span class="val">${fqStr}</span></li>`;
   }).join("");
 }
 
