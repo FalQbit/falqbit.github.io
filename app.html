@@ -699,10 +699,10 @@ button { transition: transform .1s ease; }
       <div class="card">
         <span class="k">Supply · 10,000,000,000</span>
         <div class="supply-bars" id="mc-supply">
-          <div class="supply-bar"><div class="label"><span>Community pool</span><span>40%</span></div><div class="track"><div class="fill cyan" style="width:40%"></div></div></div>
-          <div class="supply-bar"><div class="label"><span>Liquidity</span><span>25%</span></div><div class="track"><div class="fill teal" style="width:25%"></div></div></div>
-          <div class="supply-bar"><div class="label"><span>Team</span><span>20%</span></div><div class="track"><div class="fill violet" style="width:20%"></div></div></div>
-          <div class="supply-bar"><div class="label"><span>Rewards</span><span>15%</span></div><div class="track"><div class="fill amber" style="width:15%"></div></div></div>
+          <div class="supply-bar"><div class="label"><span>Community</span><span id="sd-comm">…</span></div><div class="track"><div class="fill cyan" id="sd-comm-b" style="width:0%"></div></div></div>
+          <div class="supply-bar"><div class="label"><span>Rewards</span><span id="sd-rew">…</span></div><div class="track"><div class="fill amber" id="sd-rew-b" style="width:0%"></div></div></div>
+          <div class="supply-bar"><div class="label"><span>Liquidity</span><span id="sd-liq">…</span></div><div class="track"><div class="fill teal" id="sd-liq-b" style="width:0%"></div></div></div>
+          <div class="supply-bar"><div class="label"><span>Founders</span><span id="sd-team">…</span></div><div class="track"><div class="fill violet" id="sd-team-b" style="width:0%"></div></div></div>
         </div>
       </div>
       <div class="card">
@@ -804,7 +804,7 @@ function show(v) {
   views.forEach((x) => { $("v-" + x).hidden = x !== v; $("tab-" + x).setAttribute("aria-selected", String(x === v)); });
   moveIndicator(v);
   if (v !== "pay") stopScan();
-  if (v === "market" && !MC_RAW) { loadPriceChart(); loadMCActivity(); loadMCTrades(); renderMCHolders(); }
+  if (v === "market" && !MC_RAW) { loadPriceChart(); loadMCActivity(); loadMCTrades(); if (!STATS?.balMap) loadStats().catch(() => {}); else { renderMCHolders(); renderSupplyBars(); } }
   say("");
   try { history.replaceState(null, "", "#" + v); } catch {}
 }
@@ -864,7 +864,7 @@ async function loadStats() {
   const circ = 10e9 - rewardsBalance;
   STATS = { holders: live.length, circ, balMap };
   pSet("stats", { holders: STATS.holders, circ: STATS.circ });
-  renderLive(); renderDropTracker(); renderMCHolders();
+  renderLive(); renderDropTracker(); renderMCHolders(); renderSupplyBars();
 }
 async function loadProgram() {
   // Try cache first (valid 60 min — drops happen weekly)
@@ -1332,7 +1332,7 @@ let deferred = null;
 window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); deferred = e; $("w-install-btn").hidden = false; $("w-install-text").textContent = "Install FALQBIT on this device for quick access."; });
 $("w-install-btn").addEventListener("click", async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("w-install-btn").hidden = true; });
 if (window.matchMedia("(display-mode: standalone)").matches) $("w-install").hidden = true;
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=17").catch(() => {});
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js?v=28").catch(() => {});
 
 // ---------- market: price chart ----------
 const IDX = c.n.indexer;
@@ -1532,13 +1532,9 @@ async function loadMCTrades() {
   try {
     let acc = [];
     async function page(next) {
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 12000);
       const url = `${IDX}/v2/accounts/${POOL_ADDR}/transactions?limit=500${next ? "&next=" + encodeURIComponent(next) : ""}`;
-      const r = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(tid);
-      if (!r.ok) throw new Error(r.status);
-      const j = await r.json();
+      const j = await c.getJSON(url);
+      if (!j) return acc;
       acc = acc.concat(j.transactions || []);
       if (j["next-token"] && (j.transactions || []).length && acc.length < 5000) return page(j["next-token"]);
       return acc;
@@ -1613,6 +1609,28 @@ function renderMCHolders() {
       `${label ? `<small>${label}</small>` : `<small>${pctStr} of supply</small>`}</div>` +
       `<span class="val">${fqStr}</span></li>`;
   }).join("");
+}
+
+// ---------- supply distribution bars ----------
+function renderSupplyBars() {
+  if (!STATS?.balMap) return;
+  const SUPPLY = 10e9;
+  const DEC6 = 1e6;
+  const bm = STATS.balMap;
+  const FOUNDER_ADDR = "SYRON5PUM6MQVP3IPMPGV2GHHLDNVC45KDMZEKJ7ACFHW4FH3ZLXH7SMP4";
+  const rewAddr = cfg.rewards;
+  const liqAddrs = [cfg.pool, "YW5KDBPXOFQUDLAXBLSTMGB7TH77Y6HUNVVG4FLWYSKKCHLLYYCR5UHXZM"];
+  const teamAddrs = [cfg.project, cfg.team, FOUNDER_ADDR].filter(Boolean);
+  let rew = 0, liq = 0, team = 0;
+  if (rewAddr && bm.has(rewAddr)) rew = bm.get(rewAddr) / DEC6;
+  liqAddrs.forEach(a => { if (bm.has(a)) liq += bm.get(a) / DEC6; });
+  teamAddrs.forEach(a => { if (bm.has(a)) team += bm.get(a) / DEC6; });
+  const comm = SUPPLY - rew - liq - team;
+  function pct(v) { return fmt(v / SUPPLY * 100, 1) + "%"; }
+  $("sd-comm").textContent = pct(comm); $("sd-comm-b").style.width = (comm / SUPPLY * 100) + "%";
+  $("sd-rew").textContent = pct(rew); $("sd-rew-b").style.width = (rew / SUPPLY * 100) + "%";
+  $("sd-liq").textContent = pct(liq); $("sd-liq-b").style.width = (liq / SUPPLY * 100) + "%";
+  $("sd-team").textContent = pct(team); $("sd-team-b").style.width = (team / SUPPLY * 100) + "%";
 }
 
 // ---------- start ----------
