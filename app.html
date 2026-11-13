@@ -542,7 +542,7 @@ button { transition: transform .1s ease; }
 
       <!-- CIRCULATING -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div class="dc"><span>Circulating</span><b id="l-circ" style="font-size:22px">…</b><small id="l-circ-s">community</small></div>
+        <div class="dc"><span>Circulating</span><b id="l-circ" style="font-size:22px">…</b><small id="l-circ-s">in circulation</small></div>
         <div class="dc"><span>Supply</span><b style="font-size:22px">10B</b><small>fixed · no mint</small></div>
       </div>
 
@@ -860,7 +860,9 @@ async function loadStats() {
   // build a balance map for drop tracker
   const balMap = new Map();
   for (const b of live) balMap.set(b.address, b.amount);
-  STATS = { holders: live.length, circ: comm.reduce((t, b) => t + b.amount / DEC, 0), balMap };
+  const rewardsBalance = balMap.has(cfg.rewards) ? balMap.get(cfg.rewards) / DEC : 0;
+  const circ = 10e9 - rewardsBalance;
+  STATS = { holders: live.length, circ, balMap };
   pSet("stats", { holders: STATS.holders, circ: STATS.circ });
   renderLive(); renderDropTracker(); renderMCHolders();
 }
@@ -902,7 +904,7 @@ function renderLive() {
     $("l-drop-bar").style.width = pct + "%";
     $("l-drop-info").textContent = t ? `Next: ${fmt(t)} FALQBIT · ${fmt(Math.max(0, 1000 - PROG.n))} spots left` : "Welcome drop complete";
   }
-  if (STATS) { $("l-holders").textContent = fmt(STATS.holders); $("l-circ").textContent = STATS.circ >= 1e9 ? fmt(STATS.circ / 1e9, 2) + "B" : fmt(STATS.circ / 1e6) + "M"; $("l-circ-s").textContent = `${fmt(STATS.circ / 1e8, 1)}% of supply`; }
+  if (STATS) { $("l-holders").textContent = fmt(STATS.holders); $("l-circ").textContent = STATS.circ >= 1e9 ? fmt(STATS.circ / 1e9, 2) + "B" : fmt(STATS.circ / 1e6) + "M"; $("l-circ-s").textContent = `${fmt(STATS.circ / 1e8, 1)}% of supply, in circulation`; }
 }
 let MYDROP = null;
 function renderDrop() {
@@ -1451,7 +1453,7 @@ function drawMC() {
   hit.addEventListener("touchend", onLeave);
   // update pool & holders on market tab too
   if (reserves) $("mc-pool").textContent = fmt(Number(reserves.algo) / DEC, 0);
-  if (STATS) { $("mc-holders").textContent = fmt(STATS.holders); $("mc-circ").textContent = STATS.circ >= 1e9 ? fmt(STATS.circ / 1e9, 2) + "B" : fmt(STATS.circ / 1e6) + "M"; $("mc-circ-s").textContent = `${fmt(STATS.circ / 1e8, 1)}% of supply`; }
+  if (STATS) { $("mc-holders").textContent = fmt(STATS.holders); $("mc-circ").textContent = STATS.circ >= 1e9 ? fmt(STATS.circ / 1e9, 2) + "B" : fmt(STATS.circ / 1e6) + "M"; $("mc-circ-s").textContent = `${fmt(STATS.circ / 1e8, 1)}% of supply, in circulation`; }
 }
 document.querySelectorAll(".mc-tab").forEach(b => {
   b.addEventListener("click", () => {

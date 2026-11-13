@@ -1669,7 +1669,7 @@ body { background-image: none; }
   <section class="stats reveal" aria-label="Live on-chain numbers">
     <div class="stat"><span class="k">Price</span><span class="v loading" id="st-price">&nbsp;</span><span class="s">ALGO per 1M FALQBIT</span></div>
     <div class="stat"><span class="k">Pool liquidity</span><span class="v loading" id="st-pool">&nbsp;</span><span class="s" id="st-pool-s">ALGO in the Tinyman pool</span></div>
-    <div class="stat"><span class="k">Circulating</span><span class="v loading" id="st-circ">&nbsp;</span><span class="meter" aria-hidden="true"><span id="st-circ-bar"></span></span><span class="s" id="st-circ-s">FALQBIT held by the community</span></div>
+    <div class="stat"><span class="k">Circulating</span><span class="v loading" id="st-circ">&nbsp;</span><span class="meter" aria-hidden="true"><span id="st-circ-bar"></span></span><span class="s" id="st-circ-s">FALQBIT in circulation</span></div>
     <div class="stat"><span class="k">Holders</span><span class="v loading" id="st-holders">&nbsp;</span><span class="s">wallets holding FALQBIT</span></div>
     <p class="stats-note"><i aria-hidden="true"></i><span id="st-note">Reading Algorand MainNet…</span></p>
   </section>
@@ -1849,7 +1849,7 @@ body { background-image: none; }
               <div class="hero-ring-c"><b id="d-circ-pct">…</b><span>circulating</span></div>
             </div>
             <ul class="hero-stats">
-              <li><span class="k">Held by the community</span><b id="d-circ-amt">…</b></li>
+              <li><span class="k">In circulation</span><b id="d-circ-amt">…</b></li>
               <li><span class="k">Holders</span><b id="h-count-comm">…</b></li>
               <li><span class="k">Earning rewards <small>(1M+)</small></span><b id="h-earn">…</b></li>
             </ul>
@@ -2421,10 +2421,12 @@ document.documentElement.classList.add("js");
       // the public ranking shows every holder; pool and rewards wallets appear mixed in, labelled
       var allHolders = list.filter(function (b) { return !b.deleted && b.amount > 0; });
       var rows = RANGES.map(function (r) { return { label: r[2], n: 0, sum: 0, lo: r[0], hi: r[1] }; });
-      var total = 0;
+      // circulating = total supply minus undistributed rewards wallet
+      var rewardsBal = 0;
+      list.forEach(function (b) { if (b.address === "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q") rewardsBal = b.amount / 1e6; });
+      var total = SUPPLY - rewardsBal;
       // distribution counts every wallet (pool, rewards, project, team and founder wallets included)
       allHolders.forEach(function (b) { var v = b.amount / 1e6; rows.forEach(function (r) { if (v >= r.lo && v < r.hi) { r.n++; r.sum += v; } }); });
-      comm.forEach(function (b) { total += b.amount / 1e6; });
       var max = Math.max.apply(null, rows.map(function (r) { return r.sum; }).concat([1]));
       var html = rows.map(function (r) {
         var pct = r.sum / SUPPLY * 100;
@@ -2455,7 +2457,7 @@ document.documentElement.classList.add("js");
       TOP.comm = allHolders; TOP.scale = undefined; drawTop(); loadAlgo();
       countUp("st-circ", total, function (v) { return v >= 1e9 ? fmt(v / 1e9, 2) + "B" : fmt(v / 1e6, 0) + "M"; });
       var bar = $("st-circ-bar"); if (bar) bar.style.width = Math.min(100, total / SUPPLY * 100).toFixed(1) + "%";
-      $("st-circ-s").textContent = fmt(total / SUPPLY * 100, 1) + "% of supply, held by the community";
+      $("st-circ-s").textContent = fmt(total / SUPPLY * 100, 1) + "% of supply, in circulation";
       countUp("st-holders", allHolders.length, function (v) { return fmt(Math.round(v), 0); });
     }).catch(function () {
       // only reset the UI on the very first failed load; after that keep whatever was already drawn
