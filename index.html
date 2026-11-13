@@ -2114,19 +2114,23 @@ document.documentElement.classList.add("js");
   var STALE_MAX = 10 * 60 * 1000; // if 403, accept up to 10 min stale as a fallback
   function _readSS(k) { try { var v = sessionStorage.getItem("fq:" + k); return v ? JSON.parse(v) : null; } catch { return null; } }
   function _writeSS(k, v) { try { sessionStorage.setItem("fq:" + k, JSON.stringify(v)); } catch {} }
-  function fetchJSON(url, fallbackUrl) {
+  function fetchJSON(url) {
     var key = url;
     var hit = _cache[key] || _readSS(key);
     if (hit && (Date.now() - hit.t) < CACHE_TTL) return Promise.resolve(hit.data);
-    return fetch(url).then(function (r) {
-      if (r.ok) return r.json().then(function (data) { var rec = { t: Date.now(), data: data }; _cache[key] = rec; _writeSS(key, rec); return data; });
-      // on quota or server error, fall back to any cached value we still have — avoids the UI going blank
-      if ((r.status === 403 || r.status === 429 || r.status >= 500) && hit && (Date.now() - hit.t) < STALE_MAX) return hit.data;
-      throw new Error(r.status);
-    }).catch(function (e) {
-      if (hit && (Date.now() - hit.t) < STALE_MAX) return hit.data; // network error → serve stale
-      throw e;
-    });
+    function attempt(retries) {
+      return fetch(url).then(function (r) {
+        if (r.ok) return r.json().then(function (data) { var rec = { t: Date.now(), data: data }; _cache[key] = rec; _writeSS(key, rec); return data; });
+        if ((r.status === 429 || r.status >= 500) && retries > 0) return new Promise(function (ok) { setTimeout(ok, 2000); }).then(function () { return attempt(retries - 1); });
+        if ((r.status === 403 || r.status === 429 || r.status >= 500) && hit && (Date.now() - hit.t) < STALE_MAX) return hit.data;
+        throw new Error(r.status);
+      }).catch(function (e) {
+        if (retries > 0 && !e.message.match(/^[0-9]+$/)) return new Promise(function (ok) { setTimeout(ok, 2000); }).then(function () { return attempt(retries - 1); });
+        if (hit && (Date.now() - hit.t) < STALE_MAX) return hit.data;
+        throw e;
+      });
+    }
+    return attempt(2);
   }
   function get(p) { return fetchJSON(ALGOD + p); }
   function idxGet(p) { return fetchJSON(IDX + p); }
@@ -2724,10 +2728,7 @@ document.documentElement.classList.add("js");
   function loadRecentTrades() {
     var acc = [];
     function page(next) {
-      var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-      var tid = ctrl ? setTimeout(function () { ctrl.abort(); }, 12000) : null;
-      return fetch(IDX + "/v2/accounts/" + POOL_ADDR + "/transactions?limit=500" + (next ? "&next=" + encodeURIComponent(next) : ""), ctrl ? { signal: ctrl.signal } : {})
-        .then(function (r) { if (tid) clearTimeout(tid); if (!r.ok) throw new Error(r.status); return r.json(); })
+      return fetchJSON(IDX + "/v2/accounts/" + POOL_ADDR + "/transactions?limit=500" + (next ? "&next=" + encodeURIComponent(next) : ""))
         .then(function (j) { j = j || { transactions: [] }; acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 5000 ? page(j["next-token"]) : acc; });
     }
     page().then(function (txs) {
@@ -2742,7 +2743,9 @@ document.documentElement.classList.add("js");
     });
   }
 
-  load(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); loadPrice(); loadRecentTrades();
+  load(); loadHolders(); loadLP();
+  setTimeout(function () { loadActivity(); loadWelcome(); }, 1500);
+  setTimeout(function () { loadPrice(); loadRecentTrades(); }, 3000);
   // reasonable refresh cadence that stays well under algonode public rate limits (around 60 req/min per IP)
   // the "fresh" dot on the distribution still animates when real swaps change the data, even at this rhythm
   setInterval(function () { load(); }, 45000);          // price + main stats every 45s
