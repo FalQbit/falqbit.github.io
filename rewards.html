@@ -197,7 +197,7 @@ if (!cfg || !cfg.rewards) {
 } else {
   $("foot").innerHTML = `${NETWORKS[net].label}. Token <a href="${c.n.lora}/asset/${cfg.asset_id}" target="_blank" rel="noopener">${cfg.asset_id}</a> · Rewards <a href="${c.n.lora}/account/${cfg.rewards}" target="_blank" rel="noopener">${short(cfg.rewards)}</a>`;
 }
-const EXCLUDE = new Set([cfg?.pool, cfg?.rewards, cfg?.team, cfg?.project, cfg?.app_address].filter(Boolean));
+const EXCLUDE = new Set([cfg?.pool, cfg?.rewards, cfg?.team, cfg?.project, cfg?.app_address, "SYRON5PUM6MQVP3IPMPGV2GHHLDNVC45KDMZEKJ7ACFHW4FH3ZLXH7SMP4"].filter(Boolean));
 // Founder wallets: never paid, in any browser. Stored as SHA-256 of the address so the list stays private.
 const FOUNDER_HASHES = new Set([
   // "paste-hash-here",

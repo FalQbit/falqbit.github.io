@@ -314,21 +314,23 @@ footer nav { display: flex; flex-wrap: wrap; gap: 12px 20px; }
 .trades-feed .tf-head h3 { font: 700 16px/1 var(--display); letter-spacing: -.01em; }
 .trades-feed .tf-head .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #3FE0D0; box-shadow: 0 0 8px rgba(63,224,208,.6); animation: pulse-dot 2s ease infinite; }
 @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
-.tf-list { list-style: none; margin: 0; padding: 0; max-height: 480px; overflow-y: auto; }
-.tf-list li { display: grid; grid-template-columns: 60px 1fr auto; gap: 10px; align-items: center; padding: 12px 20px; border-bottom: 1px solid rgba(36,48,79,.5); font-size: 14px; transition: background .15s; }
+.tf-list { list-style: none; margin: 0; padding: 0; max-height: 600px; overflow-y: auto; }
+.tf-list li { display: grid; grid-template-columns: 56px minmax(0,1fr) minmax(0,1.1fr) auto; gap: 14px; align-items: center; padding: 14px 20px; border-bottom: 1px solid rgba(36,48,79,.5); font-size: 14px; transition: background .15s; }
 .tf-list li:last-child { border-bottom: 0; }
 .tf-list li:hover { background: rgba(63,224,208,.04); }
 .tf-badge { font: 600 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 5px 10px; border-radius: 6px; text-align: center; }
 .tf-badge.buy { background: rgba(31,158,148,.18); color: #3FE0D0; }
 .tf-badge.sell { background: rgba(122,110,230,.18); color: #9C90FF; }
-.tf-mid { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-.tf-mid .tf-addrs { font: 500 13px/1.2 var(--mono); color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tf-mid .tf-amounts { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tf-mid .tf-amounts b { color: var(--fg); font-weight: 600; }
-.tf-right { text-align: right; white-space: nowrap; }
-.tf-right .tf-time { font-size: 12px; color: var(--muted); }
-.tf-right .tf-algo { font: 600 13px/1.3 var(--mono); color: var(--cyan); }
-@media (max-width: 600px) { .tf-list li { grid-template-columns: 48px 1fr auto; padding: 10px 14px; gap: 8px; } .tf-badge { font-size: 11px; padding: 4px 8px; } }
+.tf-from, .tf-to { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tf-from .tf-amt, .tf-to .tf-amt { font: 600 14px/1.3 var(--body); color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tf-from .tf-usd, .tf-to .tf-usd { font: 500 12px/1.2 var(--mono); color: var(--muted); }
+.tf-arrow { color: var(--muted); margin: 0 2px; }
+.tf-right { text-align: right; display: flex; flex-direction: column; gap: 2px; white-space: nowrap; }
+.tf-right .tf-time { font: 500 12px/1.3 var(--mono); color: var(--muted); }
+.tf-right .tf-addr { font: 500 11px/1 var(--mono); color: rgba(169,180,208,.6); }
+.tf-more:hover { background: rgba(63,224,208,.06); }
+@media (max-width: 700px) { .tf-list li { grid-template-columns: 48px minmax(0,1fr) minmax(0,1fr) auto; padding: 12px 14px; gap: 8px; } .tf-badge { font-size: 11px; padding: 4px 8px; } .tf-from .tf-amt, .tf-to .tf-amt { font-size: 13px; } .tf-right .tf-addr { display: none; } }
+@media (max-width: 480px) { .tf-list li { grid-template-columns: 44px 1fr auto; } .tf-to { display: none; } .tf-from .tf-amt::after { content: " →"; color: var(--muted); } }
 .hstats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
 @media (max-width: 860px) { .hstats { grid-template-columns: minmax(0, 1fr); } }
 .htable-wrap { overflow-x: auto; border: 1px solid rgba(60,78,122,.55); border-radius: 16px; background: linear-gradient(180deg, rgba(24,34,62,.6), rgba(18,26,48,.45)); }
@@ -1904,12 +1906,12 @@ body { background-image: none; }
 
   <section class="sec reveal" id="recent-trades" aria-labelledby="h-trades">
     <div class="sec-head">
-      <p class="eyebrow">Live feed</p>
-      <h2 id="h-trades">Latest trades.</h2>
+      <p class="eyebrow">Trade history</p>
+      <h2 id="h-trades">All trades.</h2>
       <p class="muted">Real-time buys and sells from the Tinyman v2 pool, straight from the chain.</p>
     </div>
     <div class="trades-feed">
-      <div class="tf-head"><h3>Recent swaps</h3><span class="live-dot" title="Live"></span></div>
+      <div class="tf-head"><h3>All swaps <span id="tf-count" style="font-weight:400;font-size:13px;color:var(--muted);margin-left:6px"></span></h3><span class="live-dot" title="Live"></span></div>
       <ul class="tf-list" id="tf-list"><li style="justify-content:center;grid-column:1/-1"><span class="muted">Reading the chain…</span></li></ul>
     </div>
   </section>
@@ -2197,7 +2199,7 @@ document.documentElement.classList.add("js");
   }
   var IDX = "https://mainnet-idx.algonode.cloud";
   var IDX_FB = "https://mainnet-idx.algonode.cloud";
-  var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": "Liquidity pool", "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": "Rewards", "YW5KDBPXOFQUDLAXBLSTMGB7TH77Y6HUNVVG4FLWYSKKCHLLYYCR5UHXZM": "Liquidity reserve" };
+  var PROJECT = { "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA": "Liquidity pool", "V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q": "Rewards", "YW5KDBPXOFQUDLAXBLSTMGB7TH77Y6HUNVVG4FLWYSKKCHLLYYCR5UHXZM": "Liquidity reserve", "OCAF6EHCGLZ3SJDE54SL2TBKNDLIQAUQDM6CAFQAFZ7LNLERA4SBY73YIU": "Project", "XMKDQFY55TLREPRIUG3WLWPUPKFW33WPV7GZF6U22EWOXYWHLKTPGBDT7Q": "Founder", "SYRON5PUM6MQVP3IPMPGV2GHHLDNVC45KDMZEKJ7ACFHW4FH3ZLXH7SMP4": "Founder" };
   var RANGES = [[0, 1e6, "Under 1M"], [1e6, 1e7, "1M – 10M"], [1e7, 1e8, "10M – 100M"], [1e8, 1e9, "100M – 1B"], [1e9, Infinity, "1B+"]];
   function allBalances(next, acc) {
     acc = acc || [];
@@ -2655,7 +2657,9 @@ document.documentElement.classList.add("js");
   });
   window.addEventListener("resize", function () { clearTimeout(window._pcrz); window._pcrz = setTimeout(drawPrice, 200); });
 
-  // ---- recent trades feed: last 20 swaps from the pool ----
+  // ---- trades feed: all swaps from the pool since inception ----
+  var ALL_TRADES = [];
+  var TF_SHOW = 20;
   function timeAgo(ts) {
     var s = Math.floor(Date.now() / 1000 - ts);
     if (s < 60) return s + "s ago";
@@ -2663,55 +2667,77 @@ document.documentElement.classList.add("js");
     if (s < 86400) return Math.floor(s / 3600) + "h ago";
     return Math.floor(s / 86400) + "d ago";
   }
-  function loadRecentTrades() {
-    var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-    var tid = ctrl ? setTimeout(function () { ctrl.abort(); }, 10000) : null;
-    fetch(IDX + "/v2/accounts/" + POOL_ADDR + "/transactions?limit=100", ctrl ? { signal: ctrl.signal } : {})
-      .then(function (r) { if (tid) clearTimeout(tid); if (!r.ok) throw new Error(r.status); return r.json(); })
-      .then(function (j) {
-        var txs = j.transactions || [], byGroup = {}, seen = {};
-        txs.forEach(function (t) {
-          if (seen[t.id]) return; seen[t.id] = 1;
-          var g = t.group || t.id;
-          if (!byGroup[g]) byGroup[g] = { t: t["round-time"], algoIn: 0, algoOut: 0, fqIn: 0, fqOut: 0, sender: "", receiver: "" };
-          var bg = byGroup[g];
-          function walk(x) {
-            var p = x["payment-transaction"], a = x["asset-transfer-transaction"];
-            if (p && (p.amount || 0) > 0) {
-              if (p.receiver === POOL_ADDR) { bg.algoIn += p.amount; bg.sender = x.sender; }
-              else if (x.sender === POOL_ADDR) { bg.algoOut += p.amount; bg.receiver = p.receiver; }
-            }
-            if (a && a["asset-id"] === ASSET && (a.amount || 0) > 0) {
-              if (a.receiver === POOL_ADDR) { bg.fqIn += a.amount; bg.sender = x.sender; }
-              else if (x.sender === POOL_ADDR) { bg.fqOut += a.amount; bg.receiver = a.receiver; }
-            }
-            (x["inner-txns"] || []).forEach(walk);
-          }
-          walk(t);
-        });
-        var trades = [];
-        for (var g in byGroup) {
-          var b = byGroup[g];
-          if (b.algoIn > 0 && b.fqOut > 0 && b.algoOut === 0) trades.push({ t: b.t, side: "buy", algo: b.algoIn / 1e6, fq: b.fqOut / 1e6, addr: b.sender || b.receiver });
-          else if (b.fqIn > 0 && b.algoOut > 0 && b.fqOut === 0) trades.push({ t: b.t, side: "sell", algo: b.algoOut / 1e6, fq: b.fqIn / 1e6, addr: b.sender || b.receiver });
+  function dateFmt(ts) {
+    var d = new Date(ts * 1000);
+    return d.toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" }) + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  function renderTrades() {
+    var list = $("tf-list");
+    if (!ALL_TRADES.length) { list.innerHTML = "<li style=\"justify-content:center;grid-column:1/-1\"><span class=\"muted\">No swaps found.</span></li>"; return; }
+    var showing = ALL_TRADES.slice(0, TF_SHOW);
+    list.innerHTML = showing.map(function (tr) {
+      var shortAddr = tr.addr ? tr.addr.slice(0, 4) + "…" + tr.addr.slice(-4) : "…";
+      var fqFmt = tr.fq >= 1e6 ? fmt(tr.fq / 1e6, 2) + "M" : tr.fq >= 1e3 ? fmt(tr.fq / 1e3, 1) + "k" : fmt(tr.fq, 0);
+      var algoFmt = fmt(tr.algo, 2);
+      var isBuy = tr.side === "buy";
+      return "<li><span class=\"tf-badge " + tr.side + "\">" + (isBuy ? "Buy" : "Sell") + "</span>" +
+        "<div class=\"tf-from\"><span class=\"tf-amt\">" + (isBuy ? algoFmt + " ALGO" : fqFmt + " FALQBIT") + "</span></div>" +
+        "<div class=\"tf-to\"><span class=\"tf-amt\">→ " + (isBuy ? fqFmt + " FALQBIT" : algoFmt + " ALGO") + "</span></div>" +
+        "<div class=\"tf-right\"><span class=\"tf-time\">" + dateFmt(tr.t) + "</span><span class=\"tf-addr\">" + shortAddr + "</span></div></li>";
+    }).join("");
+    if (ALL_TRADES.length > TF_SHOW) {
+      list.innerHTML += "<li class=\"tf-more\" style=\"justify-content:center;grid-column:1/-1;cursor:pointer\" id=\"tf-more\"><span style=\"color:var(--cyan);font-weight:600\">Show more (" + (ALL_TRADES.length - TF_SHOW) + " remaining)</span></li>";
+      $("tf-more").onclick = function () { TF_SHOW += 30; renderTrades(); };
+    }
+  }
+  function parseTrades(txs) {
+    var byGroup = {}, seen = {};
+    txs.forEach(function (t) {
+      if (seen[t.id]) return; seen[t.id] = 1;
+      var g = t.group || t.id;
+      if (!byGroup[g]) byGroup[g] = { t: t["round-time"], algoIn: 0, algoOut: 0, fqIn: 0, fqOut: 0, sender: "", receiver: "" };
+      var bg = byGroup[g];
+      function walk(x) {
+        var p = x["payment-transaction"], a = x["asset-transfer-transaction"];
+        if (p && (p.amount || 0) > 0) {
+          if (p.receiver === POOL_ADDR) { bg.algoIn += p.amount; bg.sender = x.sender; }
+          else if (x.sender === POOL_ADDR) { bg.algoOut += p.amount; bg.receiver = p.receiver; }
         }
-        trades.sort(function (a, b) { return b.t - a.t; });
-        trades = trades.slice(0, 20);
-        var list = $("tf-list");
-        if (!trades.length) { list.innerHTML = "<li style=\"justify-content:center;grid-column:1/-1\"><span class=\"muted\">No recent swaps.</span></li>"; return; }
-        list.innerHTML = trades.map(function (tr) {
-          var shortAddr = tr.addr ? tr.addr.slice(0, 4) + "…" + tr.addr.slice(-4) : "…";
-          var fqFmt = tr.fq >= 1e6 ? fmt(tr.fq / 1e6, 2) + "M" : tr.fq >= 1e3 ? fmt(tr.fq / 1e3, 1) + "k" : fmt(tr.fq, 0);
-          var algoFmt = fmt(tr.algo, 2);
-          return "<li><span class=\"tf-badge " + tr.side + "\">" + (tr.side === "buy" ? "Buy" : "Sell") + "</span>" +
-            "<div class=\"tf-mid\"><span class=\"tf-addrs\">" + shortAddr + "</span>" +
-            "<span class=\"tf-amounts\"><b>" + fqFmt + "</b> FALQBIT → <b>" + algoFmt + "</b> ALGO</span></div>" +
-            "<div class=\"tf-right\"><span class=\"tf-algo\">" + algoFmt + " Ⱥ</span><span class=\"tf-time\">" + timeAgo(tr.t) + "</span></div></li>";
-        }).join("");
-      }).catch(function () {
-        var list = $("tf-list");
-        if (list.querySelector("p.muted, span.muted")) list.innerHTML = "<li style=\"justify-content:center;grid-column:1/-1\"><span class=\"muted\">Could not read the chain right now.</span></li>";
-      });
+        if (a && a["asset-id"] === ASSET && (a.amount || 0) > 0) {
+          if (a.receiver === POOL_ADDR) { bg.fqIn += a.amount; bg.sender = x.sender; }
+          else if (x.sender === POOL_ADDR) { bg.fqOut += a.amount; bg.receiver = a.receiver; }
+        }
+        (x["inner-txns"] || []).forEach(walk);
+      }
+      walk(t);
+    });
+    var trades = [];
+    for (var g in byGroup) {
+      var b = byGroup[g];
+      if (b.algoIn > 0 && b.fqOut > 0 && b.algoOut === 0) trades.push({ t: b.t, side: "buy", algo: b.algoIn / 1e6, fq: b.fqOut / 1e6, addr: b.sender || b.receiver });
+      else if (b.fqIn > 0 && b.algoOut > 0 && b.fqOut === 0) trades.push({ t: b.t, side: "sell", algo: b.algoOut / 1e6, fq: b.fqIn / 1e6, addr: b.sender || b.receiver });
+    }
+    return trades;
+  }
+  function loadRecentTrades() {
+    var acc = [];
+    function page(next) {
+      var ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      var tid = ctrl ? setTimeout(function () { ctrl.abort(); }, 12000) : null;
+      return fetch(IDX + "/v2/accounts/" + POOL_ADDR + "/transactions?limit=500" + (next ? "&next=" + encodeURIComponent(next) : ""), ctrl ? { signal: ctrl.signal } : {})
+        .then(function (r) { if (tid) clearTimeout(tid); if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (j) { j = j || { transactions: [] }; acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 5000 ? page(j["next-token"]) : acc; });
+    }
+    page().then(function (txs) {
+      ALL_TRADES = parseTrades(txs);
+      ALL_TRADES.sort(function (a, b) { return b.t - a.t; });
+      var counter = document.getElementById("tf-count");
+      if (counter) counter.textContent = ALL_TRADES.length + " total";
+      renderTrades();
+    }).catch(function () {
+      var list = $("tf-list");
+      if (!ALL_TRADES.length) list.innerHTML = "<li style=\"justify-content:center;grid-column:1/-1\"><span class=\"muted\">Could not read the chain right now.</span></li>";
+    });
   }
 
   load(); loadHolders(); loadActivity(); loadLP(); loadWelcome(); loadPrice(); loadRecentTrades();

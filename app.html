@@ -710,7 +710,7 @@ button { transition: transform .1s ease; }
         <ul class="m-act" id="mc-act"><li class="muted" style="justify-content:center">Loading…</li></ul>
       </div>
       <div class="card">
-        <span class="k">Recent swaps</span>
+        <span class="k">All swaps</span>
         <ul class="tf-list" id="mc-trades"><li style="justify-content:center;grid-column:1/-1"><span class="muted">Loading…</span></li></ul>
       </div>
       <div class="card">
@@ -849,7 +849,7 @@ async function loadStats() {
   // Try cache first (valid 30 min)
   const cached = pGet("stats", 30 * 60000);
   if (cached) { STATS = cached; renderLive(); const tc = pGet("droptrack", 30 * 60000); if (tc) { $("l-drop-track").style.display = ""; $("l-tk-kept").textContent = `✅ ${tc.k} kept`; $("l-tk-part").style.display = "none"; $("l-tk-sold").textContent = `👋 ${tc.s} sold all`; } return; }
-  const skip = new Set([cfg.pool, cfg.rewards, cfg.project, cfg.team, cfg.app_address].filter(Boolean));
+  const skip = new Set([cfg.pool, cfg.rewards, cfg.project, cfg.team, cfg.app_address, "SYRON5PUM6MQVP3IPMPGV2GHHLDNVC45KDMZEKJ7ACFHW4FH3ZLXH7SMP4"].filter(Boolean));
   let all = [], next = "";
   for (let i = 0; i < 20; i++) {
     const j = await c.getJSON(`${c.n.indexer}/v2/assets/${cfg.asset_id}/balances?limit=1000&currency-greater-than=0${next ? "&next=" + encodeURIComponent(next) : ""}`);
@@ -1501,15 +1501,48 @@ function timeAgo(ts) {
   if (s < 86400) return Math.floor(s / 3600) + "h ago";
   return Math.floor(s / 86400) + "d ago";
 }
+function dateFmtApp(ts) {
+  const d = new Date(ts * 1000);
+  return d.toLocaleDateString([], { day: "2-digit", month: "short" }) + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+let MC_TRADES = [];
+let MC_TF_SHOW = 15;
+function renderMCTradeList() {
+  const list = $("mc-trades");
+  if (!MC_TRADES.length) { list.innerHTML = `<li style="justify-content:center;grid-column:1/-1"><span class="muted">No swaps found.</span></li>`; return; }
+  const showing = MC_TRADES.slice(0, MC_TF_SHOW);
+  list.innerHTML = showing.map(tr => {
+    const shortAddr = tr.addr ? tr.addr.slice(0, 4) + "…" + tr.addr.slice(-4) : "…";
+    const fqFmt = tr.fq >= 1e6 ? fmt(tr.fq / 1e6, 2) + "M" : tr.fq >= 1e3 ? fmt(tr.fq / 1e3, 1) + "k" : fmt(tr.fq, 0);
+    const algoFmt = fmt(tr.algo, 2);
+    const isBuy = tr.side === "buy";
+    return `<li><span class="tf-badge ${tr.side}">${isBuy ? "Buy" : "Sell"}</span>` +
+      `<div class="tf-mid"><span class="tf-amounts">${isBuy ? algoFmt + " ALGO → " + fqFmt + " FQ" : fqFmt + " FQ → " + algoFmt + " ALGO"}</span>` +
+      `<span class="tf-addr">${shortAddr} · ${dateFmtApp(tr.t)}</span></div>` +
+      `<div class="tf-right">${timeAgo(tr.t)}</div></li>`;
+  }).join("");
+  if (MC_TRADES.length > MC_TF_SHOW) {
+    list.innerHTML += `<li style="justify-content:center;grid-column:1/-1;cursor:pointer" id="mc-tf-more"><span style="color:var(--cyan);font-weight:600;font-size:13px">Show more (${MC_TRADES.length - MC_TF_SHOW} remaining)</span></li>`;
+    $("mc-tf-more").onclick = () => { MC_TF_SHOW += 20; renderMCTradeList(); };
+  }
+}
 async function loadMCTrades() {
   try {
-    const ctrl = new AbortController();
-    const tid = setTimeout(() => ctrl.abort(), 10000);
-    const r = await fetch(`${IDX}/v2/accounts/${POOL_ADDR}/transactions?limit=100`, { signal: ctrl.signal });
-    clearTimeout(tid);
-    if (!r.ok) throw new Error(r.status);
-    const j = await r.json();
-    const txs = j.transactions || [], byGroup = {}, seen = {};
+    let acc = [];
+    async function page(next) {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 12000);
+      const url = `${IDX}/v2/accounts/${POOL_ADDR}/transactions?limit=500${next ? "&next=" + encodeURIComponent(next) : ""}`;
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(tid);
+      if (!r.ok) throw new Error(r.status);
+      const j = await r.json();
+      acc = acc.concat(j.transactions || []);
+      if (j["next-token"] && (j.transactions || []).length && acc.length < 5000) return page(j["next-token"]);
+      return acc;
+    }
+    const txs = await page();
+    const byGroup = {}, seen = {};
     txs.forEach(t => {
       if (seen[t.id]) return; seen[t.id] = 1;
       const g = t.group || t.id;
@@ -1529,40 +1562,32 @@ async function loadMCTrades() {
       }
       walk(t);
     });
-    const trades = [];
+    MC_TRADES = [];
     for (const g in byGroup) {
       const b = byGroup[g];
-      if (b.algoIn > 0 && b.fqOut > 0 && b.algoOut === 0) trades.push({ t: b.t, side: "buy", algo: b.algoIn / 1e6, fq: b.fqOut / 1e6, addr: b.sender || b.receiver });
-      else if (b.fqIn > 0 && b.algoOut > 0 && b.fqOut === 0) trades.push({ t: b.t, side: "sell", algo: b.algoOut / 1e6, fq: b.fqIn / 1e6, addr: b.sender || b.receiver });
+      if (b.algoIn > 0 && b.fqOut > 0 && b.algoOut === 0) MC_TRADES.push({ t: b.t, side: "buy", algo: b.algoIn / 1e6, fq: b.fqOut / 1e6, addr: b.sender || b.receiver });
+      else if (b.fqIn > 0 && b.algoOut > 0 && b.fqOut === 0) MC_TRADES.push({ t: b.t, side: "sell", algo: b.algoOut / 1e6, fq: b.fqIn / 1e6, addr: b.sender || b.receiver });
     }
-    trades.sort((a, b) => b.t - a.t);
-    const list = $("mc-trades");
-    if (!trades.length) { list.innerHTML = `<li style="justify-content:center;grid-column:1/-1"><span class="muted">No recent swaps.</span></li>`; return; }
-    list.innerHTML = trades.slice(0, 15).map(tr => {
-      const shortAddr = tr.addr ? tr.addr.slice(0, 4) + "…" + tr.addr.slice(-4) : "…";
-      const fqFmt = tr.fq >= 1e6 ? fmt(tr.fq / 1e6, 2) + "M" : tr.fq >= 1e3 ? fmt(tr.fq / 1e3, 1) + "k" : fmt(tr.fq, 0);
-      const algoFmt = fmt(tr.algo, 2);
-      return `<li><span class="tf-badge ${tr.side}">${tr.side === "buy" ? "Buy" : "Sell"}</span>` +
-        `<div class="tf-mid"><span class="tf-amounts"><b>${fqFmt}</b> FALQBIT → <b>${algoFmt}</b> ALGO</span>` +
-        `<span class="tf-addr">${shortAddr}</span></div>` +
-        `<div class="tf-right">${timeAgo(tr.t)}</div></li>`;
-    }).join("");
+    MC_TRADES.sort((a, b) => b.t - a.t);
+    renderMCTradeList();
   } catch {
     const list = $("mc-trades");
-    if (list.querySelector(".muted")) list.innerHTML = `<li style="justify-content:center;grid-column:1/-1"><span class="muted">Could not load trades.</span></li>`;
+    if (!MC_TRADES.length) list.innerHTML = `<li style="justify-content:center;grid-column:1/-1"><span class="muted">Could not load trades.</span></li>`;
   }
 }
 
 // ---------- top holders in app ----------
 function renderMCHolders() {
   if (!STATS || !STATS.balMap) return;
-  const skip = new Set([cfg.pool, cfg.rewards, cfg.project, cfg.team, cfg.app_address].filter(Boolean));
+  const FOUNDER_ADDR = "SYRON5PUM6MQVP3IPMPGV2GHHLDNVC45KDMZEKJ7ACFHW4FH3ZLXH7SMP4";
+  const skip = new Set([cfg.pool, cfg.rewards, cfg.project, cfg.team, cfg.app_address, FOUNDER_ADDR].filter(Boolean));
   const PROJECT_LABELS = {};
   PROJECT_LABELS[cfg.pool] = "Liquidity pool";
   PROJECT_LABELS[cfg.rewards] = "Rewards";
   PROJECT_LABELS["YW5KDBPXOFQUDLAXBLSTMGB7TH77Y6HUNVVG4FLWYSKKCHLLYYCR5UHXZM"] = "Liquidity reserve";
   if (cfg.project) PROJECT_LABELS[cfg.project] = "Project";
-  if (cfg.team) PROJECT_LABELS[cfg.team] = "Team";
+  if (cfg.team) PROJECT_LABELS[cfg.team] = "Founder";
+  PROJECT_LABELS[FOUNDER_ADDR] = "Founder";
   // Build sorted list from balMap
   const entries = [];
   for (const [addr, amount] of STATS.balMap) {
