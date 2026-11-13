@@ -876,8 +876,8 @@ async function loadProgram() {
   const skip = new Set([cfg.pool, cfg.rewards, cfg.project, cfg.team].filter(Boolean));
   const [a, b] = await Promise.all([all(cfg.rewards), cfg.project ? all(cfg.project).catch(() => []) : []]);
   const seen = new Set();
-  for (const t of a) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.rewards && x && x.amount > 0 && note(t).startsWith("FALQBIT welcome") && !skip.has(x.receiver)) seen.add(x.receiver); }
-  for (const t of b) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.project && x && sizes.has(String(x.amount)) && note(t).startsWith("FALQBIT welcome") && !skip.has(x.receiver)) seen.add(x.receiver); }
+  for (const t of a) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.rewards && x && x.amount > 0 && !note(t).startsWith("FALQBIT hold") && !skip.has(x.receiver)) seen.add(x.receiver); }
+  for (const t of b) { const x = t["asset-transfer-transaction"]; if (t.sender === cfg.project && x && sizes.has(String(x.amount)) && !note(t).startsWith("FALQBIT hold") && !skip.has(x.receiver)) seen.add(x.receiver); }
   PROG = { n: seen.size, paid: seen };
   pSet("prog", { n: seen.size, list: [...seen] });
   renderLive(); renderDrop(); renderDropTracker();
@@ -1349,13 +1349,9 @@ async function loadPriceChart() {
   let acc = [], seen = {};
   MC_LOAD = Date.now(); const mine = MC_LOAD;
   async function page(next) {
-    const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-    const tid = ctrl ? setTimeout(() => ctrl.abort(), 10000) : null;
     const url = `${IDX}/v2/accounts/${POOL_ADDR}/transactions?limit=500&after-time=${encodeURIComponent(since)}${next ? "&next=" + encodeURIComponent(next) : ""}`;
-    const r = await fetch(url, ctrl ? { signal: ctrl.signal } : {});
-    if (tid) clearTimeout(tid);
-    if (!r.ok) throw new Error(r.status);
-    const j = await r.json();
+    const j = await c.getJSON(url);
+    if (!j) return acc;
     acc = acc.concat(j.transactions || []);
     if (j["next-token"] && (j.transactions || []).length && acc.length < 3000) return page(j["next-token"]);
     return acc;
