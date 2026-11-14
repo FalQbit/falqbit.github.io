@@ -594,12 +594,12 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
   var IDX = "https://mainnet-idx.4160.nodely.dev";
   var IDX_FB = "https://mainnet-idx.algonode.cloud";
   var TINYMAN_APP = 1002541853;
-  var USDC_POOL = "GPNMDACPNDLIQESXUQX4AXXHEBBUAIRCMOY3Z42XDQPH5HYNFASXNPMZFQ";
+  var USDC_POOL = "FPOU46NBKTWUZCNMNQNXRWNW3SMPOOK4ZJIN5WSILCWP662ANJLTXVRUKA";
 
   // known Tinyman v2 pools (ASA ID → pool address)
   var KNOWN_POOLS = {
     3760920399: "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", // FALQBIT
-    31566704: "GPNMDACPNDLIQESXUQX4AXXHEBBUAIRCMOY3Z42XDQPH5HYNFASXNPMZFQ",  // USDC
+    31566704: "FPOU46NBKTWUZCNMNQNXRWNW3SMPOOK4ZJIN5WSILCWP662ANJLTXVRUKA",  // USDC (Tinyman v2)
   };
 
   var chart = null, candleSeries = null, volumeSeries = null;
@@ -742,6 +742,12 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
     $("tv-price-usd").textContent = ""; $("tv-vol-usd").textContent = ""; $("tv-liq-usd").textContent = "";
     $("chart-loading").style.display = "flex";
     $("chart-loading").innerHTML = '<div class="spinner"></div>Loading chart data…';
+    // clear previous chart data
+    if (candleSeries) { try { chart.removeSeries(candleSeries); } catch (e) {} candleSeries = null; }
+    if (volumeSeries) { try { chart.removeSeries(volumeSeries); } catch (e) {} volumeSeries = null; }
+    $("tv-trades").innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading…</div>';
+    $("tv-top-holders").innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading…</div>';
+    $("tv-distribution").innerHTML = '';
     try { history.replaceState(null, "", "#" + assetId); } catch (e) {}
 
     fetchJSON(IDX + "/v2/assets/" + assetId).then(function (j) {
@@ -918,8 +924,19 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
       var c = candles[k]; c.close = tr.price; if (tr.price > c.high) c.high = tr.price; if (tr.price < c.low) c.low = tr.price;
       volumes[k].value += tr.asa;
     });
+    // fill gaps with flat candles at last close price (like Tinyman/Vestige)
+    var keys = Object.keys(candles).sort();
+    if (keys.length > 1) {
+      var first = parseInt(keys[0], 10);
+      var last = parseInt(keys[keys.length - 1], 10);
+      var prev = candles[first].close;
+      for (var t = first; t <= last; t += bucket) {
+        if (candles[t]) { prev = candles[t].close; }
+        else { candles[t] = { time: t, open: prev, high: prev, low: prev, close: prev }; volumes[t] = { time: t, value: 0 }; }
+      }
+    }
     var cArr = Object.keys(candles).sort().map(function (k) { return candles[k]; });
-    var vArr = Object.keys(volumes).sort().map(function (k) { var v = volumes[k]; v.color = candles[k].close >= candles[k].open ? "rgba(80,230,130,0.25)" : "rgba(255,122,122,0.25)"; return v; });
+    var vArr = Object.keys(volumes).sort().map(function (k) { var v = volumes[k]; v.color = candles[k] && candles[k].close >= candles[k].open ? "rgba(80,230,130,0.25)" : "rgba(255,122,122,0.25)"; return v; });
     candleSeries.setData(cArr);
     volumeSeries.setData(vArr);
     chart.timeScale().fitContent();
