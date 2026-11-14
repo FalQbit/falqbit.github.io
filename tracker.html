@@ -856,11 +856,11 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
   /* ---- trades ---- */
   function loadTrades(pool, assetId, decimals, div) {
     var poolAddr = pool.addr;
-    var since = new Date(Date.now() - 30 * 86400000).toISOString();
+    var since = new Date(Date.now() - 90 * 86400000).toISOString();
     function page(next, acc) {
       acc = acc || [];
       return fetchJSON(IDX + "/v2/accounts/" + poolAddr + "/transactions?limit=500&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
-        .then(function (j) { j = j || { transactions: [] }; acc = acc.concat(j.transactions || []); if (j["next-token"] && (j.transactions || []).length && acc.length < 2000) return page(j["next-token"], acc); return acc; });
+        .then(function (j) { j = j || { transactions: [] }; acc = acc.concat(j.transactions || []); if (j["next-token"] && (j.transactions || []).length && acc.length < 5000) return page(j["next-token"], acc); return acc; });
     }
     page().then(function (txs) {
       var seen = {}, byGroup = {};
@@ -896,7 +896,8 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
         $("tv-change").className = "value " + (chg >= 0 ? "up" : "down");
       } else { $("tv-vol").textContent = "0"; $("tv-change").textContent = "—"; }
 
-      buildChart(trades);
+      _allTrades = trades.slice();
+      buildChart(_allTrades, activeRange);
       trades.sort(function (a, b) { return b.t - a.t; });
       renderTradesTable(trades);
     }).catch(function () {
@@ -905,9 +906,9 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
     });
   }
 
-  /* ---- TradingView chart (data from Vestige API) ---- */
-  var VESTIGE_API = "https://free-api.vestige.fi";
+  /* ---- TradingView chart (built from on-chain trades) ---- */
   var activeRange = 30;
+  var _allTrades = [];
 
   function initChart() {
     if (chart) { chart.remove(); chart = null; }
@@ -937,81 +938,66 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
     new ResizeObserver(function () { if (chart) chart.applyOptions({ width: container.clientWidth }); }).observe(container);
   }
 
-  function loadVestigeCandles(assetId, days) {
-    var now = Math.floor(Date.now() / 1000);
-    var start = days > 0 ? now - days * 86400 : now - 365 * 86400;
-    var interval = days <= 1 ? 900 : days <= 7 ? 3600 : days <= 30 ? 14400 : 86400;
-    var url = VESTIGE_API + "/assets/" + assetId + "/candles?network_id=0&interval=" + interval + "&start=" + start + "&end=" + now + "&denominating_asset_id=0";
-    return fetch(url).then(function (r) { return r.json(); }).catch(function () { return null; });
-  }
-
-  function renderCandles(data, assetId, days) {
-    if (!data || !Array.isArray(data) || !data.length) {
-      // fallback: try to build chart from trades if Vestige has no data
-      if (window._allTrades && window._allTrades.length) {
-        buildChartFromTrades(window._allTrades, days);
-      } else {
-        $("chart-loading").innerHTML = '<span style="color:var(--muted)">No chart data available for this period.</span>';
-      }
-      return;
-    }
+  function buildChart(trades, days) {
+    if (typeof days === "undefined") days = activeRange;
+    if (!trades || !trades.length) { $("chart-loading").innerHTML = '<span style="color:var(--muted)">No swaps found for this asset.</span>'; return; }
     $("chart-loading").style.display = "none";
     if (!chart) initChart();
 
-    var cArr = [], vArr = [], lineArr = [];
-    data.forEach(function (c) {
-      var t = c.timestamp || c.time || c.t;
-      var o = c.open || c.o || 0;
-      var h = c.high || c.h || 0;
-      var l = c.low || c.l || 0;
-      var cl = c.close || c.c || 0;
-      var v = c.volume || c.v || 0;
-      if (o === 0 && h === 0 && l === 0 && cl === 0) return; // skip empty candles
-      cArr.push({ time: t, open: o, high: h, low: l, close: cl });
-      vArr.push({ time: t, value: v, color: cl >= o ? "rgba(80,230,130,0.25)" : "rgba(255,122,122,0.25)" });
-      lineArr.push({ time: t, value: cl });
-    });
-
-    if (!cArr.length) {
-      if (window._allTrades && window._allTrades.length) {
-        buildChartFromTrades(window._allTrades, days);
-      } else {
-        $("chart-loading").innerHTML = '<span style="color:var(--muted)">No chart data available.</span>';
-      }
-      return;
-    }
-
-    // sort by time ascending
-    cArr.sort(function (a, b) { return a.time - b.time; });
-    vArr.sort(function (a, b) { return a.time - b.time; });
-    lineArr.sort(function (a, b) { return a.time - b.time; });
-
-    lineSeries.setData(lineArr);
-    candleSeries.setData(cArr);
-    volumeSeries.setData(vArr);
-    chart.timeScale().fitContent();
-  }
-
-  // fallback: build chart from raw trades (only if Vestige API fails)
-  function buildChartFromTrades(trades, days) {
-    if (!trades.length) { $("chart-loading").innerHTML = '<span style="color:var(--muted)">No swaps in this period.</span>'; return; }
-    $("chart-loading").style.display = "none";
-    if (!chart) initChart();
     var now = Math.floor(Date.now() / 1000);
     var from = days > 0 ? now - days * 86400 : 0;
     var filtered = trades.filter(function (tr) { return tr.t >= from; });
-    if (!filtered.length) return;
+    if (!filtered.length) {
+      // if no trades in range, show the latest available trades
+      filtered = trades.slice(-20);
+      if (!filtered.length) { $("chart-loading").innerHTML = '<span style="color:var(--muted)">No swaps in this period.</span>'; $("chart-loading").style.display = "flex"; return; }
+    }
+
+    // choose bucket size based on range
     var bucket = days <= 1 ? 900 : days <= 7 ? 3600 : days <= 30 ? 14400 : 86400;
-    var candles = {}, volumes = {};
+
+    // build raw candles from trades
+    var rawCandles = {}, volumes = {};
     filtered.forEach(function (tr) {
       var k = Math.floor(tr.t / bucket) * bucket;
-      if (!candles[k]) { candles[k] = { time: k, open: tr.price, high: tr.price, low: tr.price, close: tr.price }; volumes[k] = { time: k, value: 0 }; }
-      var c = candles[k]; c.close = tr.price; if (tr.price > c.high) c.high = tr.price; if (tr.price < c.low) c.low = tr.price;
+      if (!rawCandles[k]) {
+        rawCandles[k] = { time: k, open: tr.price, high: tr.price, low: tr.price, close: tr.price };
+        volumes[k] = { time: k, value: 0 };
+      }
+      var c = rawCandles[k];
+      c.close = tr.price;
+      if (tr.price > c.high) c.high = tr.price;
+      if (tr.price < c.low) c.low = tr.price;
       volumes[k].value += tr.asa;
     });
-    var cArr = Object.keys(candles).sort().map(function (k) { return candles[k]; });
-    var vArr = Object.keys(volumes).sort().map(function (k) { var v = volumes[k]; v.color = candles[k] && candles[k].close >= candles[k].open ? "rgba(80,230,130,0.25)" : "rgba(255,122,122,0.25)"; return v; });
+
+    // fill gaps: create flat candles between existing candles using previous close
+    var rawKeys = Object.keys(rawCandles).map(Number).sort(function (a, b) { return a - b; });
+    if (rawKeys.length >= 2) {
+      var firstT = rawKeys[0];
+      var lastT = rawKeys[rawKeys.length - 1];
+      var prevClose = rawCandles[firstT].close;
+      for (var t = firstT; t <= lastT; t += bucket) {
+        if (rawCandles[t]) {
+          prevClose = rawCandles[t].close;
+        } else {
+          // gap candle: flat at previous close
+          rawCandles[t] = { time: t, open: prevClose, high: prevClose, low: prevClose, close: prevClose };
+          volumes[t] = { time: t, value: 0 };
+        }
+      }
+    }
+
+    // sort and build arrays
+    var sortedKeys = Object.keys(rawCandles).map(Number).sort(function (a, b) { return a - b; });
+    var cArr = sortedKeys.map(function (k) { return rawCandles[k]; });
+    var vArr = sortedKeys.map(function (k) {
+      var v = volumes[k] || { time: k, value: 0 };
+      v.color = rawCandles[k].close >= rawCandles[k].open ? "rgba(80,230,130,0.25)" : "rgba(255,122,122,0.25)";
+      return v;
+    });
     var lineArr = cArr.map(function (c) { return { time: c.time, value: c.close }; });
+
     lineSeries.setData(lineArr);
     candleSeries.setData(cArr);
     volumeSeries.setData(vArr);
@@ -1023,12 +1009,10 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
       document.querySelectorAll(".tf-tab").forEach(function (b) { b.classList.remove("active"); });
       btn.classList.add("active");
       activeRange = parseInt(btn.dataset.r, 10);
-      if (currentAsset) {
+      if (_allTrades.length) {
         $("chart-loading").style.display = "flex";
         $("chart-loading").innerHTML = '<div class="spinner"></div>Loading chart data…';
-        loadVestigeCandles(currentAsset.id, activeRange).then(function (data) {
-          renderCandles(data, currentAsset.id, activeRange);
-        });
+        buildChart(_allTrades, activeRange);
       }
     });
   });
@@ -1040,7 +1024,7 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
     var pDec = 6;
     if (showing.length && showing[0].price > 10) pDec = 2;
     else if (showing.length && showing[0].price > 0.1) pDec = 4;
-    $("tv-trade-count").textContent = trades.length + " swaps (30d)";
+    $("tv-trade-count").textContent = trades.length + " swaps (90d)";
     $("tv-trades").innerHTML = showing.map(function (tr) {
       var d = new Date(tr.t * 1000);
       var time = d.toLocaleDateString([], { day: "2-digit", month: "short" }) + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
