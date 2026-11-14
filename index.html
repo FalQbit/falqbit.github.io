@@ -2378,7 +2378,7 @@ document.documentElement.classList.add("js");
     function all(addr, next, acc) {
       acc = acc || [];
       return fetchJSON(IDX + "/v2/accounts/" + addr + "/transactions?tx-type=axfer&asset-id=" + ASSET + "&limit=1000" + (next ? "&next=" + encodeURIComponent(next) : ""))
-        .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 3000 ? all(addr, j["next-token"], acc) : acc; });
+        .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 5000 ? all(addr, j["next-token"], acc) : acc; });
     }
     function note(t) { try { return t.note ? atob(t.note) : ""; } catch (e) { return ""; } }
     Promise.all([all(RW), all(PR).catch(function () { return []; })]).then(function (x) {
