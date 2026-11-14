@@ -596,6 +596,12 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
   var TINYMAN_APP = 1002541853;
   var USDC_POOL = "GPNMDACPNDLIQESXUQX4AXXHEBBUAIRCMOY3Z42XDQPH5HYNFASXNPMZFQ";
 
+  // known Tinyman v2 pools (ASA ID → pool address)
+  var KNOWN_POOLS = {
+    3760920399: "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", // FALQBIT
+    31566704: "GPNMDACPNDLIQESXUQX4AXXHEBBUAIRCMOY3Z42XDQPH5HYNFASXNPMZFQ",  // USDC
+  };
+
   var chart = null, candleSeries = null, volumeSeries = null;
   var currentAsset = null;
   var usdPerAlgo = null;
@@ -754,25 +760,45 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
   }
 
   /* ---- find Tinyman v2 pool ---- */
+  function getPoolState(addr) {
+    return fetchJSON(IDX + "/v2/accounts/" + addr + "/applications/" + TINYMAN_APP)
+      .then(function (j) {
+        if (j && j["app-local-state"]) {
+          var kv = j["app-local-state"]["key-value"] || [], keys = {};
+          kv.forEach(function (x) { keys[atob(x.key)] = x.value.uint; });
+          if (keys.asset_1_reserves > 0 || keys.asset_2_reserves > 0) return { addr: addr, keys: keys };
+        }
+        return null;
+      }).catch(function () { return null; });
+  }
+
   function findPool(assetId) {
-    return fetchJSON(IDX + "/v2/assets/" + assetId + "/balances?limit=100&currency-greater-than=0")
+    // 1) check known pools first
+    if (KNOWN_POOLS[assetId]) {
+      return getPoolState(KNOWN_POOLS[assetId]).then(function (r) {
+        if (r) return r;
+        return searchPool(assetId); // fallback if known pool is stale
+      });
+    }
+    return searchPool(assetId);
+  }
+
+  function searchPool(assetId) {
+    return fetchJSON(IDX + "/v2/assets/" + assetId + "/balances?limit=200&currency-greater-than=0")
       .then(function (j) {
         var candidates = ((j && j.balances) || []).map(function (b) { return b.address; });
-        var checks = candidates.slice(0, 20).map(function (addr) {
-          return fetchJSON(IDX + "/v2/accounts/" + addr + "/applications/" + TINYMAN_APP)
-            .then(function (j) {
-              if (j && j["app-local-state"]) {
-                var kv = j["app-local-state"]["key-value"] || [], keys = {};
-                kv.forEach(function (x) { keys[atob(x.key)] = x.value.uint; });
-                if (keys.asset_1_reserves > 0 || keys.asset_2_reserves > 0) return { addr: addr, keys: keys };
-              }
-              return null;
-            }).catch(function () { return null; });
-        });
-        return Promise.all(checks).then(function (r) {
-          for (var i = 0; i < r.length; i++) { if (r[i]) return r[i]; }
-          return null;
-        });
+        // check in small sequential batches to avoid rate limits
+        var idx = 0;
+        function next() {
+          if (idx >= candidates.length || idx >= 40) return Promise.resolve(null);
+          var batch = candidates.slice(idx, idx + 5);
+          idx += 5;
+          return Promise.all(batch.map(getPoolState)).then(function (results) {
+            for (var i = 0; i < results.length; i++) { if (results[i]) return results[i]; }
+            return next();
+          });
+        }
+        return next();
       }).catch(function () { return null; });
   }
 
