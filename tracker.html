@@ -759,11 +759,15 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
       $("tv-supply").textContent = fmtShort((p.total || 0) / div);
     }).catch(function () {});
 
+    // load chart from Vestige API (independent of pool)
+    loadVestigeCandles(assetId, activeRange).then(function (data) {
+      renderCandles(data, assetId, activeRange);
+    });
+
     findPool(assetId).then(function (pool) {
       if (!pool) {
         $("tv-price").textContent = "No pool";
         $("tv-liq").textContent = "—";
-        $("chart-loading").innerHTML = '<span style="color:var(--muted)">No Tinyman v2 pool found for this asset.</span>';
         return;
       }
       loadPoolData(pool, assetId, decimals, div);
@@ -896,7 +900,7 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
         $("tv-change").className = "value " + (chg >= 0 ? "up" : "down");
       } else { $("tv-vol").textContent = "0"; $("tv-change").textContent = "—"; }
 
-      buildChart(trades);
+      window._allTrades = trades;
       trades.sort(function (a, b) { return b.t - a.t; });
       renderTradesTable(trades);
     }).catch(function () {
@@ -905,11 +909,11 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
     });
   }
 
-  /* ---- TradingView chart ---- */
+  /* ---- TradingView chart (data from Vestige API) ---- */
+  var VESTIGE_API = "https://free-api.vestige.fi";
   var activeRange = 30;
-  function buildChart(trades) {
-    if (!trades.length) { $("chart-loading").innerHTML = '<span style="color:var(--muted)">No swaps in this period.</span>'; return; }
-    $("chart-loading").style.display = "none";
+
+  function initChart() {
     if (chart) { chart.remove(); chart = null; }
     var container = $("chart-container");
     chart = LightweightCharts.createChart(container, {
@@ -934,12 +938,69 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
       color: "#3FE0D0", priceFormat: { type: "volume" },
       priceScaleId: "", scaleMargins: { top: 0.85, bottom: 0 }
     });
-    window._allTrades = trades;
-    updateChartData(trades, activeRange);
-    new ResizeObserver(function () { chart.applyOptions({ width: container.clientWidth }); }).observe(container);
+    new ResizeObserver(function () { if (chart) chart.applyOptions({ width: container.clientWidth }); }).observe(container);
   }
 
-  function updateChartData(trades, days) {
+  function loadVestigeCandles(assetId, days) {
+    var now = Math.floor(Date.now() / 1000);
+    var start = days > 0 ? now - days * 86400 : now - 365 * 86400;
+    var interval = days <= 1 ? 900 : days <= 7 ? 3600 : days <= 30 ? 14400 : 86400;
+    var url = VESTIGE_API + "/assets/" + assetId + "/candles?network_id=0&interval=" + interval + "&start=" + start + "&end=" + now + "&denominating_asset_id=0";
+    return fetch(url).then(function (r) { return r.json(); }).catch(function () { return null; });
+  }
+
+  function renderCandles(data, assetId, days) {
+    if (!data || !Array.isArray(data) || !data.length) {
+      // fallback: try to build chart from trades if Vestige has no data
+      if (window._allTrades && window._allTrades.length) {
+        buildChartFromTrades(window._allTrades, days);
+      } else {
+        $("chart-loading").innerHTML = '<span style="color:var(--muted)">No chart data available for this period.</span>';
+      }
+      return;
+    }
+    $("chart-loading").style.display = "none";
+    if (!chart) initChart();
+
+    var cArr = [], vArr = [], lineArr = [];
+    data.forEach(function (c) {
+      var t = c.timestamp || c.time || c.t;
+      var o = c.open || c.o || 0;
+      var h = c.high || c.h || 0;
+      var l = c.low || c.l || 0;
+      var cl = c.close || c.c || 0;
+      var v = c.volume || c.v || 0;
+      if (o === 0 && h === 0 && l === 0 && cl === 0) return; // skip empty candles
+      cArr.push({ time: t, open: o, high: h, low: l, close: cl });
+      vArr.push({ time: t, value: v, color: cl >= o ? "rgba(80,230,130,0.25)" : "rgba(255,122,122,0.25)" });
+      lineArr.push({ time: t, value: cl });
+    });
+
+    if (!cArr.length) {
+      if (window._allTrades && window._allTrades.length) {
+        buildChartFromTrades(window._allTrades, days);
+      } else {
+        $("chart-loading").innerHTML = '<span style="color:var(--muted)">No chart data available.</span>';
+      }
+      return;
+    }
+
+    // sort by time ascending
+    cArr.sort(function (a, b) { return a.time - b.time; });
+    vArr.sort(function (a, b) { return a.time - b.time; });
+    lineArr.sort(function (a, b) { return a.time - b.time; });
+
+    lineSeries.setData(lineArr);
+    candleSeries.setData(cArr);
+    volumeSeries.setData(vArr);
+    chart.timeScale().fitContent();
+  }
+
+  // fallback: build chart from raw trades (only if Vestige API fails)
+  function buildChartFromTrades(trades, days) {
+    if (!trades.length) { $("chart-loading").innerHTML = '<span style="color:var(--muted)">No swaps in this period.</span>'; return; }
+    $("chart-loading").style.display = "none";
+    if (!chart) initChart();
     var now = Math.floor(Date.now() / 1000);
     var from = days > 0 ? now - days * 86400 : 0;
     var filtered = trades.filter(function (tr) { return tr.t >= from; });
@@ -952,30 +1013,8 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
       var c = candles[k]; c.close = tr.price; if (tr.price > c.high) c.high = tr.price; if (tr.price < c.low) c.low = tr.price;
       volumes[k].value += tr.asa;
     });
-    // fill gaps: insert flat candles so the line series has continuous timestamps
-    var keys = Object.keys(candles).sort();
-    if (keys.length > 1) {
-      var first = parseInt(keys[0], 10);
-      var last = parseInt(keys[keys.length - 1], 10);
-      var prev = candles[first].close;
-      for (var t = first; t <= last; t += bucket) {
-        if (candles[t]) { prev = candles[t].close; }
-        else { candles[t] = { time: t, open: prev, high: prev, low: prev, close: prev }; volumes[t] = { time: t, value: 0 }; }
-      }
-    }
-    // build arrays — mark gap candles with transparent colors so only line shows
-    var realKeys = {};
-    filtered.forEach(function (tr) { realKeys[Math.floor(tr.t / bucket) * bucket] = true; });
-    var cArr = Object.keys(candles).sort().map(function (k) {
-      var c = candles[k];
-      if (!realKeys[k]) {
-        // gap candle: make it transparent so line series bridges it
-        c.color = "transparent"; c.borderColor = "transparent"; c.wickColor = "transparent";
-      }
-      return c;
-    });
+    var cArr = Object.keys(candles).sort().map(function (k) { return candles[k]; });
     var vArr = Object.keys(volumes).sort().map(function (k) { var v = volumes[k]; v.color = candles[k] && candles[k].close >= candles[k].open ? "rgba(80,230,130,0.25)" : "rgba(255,122,122,0.25)"; return v; });
-    // line series: continuous close price line (fills visual gaps)
     var lineArr = cArr.map(function (c) { return { time: c.time, value: c.close }; });
     lineSeries.setData(lineArr);
     candleSeries.setData(cArr);
@@ -988,7 +1027,13 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
       document.querySelectorAll(".tf-tab").forEach(function (b) { b.classList.remove("active"); });
       btn.classList.add("active");
       activeRange = parseInt(btn.dataset.r, 10);
-      if (window._allTrades) updateChartData(window._allTrades, activeRange);
+      if (currentAsset) {
+        $("chart-loading").style.display = "flex";
+        $("chart-loading").innerHTML = '<div class="spinner"></div>Loading chart data…';
+        loadVestigeCandles(currentAsset.id, activeRange).then(function (data) {
+          renderCandles(data, currentAsset.id, activeRange);
+        });
+      }
     });
   });
 
