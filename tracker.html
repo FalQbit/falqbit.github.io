@@ -599,10 +599,13 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
   // known Tinyman v2 pools (ASA ID → pool address)
   var KNOWN_POOLS = {
     3760920399: "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", // FALQBIT
-    31566704: "FPOU46NBKTWUZCNMNQNXRWNW3SMPOOK4ZJIN5WSILCWP662ANJLTXVRUKA",  // USDC (Tinyman v2)
+    31566704: "FPOU46NBKTWUZCNMNQNXRWNW3SMPOOK4ZJIN5WSILCWP662ANJLTXVRUKA",  // USDC
+    700965019: "EWBJXKHQJM5Z5PYZG5BKXMD2AF3HKTFN7JLCI2HEGEOWO7KMBGGDW4ANXQ",  // VEST
+    386192725: "L6CDM74YQEZ7RABX7AGTD32ZJEMDOJ5OGY4QNGZUS35S5VPIGC5UNHZTPA",  // goETH
+    386195940: "FKMV6GSU57764TQ5NLSBEDXNPUXL7OAOKANVDP2A6FSB77BHI3GTWHQAZA",  // goBTC
   };
 
-  var chart = null, candleSeries = null, volumeSeries = null;
+  var chart = null, candleSeries = null, volumeSeries = null, lineSeries = null;
   var currentAsset = null;
   var usdPerAlgo = null;
 
@@ -745,6 +748,7 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
     // clear previous chart data
     if (candleSeries) { try { chart.removeSeries(candleSeries); } catch (e) {} candleSeries = null; }
     if (volumeSeries) { try { chart.removeSeries(volumeSeries); } catch (e) {} volumeSeries = null; }
+    if (lineSeries) { try { chart.removeSeries(lineSeries); } catch (e) {} lineSeries = null; }
     $("tv-trades").innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading…</div>';
     $("tv-top-holders").innerHTML = '<div class="loading-msg"><div class="spinner"></div>Loading…</div>';
     $("tv-distribution").innerHTML = '';
@@ -795,22 +799,42 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
   }
 
   function searchPool(assetId) {
-    return fetchJSON(IDX + "/v2/assets/" + assetId + "/balances?limit=200&currency-greater-than=0")
+    // Strategy 1: find accounts with BOTH Tinyman v2 app AND this ASA (most efficient)
+    return fetchJSON(IDX + "/v2/accounts?application-id=" + TINYMAN_APP + "&asset-id=" + assetId + "&limit=20")
       .then(function (j) {
-        var candidates = ((j && j.balances) || []).map(function (b) { return b.address; });
-        // check in small sequential batches to avoid rate limits
+        var accts = (j && j.accounts) || [];
         var idx = 0;
-        function next() {
-          if (idx >= candidates.length || idx >= 40) return Promise.resolve(null);
-          var batch = candidates.slice(idx, idx + 5);
+        function check() {
+          if (idx >= accts.length) return Promise.resolve(null);
+          var batch = accts.slice(idx, idx + 5).map(function (a) { return a.address; });
           idx += 5;
           return Promise.all(batch.map(getPoolState)).then(function (results) {
             for (var i = 0; i < results.length; i++) { if (results[i]) return results[i]; }
-            return next();
+            return check();
           });
         }
-        return next();
-      }).catch(function () { return null; });
+        return check();
+      })
+      .then(function (result) {
+        if (result) return result;
+        // Strategy 2 fallback: search top holders of the ASA
+        return fetchJSON(IDX + "/v2/assets/" + assetId + "/balances?limit=200&currency-greater-than=0")
+          .then(function (j) {
+            var candidates = ((j && j.balances) || []).map(function (b) { return b.address; });
+            var idx2 = 0;
+            function next() {
+              if (idx2 >= candidates.length || idx2 >= 40) return Promise.resolve(null);
+              var batch = candidates.slice(idx2, idx2 + 5);
+              idx2 += 5;
+              return Promise.all(batch.map(getPoolState)).then(function (results) {
+                for (var i = 0; i < results.length; i++) { if (results[i]) return results[i]; }
+                return next();
+              });
+            }
+            return next();
+          });
+      })
+      .catch(function () { return null; });
   }
 
   function loadPoolData(pool, assetId, decimals, div) {
@@ -897,6 +921,10 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
       timeScale: { borderColor: "#24304F", timeVisible: true, secondsVisible: false },
       handleScroll: { vertTouchDrag: false }
     });
+    lineSeries = chart.addLineSeries({
+      color: "rgba(63,224,208,0.5)", lineWidth: 1,
+      crosshairMarkerVisible: false, lastValueVisible: false, priceLineVisible: false
+    });
     candleSeries = chart.addCandlestickSeries({
       upColor: "#50E682", downColor: "#FF7A7A",
       borderUpColor: "#50E682", borderDownColor: "#FF7A7A",
@@ -937,6 +965,9 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
     }
     var cArr = Object.keys(candles).sort().map(function (k) { return candles[k]; });
     var vArr = Object.keys(volumes).sort().map(function (k) { var v = volumes[k]; v.color = candles[k] && candles[k].close >= candles[k].open ? "rgba(80,230,130,0.25)" : "rgba(255,122,122,0.25)"; return v; });
+    // line series: continuous close price line (fills visual gaps)
+    var lineArr = cArr.map(function (c) { return { time: c.time, value: c.close }; });
+    lineSeries.setData(lineArr);
     candleSeries.setData(cArr);
     volumeSeries.setData(vArr);
     chart.timeScale().fitContent();
