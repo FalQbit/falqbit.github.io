@@ -594,12 +594,12 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
   var IDX = "https://mainnet-idx.4160.nodely.dev";
   var IDX_FB = "https://mainnet-idx.algonode.cloud";
   var TINYMAN_APP = 1002541853;
-  var USDC_POOL = "FPOU46NBKTWUZCNMNQNXRWNW3SMPOOK4ZJIN5WSILCWP662ANJLTXVRUKA";
+  var USDC_POOL = "2PIFZW53RHCSFSYMCFUBW4XOCXOMB7XOYQSQ6KGT3KVGJTL4HM6COZRNMM";
 
   // known Tinyman v2 pools (ASA ID → pool address)
   var KNOWN_POOLS = {
     3760920399: "CEQH5WNK3VFUVGZ6WET7GO2JLZVYY7BDPCN74LGWEUWC5WCMPYU7M7VCIA", // FALQBIT
-    31566704: "FPOU46NBKTWUZCNMNQNXRWNW3SMPOOK4ZJIN5WSILCWP662ANJLTXVRUKA",  // USDC
+    31566704: "2PIFZW53RHCSFSYMCFUBW4XOCXOMB7XOYQSQ6KGT3KVGJTL4HM6COZRNMM",  // USDC
     700965019: "EWBJXKHQJM5Z5PYZG5BKXMD2AF3HKTFN7JLCI2HEGEOWO7KMBGGDW4ANXQ",  // VEST
     386192725: "L6CDM74YQEZ7RABX7AGTD32ZJEMDOJ5OGY4QNGZUS35S5VPIGC5UNHZTPA",  // goETH
     386195940: "FKMV6GSU57764TQ5NLSBEDXNPUXL7OAOKANVDP2A6FSB77BHI3GTWHQAZA",  // goBTC
@@ -922,7 +922,7 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
       handleScroll: { vertTouchDrag: false }
     });
     lineSeries = chart.addLineSeries({
-      color: "rgba(63,224,208,0.5)", lineWidth: 1,
+      color: "rgba(63,224,208,0.65)", lineWidth: 2,
       crosshairMarkerVisible: false, lastValueVisible: false, priceLineVisible: false
     });
     candleSeries = chart.addCandlestickSeries({
@@ -952,7 +952,7 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
       var c = candles[k]; c.close = tr.price; if (tr.price > c.high) c.high = tr.price; if (tr.price < c.low) c.low = tr.price;
       volumes[k].value += tr.asa;
     });
-    // fill gaps with flat candles at last close price (like Tinyman/Vestige)
+    // fill gaps: insert flat candles so the line series has continuous timestamps
     var keys = Object.keys(candles).sort();
     if (keys.length > 1) {
       var first = parseInt(keys[0], 10);
@@ -963,7 +963,17 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
         else { candles[t] = { time: t, open: prev, high: prev, low: prev, close: prev }; volumes[t] = { time: t, value: 0 }; }
       }
     }
-    var cArr = Object.keys(candles).sort().map(function (k) { return candles[k]; });
+    // build arrays — mark gap candles with transparent colors so only line shows
+    var realKeys = {};
+    filtered.forEach(function (tr) { realKeys[Math.floor(tr.t / bucket) * bucket] = true; });
+    var cArr = Object.keys(candles).sort().map(function (k) {
+      var c = candles[k];
+      if (!realKeys[k]) {
+        // gap candle: make it transparent so line series bridges it
+        c.color = "transparent"; c.borderColor = "transparent"; c.wickColor = "transparent";
+      }
+      return c;
+    });
     var vArr = Object.keys(volumes).sort().map(function (k) { var v = volumes[k]; v.color = candles[k] && candles[k].close >= candles[k].open ? "rgba(80,230,130,0.25)" : "rgba(255,122,122,0.25)"; return v; });
     // line series: continuous close price line (fills visual gaps)
     var lineArr = cArr.map(function (c) { return { time: c.time, value: c.close }; });
