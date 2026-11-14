@@ -632,9 +632,12 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
   }
 
   function loadUsdPrice() {
-    return fetchJSON(IDX + "/v2/accounts/" + USDC_POOL + "/applications/" + TINYMAN_APP)
+    return fetchJSON(IDX + "/v2/accounts/" + USDC_POOL + "/apps-local-state?application-id=" + TINYMAN_APP)
       .then(function (j) {
-        var kv = ((j["app-local-state"] || {})["key-value"]) || [], r = {};
+        var states = (j && j["apps-local-states"]) || [];
+        var st = states[0];
+        if (!st) return;
+        var kv = st["key-value"] || [], r = {};
         kv.forEach(function (x) { r[atob(x.key)] = x.value.uint; });
         if (r.asset_1_reserves && r.asset_2_reserves) usdPerAlgo = r.asset_1_reserves / r.asset_2_reserves;
       }).catch(function () {});
@@ -761,10 +764,12 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
 
   /* ---- find Tinyman v2 pool ---- */
   function getPoolState(addr) {
-    return fetchJSON(IDX + "/v2/accounts/" + addr + "/applications/" + TINYMAN_APP)
+    return fetchJSON(IDX + "/v2/accounts/" + addr + "/apps-local-state?application-id=" + TINYMAN_APP)
       .then(function (j) {
-        if (j && j["app-local-state"]) {
-          var kv = j["app-local-state"]["key-value"] || [], keys = {};
+        var states = (j && j["apps-local-states"]) || [];
+        var st = states[0];
+        if (st) {
+          var kv = st["key-value"] || [], keys = {};
           kv.forEach(function (x) { keys[atob(x.key)] = x.value.uint; });
           if (keys.asset_1_reserves > 0 || keys.asset_2_reserves > 0) return { addr: addr, keys: keys };
         }
@@ -989,15 +994,14 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
           '<span class="holder-bal">' + fmtShort(bal) + '</span><span class="holder-pct">' + fmt(pct, 1) + '%</span></div>';
       }).join("");
 
-      // distribution
+      // distribution (ranges in human-readable token amounts, compare against b.amount/div)
       var ranges;
       if (decimals >= 6) {
         ranges = [[0, 1e6, "< 1M"], [1e6, 1e7, "1M–10M"], [1e7, 1e8, "10M–100M"], [1e8, 1e9, "100M–1B"], [1e9, Infinity, "1B+"]];
       } else {
-        var u = Math.pow(10, decimals);
-        ranges = [[0, u, "< 1"], [u, 10 * u, "1–10"], [10 * u, 100 * u, "10–100"], [100 * u, 1000 * u, "100–1k"], [1000 * u, Infinity, "1k+"]];
+        ranges = [[0, 1, "< 1"], [1, 10, "1–10"], [10, 100, "10–100"], [100, 1000, "100–1k"], [1000, Infinity, "1k+"]];
       }
-      var dist = ranges.map(function (r) { return { label: r[2], count: bals.filter(function (b) { return b.amount >= r[0] && b.amount < r[1]; }).length }; });
+      var dist = ranges.map(function (r) { return { label: r[2], count: bals.filter(function (b) { var human = b.amount / div; return human >= r[0] && human < r[1]; }).length }; });
       var maxC = Math.max.apply(null, dist.map(function (d) { return d.count; })) || 1;
       $("tv-distribution").innerHTML = '<div class="dist-bar">' + dist.map(function (d) {
         return '<div class="dist-col"><span class="cnt">' + d.count + '</span><div class="bar" style="height:' + Math.max(3, (d.count / maxC) * 120) + 'px"></div><span class="lbl">' + d.label + '</span></div>';
