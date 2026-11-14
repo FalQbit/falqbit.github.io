@@ -123,6 +123,7 @@ details.lowlist summary, .skipped summary { cursor: pointer; font: 600 12px/1.4 
     <div class="actions" style="flex-direction:row; flex-wrap:wrap;">
       <button class="ghost small" id="b-scan" type="button">Check the chain</button>
       <button class="ghost small" id="b-reset" type="button" hidden>Take a new snapshot</button>
+      <button class="ghost small" id="b-clearcache" type="button" style="color:var(--amber)">Clear local cache</button>
     </div>
     <div class="detail" id="p-summary">Press "Check the chain" to build the list.</div>
     <ul class="list" id="p-list"><li class="empty">No list yet.</li></ul>
@@ -691,6 +692,18 @@ $("b-reset").addEventListener("click", () => {
   scan();
 });
 $("b-pay").addEventListener("click", payBatch);
+$("b-clearcache").addEventListener("click", () => {
+  if (!confirm("Clear all local caches (paid list, funders, skip list, snapshots)? The on-chain data stays — just press Check the chain after.")) return;
+  try { localStorage.removeItem(LOCAL_PAID); } catch {}
+  try { localStorage.removeItem(SKIP_KEY); } catch {}
+  try { localStorage.removeItem(FUND_KEY); } catch {}
+  try { localStorage.removeItem(OUT_KEY); } catch {}
+  try { localStorage.removeItem(SNAP_KEY()); } catch {}
+  try { localStorage.removeItem("fq-prog"); } catch {}
+  SKIP.clear(); FUND_CACHE = {};
+  log("Local cache cleared. Press Check the chain to rebuild from on-chain data.");
+  say("Cache cleared.", "ok");
+});
 
 setMode("welcome");
 if (cfg?.rewards) c.reconnect().then((a) => { if (a.length) { account = a[0]; c.pera.connector?.on("disconnect", disconnect); refreshWallet(); } }).catch(() => {});
