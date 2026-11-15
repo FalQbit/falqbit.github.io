@@ -859,8 +859,8 @@ a:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; border-ra
     var since = new Date(Date.now() - 90 * 86400000).toISOString();
     function page(next, acc) {
       acc = acc || [];
-      return fetchJSON(IDX + "/v2/accounts/" + poolAddr + "/transactions?limit=500&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
-        .then(function (j) { j = j || { transactions: [] }; acc = acc.concat(j.transactions || []); if (j["next-token"] && (j.transactions || []).length && acc.length < 5000) return page(j["next-token"], acc); return acc; });
+      return fetchJSON(IDX + "/v2/accounts/" + poolAddr + "/transactions?limit=1000&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
+        .then(function (j) { j = j || { transactions: [] }; acc = acc.concat(j.transactions || []); if (j["next-token"] && (j.transactions || []).length && acc.length < 30000) return page(j["next-token"], acc); return acc; });
     }
     page().then(function (txs) {
       var seen = {}, byGroup = {};

@@ -2474,7 +2474,7 @@ document.documentElement.classList.add("js");
   function allTx(after, next, acc) {
     acc = acc || [];
     return fetchJSON(IDX + "/v2/assets/" + ASSET + "/transactions?limit=1000&after-time=" + encodeURIComponent(after) + (next ? "&next=" + encodeURIComponent(next) : ""))
-      .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 2000 ? allTx(after, j["next-token"], acc) : acc; });
+      .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 20000 ? allTx(after, j["next-token"], acc) : acc; });
   }
   function dayKey(t) { return new Date(t * 1000).toISOString().slice(0, 10); }
   function loadActivity() {
