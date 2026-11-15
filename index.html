@@ -2553,8 +2553,8 @@ document.documentElement.classList.add("js");
     PC_LOAD = Date.now(); var mine = PC_LOAD;
     function page(next, acc) {
       acc = acc || [];
-      return fetchJSON(IDX + "/v2/accounts/" + PFX + "/transactions?limit=500&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
-        .then(function (j) { j = j || { transactions: [] }; acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 1500 ? page(j["next-token"], acc) : acc; });
+      return fetchJSON(IDX + "/v2/accounts/" + PFX + "/transactions?limit=1000&after-time=" + encodeURIComponent(since) + (next ? "&next=" + encodeURIComponent(next) : ""))
+        .then(function (j) { j = j || { transactions: [] }; acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 20000 ? page(j["next-token"], acc) : acc; });
     }
     page().then(function (txs) {
       if (mine !== PC_LOAD) return;
