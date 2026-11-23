@@ -1018,7 +1018,10 @@ function renderLive() {
   // welcome drop
   if (PROG) {
     const t = tierFor(PROG.n);
-    $("l-drop").textContent = `${fmt(PROG.n)} / 1,000`;
+    // the drop was capped at 1,000 spots. A few extra manual re-sends (for people who reported not receiving)
+    // can push the raw count above that, so display is clamped to 1,000.
+    const shown = Math.min(1000, PROG.n);
+    $("l-drop").textContent = `${fmt(shown)} / 1,000`;
     const pct = Math.min(100, PROG.n / 10);
     $("l-drop-bar").style.width = pct + "%";
     $("l-drop-info").textContent = t ? `Next: ${fmt(t)} FALQBIT · ${fmt(Math.max(0, 1000 - PROG.n))} spots left` : "Welcome drop complete";
@@ -1031,7 +1034,7 @@ function renderDrop() {
   $("w-drop").hidden = false;
   const n = PROG ? PROG.n : null, t = n == null ? null : tierFor(n);
   $("w-drop-bar").style.width = n == null ? "0" : Math.min(100, n / 10) + "%";
-  $("w-drop-fine").textContent = n == null ? "" : `${fmt(n)} of 1,000 accounts welcomed · ${t ? fmt(t) + " FALQBIT for the next ones" : "drop complete"}`;
+  $("w-drop-fine").textContent = n == null ? "" : `${fmt(Math.min(1000, n))} of 1,000 accounts welcomed · ${t ? fmt(t) + " FALQBIT for the next ones" : "drop complete"}`;
   const b = $("w-drop-body");
   if (MYDROP) b.innerHTML = `<b class="ok">✓ ${fmt(MYDROP.amount / DEC)} FALQBIT</b><span class="muted">Received on ${new Date(MYDROP.at * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short" })}. Welcome!</span>`;
   else if (PROG && PROG.paid.has(account)) b.innerHTML = `<b class="ok">✓ Received</b><span class="muted">This account already got its welcome drop.</span>`;
