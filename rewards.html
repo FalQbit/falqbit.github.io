@@ -115,6 +115,7 @@ details.lowlist summary, .skipped summary { cursor: pointer; font: 600 12px/1.4 
   <div class="tabs" role="group" aria-label="Reward type">
     <button type="button" id="t-welcome" aria-pressed="true">Welcome drop</button>
     <button type="button" id="t-hold" aria-pressed="false">Hold-to-earn</button>
+    <button type="button" id="t-ref" aria-pressed="false">Referrals</button>
   </div>
 
   <section class="panel" style="padding:20px; display:flex; flex-direction:column; gap:14px;">
@@ -177,6 +178,21 @@ const FEE = 3000;                          // a Falcon-signed transfer
 const NOTE_WELCOME = "FALQBIT welcome";
 const month = new Date().toISOString().slice(0, 7);
 const NOTE_HOLD = `FALQBIT hold ${month}`;
+
+// ---- referral program ----
+const REFCFG = cfgAll.referral || {};
+const REF_NOTE = REFCFG.note_prefix || "falqbit-ref:";
+const REF_NOTE_R = REFCFG.payout_note_referrer_prefix || "falqbit-refpay-r:";
+const REF_NOTE_F = REFCFG.payout_note_referred_prefix || "falqbit-refpay-f:";
+const REF_REWARD_R = BigInt(REFCFG.reward_referrer || 250000) * DEC;
+const REF_REWARD_F = BigInt(REFCFG.reward_referred || 250000) * DEC;
+const REF_MIN_REFERRER = BigInt(REFCFG.min_referrer || 1000000) * DEC;
+const REF_MIN_REFERRED = BigInt(REFCFG.min_referred || 1000000) * DEC;
+const REF_HOLD_SEC = (REFCFG.hold_days || 7) * 86400;
+const REF_SPOTS = REFCFG.spots || 500;
+const REF_MAX_PER = REFCFG.max_per_referrer || 10;
+const REF_START = REFCFG.start ? Date.parse(REFCFG.start) / 1000 : 0;
+const REF_END = REFCFG.end ? Date.parse(REFCFG.end) / 1000 : 0;
 
 const net = pickNetwork() || "mainnet";
 const cfg = cfgAll[net];
@@ -497,6 +513,163 @@ async function lowestSinceFirst(current, addrs) {
   return low;
 }
 
+// ---- Referrals ----
+// Replay FALQBIT balance history backwards for `addr`; return {bal, since} where `since` is the
+// unix timestamp when balance last reached (and stayed above) min. Null if below.
+async function refHoldStart(addr, minAmount) {
+  const h = await c.algodGet(`/v2/accounts/${addr}/assets/${cfg.asset_id}`).catch(() => null);
+  const cur = BigInt(h?.["asset-holding"]?.amount || 0);
+  if (cur < minAmount) return { bal: cur, since: null };
+  const txs = await indexerAll(`/v2/accounts/${addr}/transactions?tx-type=axfer&asset-id=${cfg.asset_id}`, "transactions");
+  txs.sort((a, b) => b["round-time"] - a["round-time"]);
+  let bal = cur;
+  for (const t of txs) {
+    let d = 0n;
+    const walk = (x) => {
+      const a = x["asset-transfer-transaction"];
+      if (a && (a["asset-id"] ?? cfg.asset_id) === cfg.asset_id) {
+        if (a.receiver === addr) d += BigInt(a.amount || 0);
+        if (x.sender === addr) d -= BigInt(a.amount || 0) + BigInt(a["close-amount"] || 0);
+      }
+      for (const it of x["inner-txns"] || []) walk(it);
+    };
+    walk(t);
+    const before = bal - d;
+    if (bal >= minAmount && before < minAmount) return { bal: cur, since: t["round-time"] };
+    bal = before;
+  }
+  return { bal: cur, since: txs.length ? txs[txs.length - 1]["round-time"] : null };
+}
+
+async function firstFalqbitTxn(addr) {
+  const txs = await indexerAll(`/v2/accounts/${addr}/transactions?tx-type=axfer&asset-id=${cfg.asset_id}`, "transactions");
+  return txs.length ? Math.min(...txs.map((t) => t["round-time"] || 1e12)) : null;
+}
+
+async function buildRef() {
+  const now = Math.floor(Date.now() / 1000);
+  if (now < REF_START) {
+    $("p-summary").innerHTML = `Program starts <b>${new Date(REF_START * 1000).toLocaleString()}</b>. Come back then.`;
+    return [];
+  }
+  if (now > REF_END) {
+    $("p-summary").innerHTML = `Program ended on <b>${new Date(REF_END * 1000).toLocaleString()}</b>.`;
+    return [];
+  }
+
+  // 1. all referral invites recorded on-chain (via ?ref=)
+  const refNotePfx = encodeURIComponent(btoa(REF_NOTE));
+  const unlockTx = await indexerAll(`/v2/transactions?tx-type=pay&note-prefix=${refNotePfx}&address=${cfg.app_address}&address-role=receiver`, "transactions");
+  const invites = [];
+  const seenReferred = new Set();
+  unlockTx.sort((a, b) => (a["round-time"] || 0) - (b["round-time"] || 0));
+  for (const t of unlockTx) {
+    const p = t["payment-transaction"]; if (!p || p.receiver !== cfg.app_address) continue;
+    let note = ""; try { note = t.note ? atob(t.note) : ""; } catch {}
+    if (!note.startsWith(REF_NOTE)) continue;
+    const referrer = note.slice(REF_NOTE.length).trim();
+    const referred = t.sender, tt = t["round-time"] || 0;
+    if (referrer.length !== 58 || referred === referrer) continue;
+    if (EXCLUDE.has(referrer) || EXCLUDE.has(referred)) continue;
+    if (tt < REF_START || tt > REF_END) continue;
+    if (seenReferred.has(referred)) continue; // first invite wins
+    seenReferred.add(referred);
+    invites.push({ referrer, referred, t: tt });
+  }
+
+  // 2. payouts already made (both sides) — build sets of referred addresses that had each side paid
+  const [txsR, txsF] = await Promise.all([
+    indexerAll(`/v2/accounts/${cfg.rewards}/transactions?asset-id=${cfg.asset_id}&tx-type=axfer&note-prefix=${encodeURIComponent(btoa(REF_NOTE_R))}`, "transactions"),
+    indexerAll(`/v2/accounts/${cfg.rewards}/transactions?asset-id=${cfg.asset_id}&tx-type=axfer&note-prefix=${encodeURIComponent(btoa(REF_NOTE_F))}`, "transactions"),
+  ]);
+  const paidR = new Set(), paidF = new Set();
+  const paidByReferrer = new Map();
+  for (const t of txsR) {
+    if (t.sender !== cfg.rewards) continue;
+    let n = ""; try { n = t.note ? atob(t.note) : ""; } catch {}
+    if (!n.startsWith(REF_NOTE_R)) continue;
+    const refd = n.slice(REF_NOTE_R.length).trim();
+    paidR.add(refd);
+    const receiver = t["asset-transfer-transaction"]?.receiver;
+    if (receiver) paidByReferrer.set(receiver, (paidByReferrer.get(receiver) || 0) + 1);
+  }
+  for (const t of txsF) {
+    if (t.sender !== cfg.rewards) continue;
+    let n = ""; try { n = t.note ? atob(t.note) : ""; } catch {}
+    if (!n.startsWith(REF_NOTE_F)) continue;
+    paidF.add(n.slice(REF_NOTE_F.length).trim());
+  }
+  // local paid (this browser, not yet on indexer)
+  for (const k of Object.keys(localPaid())) {
+    if (!k.startsWith("ref:")) continue;
+    const note = k.slice(4);
+    if (note.startsWith(REF_NOTE_R)) paidR.add(note.slice(REF_NOTE_R.length));
+    else if (note.startsWith(REF_NOTE_F)) paidF.add(note.slice(REF_NOTE_F.length));
+  }
+  const spotsUsed = new Set([...paidR, ...paidF]);
+  const spotsLeft = Math.max(0, REF_SPOTS - spotsUsed.size);
+
+  // 3. validate each pending invite — produce up to 2 rows per valid one
+  const due = [];
+  const waiting = [];
+  const batchPerReferrer = {};
+  let newSpotsThisRun = 0;
+  for (const inv of invites) {
+    const bothDone = paidR.has(inv.referred) && paidF.has(inv.referred);
+    if (bothDone) continue;
+    const reservesSpot = !spotsUsed.has(inv.referred);
+    let why = null;
+    if (reservesSpot && (spotsLeft - newSpotsThisRun) <= 0) why = "no spots left";
+    if (!why) {
+      const ft = await firstFalqbitTxn(inv.referred);
+      if (ft !== null && ft < inv.t - 3600) why = "not new to FALQBIT (history before unlock)";
+    }
+    if (!why) {
+      const fr = await refHoldStart(inv.referred, REF_MIN_REFERRED);
+      if (fr.since === null) why = `referred below minimum (${fq(fr.bal)} FALQBIT)`;
+      else if (now - fr.since < REF_HOLD_SEC) {
+        const dLeft = Math.ceil((REF_HOLD_SEC - (now - fr.since)) / 86400);
+        why = `referred holding — ${dLeft}d left`;
+      }
+    }
+    if (!why) {
+      const re = await refHoldStart(inv.referrer, REF_MIN_REFERRER);
+      if (re.since === null) why = `referrer below minimum (${fq(re.bal)} FALQBIT)`;
+      else if (now - re.since < REF_HOLD_SEC) {
+        const dLeft = Math.ceil((REF_HOLD_SEC - (now - re.since)) / 86400);
+        why = `referrer holding — ${dLeft}d left`;
+      }
+    }
+    if (!why) {
+      const already = (paidByReferrer.get(inv.referrer) || 0) + (batchPerReferrer[inv.referrer] || 0);
+      if (already >= REF_MAX_PER) why = `referrer cap reached (${REF_MAX_PER})`;
+    }
+    if (why) { waiting.push({ ...inv, why }); continue; }
+    if (reservesSpot) newSpotsThisRun++;
+    batchPerReferrer[inv.referrer] = (batchPerReferrer[inv.referrer] || 0) + 1;
+    if (!paidR.has(inv.referred)) {
+      due.push({ to: inv.referrer, amount: REF_REWARD_R, note: REF_NOTE_R + inv.referred, side: "referrer", referred: inv.referred });
+    }
+    if (!paidF.has(inv.referred)) {
+      due.push({ to: inv.referred, amount: REF_REWARD_F, note: REF_NOTE_F + inv.referred, side: "friend", referred: inv.referred });
+    }
+  }
+
+  const totalDue = due.reduce((s, r) => s + r.amount, 0n);
+  $("p-summary").innerHTML = statGrid([
+    ["Invites on-chain", invites.length.toString()],
+    ["Spots used", spotsUsed.size.toString() + ` <small>/ ${REF_SPOTS}</small>`],
+    ["Spots left", spotsLeft.toString()],
+    ["Qualifying now", newSpotsThisRun.toString(), newSpotsThisRun > 0],
+    ["Pending rows", due.length.toString() + ` <small>· ${fq(totalDue)}</small>`, due.length > 0],
+    ["Waiting", waiting.length.toString()],
+  ]);
+  if (waiting.length) {
+    $("p-summary").innerHTML += `<details class="lowlist"><summary>⏳ Waiting on rules (${waiting.length})</summary><div class="chips">${waiting.map((w) => `<a class="chip" href="${c.n.lora}/account/${w.referred}" target="_blank" rel="noopener">${short(w.referred)} <span>${w.why}</span></a>`).join("")}</div></details>`;
+  }
+  return due;
+}
+
 async function buildHold() {
   const R = holdRules(month);
   const today = new Date().getUTCDate();
@@ -534,6 +707,19 @@ function render() {
   if (!queue.length) { ul.innerHTML = `<li class="empty">Nobody to pay right now.</li>`; }
   for (const r of queue.slice(0, 500)) {
     const li = document.createElement("li");
+    // referral mode: simpler row — side pill + "for <referred>"
+    if (mode === "ref") {
+      const sideFlag = r.side === "referrer"
+        ? `<span class="flag ok">referrer</span>`
+        : `<span class="flag amber">friend</span>`;
+      const forLine = `<span class="fund">${sideFlag} for referral <a href="${c.n.lora}/account/${r.referred}" target="_blank" rel="noopener">${short(r.referred)}</a></span>`;
+      li.innerHTML = `<span class="who"><a href="${c.n.lora}/account/${r.to}" target="_blank" rel="noopener">${short(r.to)}</a>${forLine}</span><span class="right"><span class="amt">${fq(r.amount)}</span><button type="button" class="skip">Skip</button></span>`;
+      li.querySelector(".skip").addEventListener("click", () => {
+        queue = queue.filter((q) => !(q.to === r.to && q.note === r.note)); render();
+      });
+      ul.append(li);
+      continue;
+    }
     const f = r.fund;
     const fundLine = f ? `<span class="fund">funded by <a href="${c.n.lora}/account/${f.from}" target="_blank" rel="noopener">${short(f.from)}</a> · ${(f.amt / 1e6).toFixed(2)} ALGO${f.at ? " · " + new Date(f.at * 1000).toLocaleString([], { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : ""}${r.dup > 1 ? `<span class="flag">same funder ×${r.dup}</span>` : ""}${r.chain ? `<span class="flag">funder got a drop</span>` : ""}${r.prior ? `<span class="flag">funder used before ×${r.prior}</span>` : ""}${r.sib ? `<span class="flag">funder is a FALQBIT account</span>` : ""}${r.hub ? `<span class="flag">funder collects from ${r.hub} welcomed</span>` : ""}${r.exch ? `<span class="flag ok">exchange</span>` : ""}${r.twin ? `<span class="flag amber">twin ×${r.twin}</span>` : ""}${r.burst ? `<span class="flag ${r.burst >= 4 ? '' : 'amber'}">same exchange ×${r.burst} within 30 min</span>` : ""}${r.feeds ? `<span class="flag amber">funded ${r.feeds} other on this list</span>` : ""}</span>` : (mode === "welcome" ? `<span class="fund">funder unknown</span>` : "");
     if (r.dup > 1 || r.chain || r.prior || r.sib || r.hub || (r.burst && r.burst >= 4)) li.className = "dup";
@@ -603,7 +789,9 @@ function renderSkipped() {
 async function scan() {
   try {
     $("b-scan").disabled = true; say("Reading the chain…");
-    queue = mode === "welcome" ? await buildWelcome() : await buildHold();
+    queue = mode === "welcome" ? await buildWelcome()
+         : mode === "hold"    ? await buildHold()
+         :                      await buildRef();
     say(""); render();
   } catch (e) { say(e.message || String(e), "err"); }
   finally { $("b-scan").disabled = false; }
@@ -613,46 +801,92 @@ function setMode(m) {
   mode = m; queue = []; render();
   $("t-welcome").setAttribute("aria-pressed", String(m === "welcome"));
   $("t-hold").setAttribute("aria-pressed", String(m === "hold"));
+  $("t-ref").setAttribute("aria-pressed", String(m === "ref"));
   $("b-reset").hidden = true;
   $("p-summary").textContent = 'Press "Check the chain" to build the list.';
   if (m === "welcome") {
     $("p-title").textContent = "Welcome drop";
     $("p-rules").innerHTML = `<li>A drop for every quantum account the gate has unlocked, in tiers: accounts 1–200 get 1,000,000 FALQBIT, 201–600 get 500,000, 601–800 get 250,000, 801–1,000 get 100,000.</li><li>Only the first ${WELCOME_CAP.toLocaleString()} accounts. Each account once, ever. The account must hold at least ${WELCOME_MIN_ALGO / 1e6} ALGO; others are skipped automatically and can get it in a later round.</li><li>Project accounts and the pool are left out. Transfers carry the note "${NOTE_WELCOME}".</li>`;
-  } else {
+  } else if (m === "hold") {
     $("p-title").textContent = "Hold-to-earn";
     const R = holdRules(month);
     $("p-rules").innerHTML = R.lowest
       ? `<li>${Number(R.rate) / 100}% of each wallet's lowest balance since the 1st, for wallets with at least ${fq(MIN_HOLD)} FALQBIT.</li><li>Max ${fq(R.perWallet)} FALQBIT per wallet. Monthly pool ${fq(R.pool)} FALQBIT shared by everyone; above it, all payouts shrink in the same proportion.</li><li>Paid on the ${PAY_DAY}th. The list is fixed the first time you check that day.</li><li>Project accounts, the pool and skipped wallets are left out. Transfers carry the note "${NOTE_HOLD}".</li>`
       : `<li>Launch month: ${Number(R.rate) / 100}% of each balance on the ${PAY_DAY}th, for wallets with at least ${fq(MIN_HOLD)} FALQBIT.</li><li>Max ${fq(R.perWallet)} FALQBIT per wallet. Monthly pool ${fq(R.pool)} FALQBIT shared by everyone; above it, all payouts shrink in the same proportion.</li><li>Pay on the ${PAY_DAY}th. The list is fixed the first time you check and kept for every batch.</li><li>Project accounts, the pool and skipped wallets are left out. Transfers carry the note "${NOTE_HOLD}".</li>`;
+  } else {
+    $("p-title").textContent = "Referrals";
+    $("p-rules").innerHTML = `<li>Each valid referral pays <b>${fq(REF_REWARD_R)}</b> FALQBIT to the referrer and <b>${fq(REF_REWARD_F)}</b> to the friend — same side, same day.</li><li>The friend must be new to FALQBIT, unlocked via <code>?ref=</code>, holding <b>${fq(REF_MIN_REFERRED)}+</b> for <b>${REFCFG.hold_days} days</b> continuously. The referrer must hold <b>${fq(REF_MIN_REFERRER)}+</b> for the same ${REFCFG.hold_days} days.</li><li>First <b>${REF_SPOTS}</b> referrals total · max <b>${REF_MAX_PER}</b> paid per referrer · ends ${new Date(REF_END * 1000).toLocaleDateString()}. Program wallets excluded; no self-referrals; no retroactive invites.</li><li>Each payment carries a unique note (<code>${REF_NOTE_R}&lt;referred&gt;</code> or <code>${REF_NOTE_F}&lt;referred&gt;</code>) so double-paying is impossible and the whole program is publicly auditable.</li>`;
   }
 }
 
 // ---- paying --------------------------------------------------------------
 async function payBatch() {
-  // never the same account twice in one batch
-  const seen = new Set(); queue = queue.filter((r) => !seen.has(r.to) && seen.add(r.to));
+  // "one receiver per batch" is a welcome/hold rule; referrals may legitimately pay the same wallet twice
+  // (e.g. referrer side for one referred + friend side for them if they referred someone AND were referred — rare but possible)
+  // so we dedupe by (receiver + note) for referrals, and by receiver alone for welcome/hold
+  if (mode === "ref") {
+    const seen = new Set(); queue = queue.filter((r) => { const k = r.to + "|" + (r.note || ""); if (seen.has(k)) return false; seen.add(k); return true; });
+  } else {
+    const seen = new Set(); queue = queue.filter((r) => !seen.has(r.to) && seen.add(r.to));
+  }
   const batch = queue.slice(0, BATCH);
   if (!batch.length) return;
   try {
     $("b-pay").disabled = true;
     // last check against the chain right before signing: drop anyone already paid
     say("Final check: making sure nobody in this batch was paid before…");
-    const fresh = mode === "welcome" ? await paidWelcome() : await paidWith(NOTE_HOLD).then((s) => { for (const k of Object.keys(localPaid())) if (k.startsWith(NOTE_HOLD + ":")) s.add(k.slice(NOTE_HOLD.length + 1)); return s; });
-    const already = batch.filter((r) => fresh.has(r.to));
+    let drop;
+    if (mode === "welcome") {
+      const fresh = await paidWelcome();
+      drop = (r) => fresh.has(r.to);
+    } else if (mode === "hold") {
+      const fresh = await paidWith(NOTE_HOLD);
+      for (const k of Object.keys(localPaid())) if (k.startsWith(NOTE_HOLD + ":")) fresh.add(k.slice(NOTE_HOLD.length + 1));
+      drop = (r) => fresh.has(r.to);
+    } else { // ref
+      const [paidR, paidF] = await Promise.all([paidWith(REF_NOTE_R), paidWith(REF_NOTE_F)]);
+      // paidWith returns a set of receivers; for refs we need the set of "referred" IDs by note suffix
+      // so rebuild from raw transactions
+      const prefixR = encodeURIComponent(btoa(REF_NOTE_R));
+      const prefixF = encodeURIComponent(btoa(REF_NOTE_F));
+      const [txsR, txsF] = await Promise.all([
+        indexerAll(`/v2/accounts/${cfg.rewards}/transactions?asset-id=${cfg.asset_id}&tx-type=axfer&note-prefix=${prefixR}`, "transactions"),
+        indexerAll(`/v2/accounts/${cfg.rewards}/transactions?asset-id=${cfg.asset_id}&tx-type=axfer&note-prefix=${prefixF}`, "transactions"),
+      ]);
+      const paidRefs = new Set();
+      for (const t of [...txsR, ...txsF]) {
+        if (t.sender !== cfg.rewards) continue;
+        let n = ""; try { n = t.note ? atob(t.note) : ""; } catch {}
+        paidRefs.add(n);
+      }
+      // also include what this browser just paid (before indexer catches up)
+      for (const k of Object.keys(localPaid())) if (k.startsWith("ref:")) paidRefs.add(k.slice(4));
+      drop = (r) => paidRefs.has(r.note);
+    }
+    const already = batch.filter(drop);
     if (already.length) {
-      queue = queue.filter((r) => !fresh.has(r.to));
-      say(`${already.length} account${already.length > 1 ? "s were" : " was"} already paid and removed: ${already.map((r) => short(r.to)).join(", ")}. Check the list and sign again.`, "err");
+      queue = queue.filter((r) => !drop(r));
+      say(`${already.length} payment${already.length > 1 ? "s were" : " was"} already settled and removed. Check the list and sign again.`, "err");
       render(); return;
     }
     say(`Approve ${batch.length} transfers in Pera…`);
     const sp = await c.params(FEE);
-    const note = new TextEncoder().encode(mode === "welcome" ? NOTE_WELCOME : NOTE_HOLD);
+    const defaultNote = new TextEncoder().encode(mode === "welcome" ? NOTE_WELCOME : NOTE_HOLD);
     const txns = batch.map((r) => algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-      sender: account, receiver: r.to, amount: r.amount, assetIndex: cfg.asset_id, note, suggestedParams: sp,
+      sender: account, receiver: r.to, amount: r.amount, assetIndex: cfg.asset_id,
+      note: r.note ? new TextEncoder().encode(r.note) : defaultNote,
+      suggestedParams: sp,
     }));
     const { id } = await c.signAndSend(txns);
-    markPaid(batch.map((r) => r.to), mode === "welcome" ? "welcome" : NOTE_HOLD);
-    log(`Paid ${batch.length} accounts · <a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">view on Lora</a>`);
+    if (mode === "ref") {
+      // track by the per-row note string so we don't try to pay the same side twice
+      const m = localPaid();
+      for (const r of batch) m["ref:" + r.note] = Date.now();
+      try { localStorage.setItem(LOCAL_PAID, JSON.stringify(m)); } catch {}
+    } else {
+      markPaid(batch.map((r) => r.to), mode === "welcome" ? "welcome" : NOTE_HOLD);
+    }
+    log(`Paid ${batch.length} ${mode === "ref" ? "referral side" + (batch.length > 1 ? "s" : "") : "account" + (batch.length > 1 ? "s" : "")} · <a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">view on Lora</a>`);
     queue = queue.slice(batch.length);
     say(queue.length ? "Batch done. Sign the next one when ready." : "All paid.", "ok");
     render(); refreshWallet();
@@ -686,6 +920,7 @@ $("b-connect").addEventListener("click", async () => {
 $("b-disconnect").addEventListener("click", disconnect);
 $("t-welcome").addEventListener("click", () => setMode("welcome"));
 $("t-hold").addEventListener("click", () => setMode("hold"));
+$("t-ref").addEventListener("click", () => setMode("ref"));
 $("b-scan").addEventListener("click", scan);
 $("b-reset").addEventListener("click", () => {
   try { localStorage.removeItem(SNAP_KEY()); } catch {}
