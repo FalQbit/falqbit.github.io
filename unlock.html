@@ -38,6 +38,7 @@
   </section>
 
   <div id="notlive" class="warnbox" hidden></div>
+  <div id="refbox" class="warnbox" hidden style="border-color:rgba(63,224,208,.35)"></div>
 
   <section class="panel" aria-live="polite" id="status">
     <div class="row" id="r-wallet"><span class="dot"></span><div><div class="label">Wallet</div><div class="detail">Not connected</div></div></div>
@@ -80,6 +81,39 @@ if (!cfg) {
 
 let account = null, found = null;
 
+// ---- referral program: capture ?ref=, keep it in the browser, record it in the unlock ----
+const REF_KEY = "falqbit_ref";
+function getRef() {
+  try {
+    const qp = new URLSearchParams(location.search).get("ref");
+    if (qp && algosdk.isValidAddress(qp)) localStorage.setItem(REF_KEY, qp);
+    const r = localStorage.getItem(REF_KEY);
+    return r && algosdk.isValidAddress(r) ? r : null;
+  } catch { return null; }
+}
+function setRef(v) { try { if (v) localStorage.setItem(REF_KEY, v); else localStorage.removeItem(REF_KEY); } catch {} }
+function renderRef() {
+  const box = $("refbox"); if (!box || !cfg) return;
+  const r = getRef();
+  box.hidden = false;
+  if (r && account && r === account) {
+    box.innerHTML = `<strong>Invite ignored:</strong> you can't refer yourself. <a href="#" id="ref-clear">Remove</a>`;
+    $("ref-clear").onclick = (e) => { e.preventDefault(); setRef(null); renderRef(); };
+  } else if (r) {
+    box.innerHTML = `🎁 <strong>Invited by <span class="mono">${short(r)}</span></strong> — buy and hold 1,000,000 FALQBIT for 7 days and <strong>you earn 250,000 FALQBIT</strong> (your friend earns 250,000 too). <a href="#" id="ref-clear">Remove</a>`;
+    $("ref-clear").onclick = (e) => { e.preventDefault(); setRef(null); renderRef(); };
+  } else {
+    box.innerHTML = `<a href="#" id="ref-open">Have an invite from a friend? Add it here to earn 250,000 FALQBIT when you qualify.</a><span id="ref-form" hidden> <input id="ref-in" placeholder="Friend's wallet address" style="max-width:340px"> <button class="ghost" id="ref-apply" type="button">Apply</button></span>`;
+    $("ref-open").onclick = (e) => { e.preventDefault(); $("ref-open").hidden = true; $("ref-form").hidden = false; };
+    $("ref-apply").onclick = () => {
+      const v = ($("ref-in").value || "").trim().toUpperCase();
+      if (algosdk.isValidAddress(v)) { setRef(v); renderRef(); }
+      else say("That doesn't look like a valid Algorand address.", "err");
+    };
+  }
+}
+renderRef();
+
 function setRow(id, state, detail) {
   const r = $(id); r.dataset.s = state; r.querySelector(".detail").textContent = detail;
 }
@@ -89,6 +123,7 @@ function say(html, kind = "") {
 
 async function refresh() {
   if (!account || !cfg) return;
+  renderRef();
   $("b-connect").hidden = true; $("b-disconnect").hidden = false;
   $("b-activate").hidden = true; $("b-unlock").hidden = true;
 
@@ -144,8 +179,10 @@ $("b-unlock").addEventListener("click", async () => {
       }));
     }
     const box = await c.algodGet(`/v2/applications/${cfg.app_id}/box?name=${encodeURIComponent("b64:" + btoa(String.fromCharCode(...holderBox(account))))}`);
+    const refAddr = getRef();
+    const refNote = refAddr && refAddr !== account ? new TextEncoder().encode("falqbit-ref:" + refAddr) : undefined;
     txns.push(algosdk.makePaymentTxnWithSuggestedParamsFromObject({
-      sender: account, receiver: cfg.app_address, amount: box ? 0 : HOLDER_DEPOSIT, suggestedParams: await c.params(FEE_PQ),
+      sender: account, receiver: cfg.app_address, amount: box ? 0 : HOLDER_DEPOSIT, suggestedParams: await c.params(FEE_PQ), note: refNote,
     }));
     txns.push(algosdk.makeApplicationNoOpTxnFromObject({
       sender: account, appIndex: cfg.app_id, suggestedParams: await c.params(FEE_CALL),
@@ -158,6 +195,7 @@ $("b-unlock").addEventListener("click", async () => {
     }));
     const { id } = await c.signAndSend(txns, {}, txns.length - 1);
     say(`Unlocked. <a href="${c.n.lora}/transaction/${id}" target="_blank" rel="noopener">View on Lora</a>`, "ok");
+    if (refNote) { setRef(null); renderRef(); }
     await refresh();
   } catch (e) {
     say(e.message || String(e), "err");
@@ -169,6 +207,7 @@ $("b-unlock").addEventListener("click", async () => {
 function disconnect() {
   c.pera.disconnect();
   account = null; found = null;
+  renderRef();
   $("b-connect").hidden = false;
   for (const id of ["b-disconnect", "b-activate", "b-unlock"]) $(id).hidden = true;
   setRow("r-wallet", "", "Not connected");

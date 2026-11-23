@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FALQBIT Referrals</title>
+<meta name="description" content="Invite a friend to FALQBIT. They unlock with Falcon-1024, buy and hold 1M — both sides earn 250K each. First 500 referrals only, verified on-chain.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="icon" type="image/png" href="./icon.png">
+<style>
+:root{
+  --ground:#0A0F1E; --surface:#121A30; --raise:#18223E; --line:#24304F;
+  --fg:#E8ECF6; --muted:#A9B4D0; --cyan:#3FE0D0; --violet:#9C90FF; --amber:#F5B942; --red:#FF7A7A;
+  --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--ground);color:var(--fg);font:400 16px/1.6 var(--body);margin:0;
+  padding:0 max(16px,env(safe-area-inset-left,0px)) 70px max(16px,env(safe-area-inset-right,0px))}
+.glowfx{position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(520px 380px at 90% 0%,rgba(63,224,208,.13),transparent 70%),radial-gradient(480px 360px at 0% 90%,rgba(156,144,255,.11),transparent 70%)}
+h1,h2,h3{font-family:var(--display);letter-spacing:-.02em;margin:0;text-wrap:balance}
+a{color:var(--cyan)}
+.wrap{max-width:1040px;margin:0 auto}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:22px 0;flex-wrap:wrap}
+.brand{display:inline-flex;align-items:center;gap:10px;color:var(--fg);text-decoration:none;font:700 18px/1 var(--display)}
+.brand img{width:34px;height:34px;border-radius:50%;box-shadow:0 0 18px rgba(63,224,208,.35)}
+nav.pages a{color:var(--muted);text-decoration:none;font:500 13px/1 var(--mono);letter-spacing:.08em;margin-left:16px}
+nav.pages a:hover{color:var(--cyan)}
+.eyebrow{display:inline-flex;align-items:center;gap:10px;font:500 12px/1 var(--mono);letter-spacing:.22em;text-transform:uppercase;color:var(--cyan);text-shadow:0 0 12px rgba(63,224,208,.45);margin:26px 0 10px}
+.eyebrow::before{content:"";width:22px;height:1px;background:linear-gradient(90deg,transparent,var(--cyan));box-shadow:0 0 8px var(--cyan)}
+h1.hero{font-size:clamp(30px,5vw,46px);font-weight:800}
+h1.hero em{font-style:normal;background:linear-gradient(100deg,#3FE0D0,#8FF3EA 45%,#9C90FF);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{color:var(--muted);max-width:700px;margin:12px 0 0;font-size:15.5px}
+.lede b{color:var(--fg)}
+/* status strip */
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:28px 0 0}
+.sbox{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 16px;min-width:0}
+.sbox .k{font:500 10.5px/1 var(--mono);letter-spacing:.18em;text-transform:uppercase;color:var(--cyan);margin:0 0 8px}
+.sbox b{display:block;font:800 26px/1.1 var(--display);color:var(--fg)}
+.sbox span{font:500 11px/1.4 var(--mono);color:var(--muted)}
+.sbox.amber .k{color:var(--amber)}
+.tick{font-variant-numeric:tabular-nums}
+/* cards */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:16px;margin-top:24px}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 20px;min-width:0}
+.step .n{font:500 11px/1 var(--mono);letter-spacing:.2em;color:var(--violet)}
+.step h3{font-size:19px;margin:10px 0 8px}
+.step p{color:var(--muted);font-size:14px;margin:0 0 10px}
+.step p b{color:var(--fg)}
+.tiers{border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px;margin:12px 0}
+.tiers>div{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.tiers>div:last-child{border-bottom:0}
+.tiers span{color:var(--muted)} .tiers b{font-family:var(--mono);color:var(--cyan);text-align:right}
+.lock{display:inline-block;font:500 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;padding:7px 10px;border-radius:7px;border:1px solid var(--line);color:var(--cyan);background:rgba(63,224,208,.07);margin-top:6px}
+.lock.amber{color:var(--amber);background:rgba(245,185,66,.08)}
+/* generator */
+.linkbox{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 20px}
+.linkbox h3{font-size:18px;margin-bottom:4px}
+.linkbox .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.lrow{display:flex;gap:10px;flex-wrap:wrap}
+.lrow input{flex:1;min-width:230px;background:var(--ground);border:1px solid var(--line);border-radius:10px;color:var(--fg);font:500 13px/1.4 var(--mono);padding:12px 14px}
+.lrow input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.btn{background:var(--cyan);color:var(--ground);border:0;border-radius:10px;font:600 14px/1 var(--body);padding:12px 20px;cursor:pointer;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--cyan);border:1px solid var(--line)}
+.linkout{display:none;margin-top:12px;background:var(--ground);border:1px dashed var(--line);border-radius:10px;padding:12px 14px;font:500 13px/1.6 var(--mono);color:var(--cyan);overflow-wrap:anywhere}
+.linkout .st{display:block;color:var(--muted);font-size:11.5px;margin-top:4px}
+.linkout .st.ok{color:var(--cyan)} .linkout .st.warn{color:var(--amber)} .linkout .st.bad{color:var(--red)}
+/* leaderboard + activity */
+.lb{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 20px;min-width:0}
+.lb h3{font-size:18px;margin-bottom:4px}
+.lb .sub{color:var(--muted);font-size:13px;margin:0 0 14px}
+.tblwrap{overflow-x:auto}
+table.board{width:100%;border-collapse:collapse;font-size:13px;min-width:430px}
+.board th{font:500 11px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+.board td{padding:10px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:13px}
+.board tr:last-child td{border-bottom:0}
+.board .pos{color:var(--violet)} .board .amt{color:var(--cyan)}
+.badge{display:inline-block;font:500 10px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;padding:5px 8px;border-radius:6px;white-space:nowrap}
+.badge.paid{color:var(--cyan);background:rgba(63,224,208,.1)}
+.badge.qual{color:var(--amber);background:rgba(245,185,66,.1)}
+.badge.wait{color:var(--violet);background:rgba(156,144,255,.12)}
+.badge.low{color:var(--red);background:rgba(255,122,122,.1)}
+.muted{color:var(--muted)}
+.mono{font-family:var(--mono)}
+/* activity rings */
+ul.refs{list-style:none;margin:0;padding:0}
+ul.refs li{display:flex;align-items:center;gap:12px;padding:12px 2px;border-bottom:1px solid var(--line);font:500 12.5px/1.4 var(--mono)}
+ul.refs li:last-child{border-bottom:0}
+.rinfo{flex:1;min-width:0}
+.raddr{color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rsub{font-size:11px;margin-top:3px;color:var(--muted)}
+.rsub.qual{color:var(--amber)} .rsub.paid{color:var(--cyan)} .rsub.wait{color:var(--violet)} .rsub.low{color:var(--red)}
+.ring{position:relative;width:40px;height:40px;flex:none}
+.ring svg{width:40px;height:40px;transform:rotate(-90deg)}
+.ring .bg{fill:none;stroke:var(--line);stroke-width:3.5}
+.ring .fg{fill:none;stroke:url(#rg);stroke-width:3.5;stroke-linecap:round;stroke-dasharray:100 100;stroke-dashoffset:100;animation:dash 1.4s cubic-bezier(.22,1,.36,1) forwards}
+.ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 10px/1 var(--mono);color:var(--fg)}
+.ring.live{filter:drop-shadow(0 0 7px rgba(245,185,66,.5))} .ring.live b{color:var(--amber)}
+.ring.done{filter:drop-shadow(0 0 7px rgba(63,224,208,.45))} .ring.done .fg{stroke:var(--cyan)} .ring.done b{color:var(--cyan)}
+.ring.waitp{filter:drop-shadow(0 0 7px rgba(156,144,255,.45))} .ring.waitp .fg{stroke:var(--violet)} .ring.waitp b{color:var(--violet)}
+.ring.low .fg{stroke:var(--red)} .ring.low b{color:var(--red)}
+@keyframes dash{to{stroke-dashoffset:var(--off,0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.livedot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);margin-right:6px;animation:pulse 1.5s ease-in-out infinite;vertical-align:1px}
+.note{margin-top:22px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:16px}
+.note a{color:var(--cyan)}
+/* audit panel */
+.aud{background:var(--ground);border:1px solid var(--line);border-radius:12px;padding:16px}
+.aud h4{font-size:14px;margin:0 0 10px;color:var(--cyan);font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;font-weight:500}
+.aud .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:13px;font-family:var(--mono)}
+.aud .kv dt{color:var(--muted)}
+.aud .kv dd{color:var(--fg);margin:0;overflow-wrap:anywhere}
+.aud .kv dd.up{color:var(--cyan)} .aud .kv dd.warn{color:var(--amber)} .aud .kv dd.bad{color:var(--red)}
+.aud .section{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.aud .section:first-child{margin-top:0;padding-top:0;border-top:0}
+.aud .pill{display:inline-block;font:500 10px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:4px 7px;border-radius:5px;margin-right:4px}
+.aud .pill.r{color:var(--cyan);background:rgba(63,224,208,.1)}
+.aud .pill.f{color:var(--violet);background:rgba(156,144,255,.12)}
+.aud .pill.cap{color:var(--amber);background:rgba(245,185,66,.1)}
+.aud .pill.no{color:var(--red);background:rgba(255,122,122,.1)}
+.aud table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+.aud table th{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);font:500 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.aud table td{padding:6px 8px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px}
+.aud table tr:last-child td{border-bottom:0}
+#loading{color:var(--muted);font:500 13px/1.5 var(--mono);padding:16px 0}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--cyan);border-radius:50%;animation:spin .9s linear infinite;vertical-align:-2px;margin-right:8px}
+</style>
+</head>
+<body>
+<div class="glowfx" aria-hidden="true"></div>
+<svg width="0" height="0" aria-hidden="true"><defs><linearGradient id="rg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3FE0D0"/><stop offset="1" stop-color="#9C90FF"/></linearGradient></defs></svg>
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="./"><img src="./icon.png" alt="">FALQBIT</a>
+    <nav class="pages" aria-label="Pages">
+      <a href="./">Home</a>
+      <a href="./app.html">App</a>
+      <a href="./unlock.html">Unlock</a>
+    </nav>
+  </header>
+
+  <p class="eyebrow">Referral program</p>
+  <h1 class="hero">Invite. Hold. <em>Earn.</em></h1>
+  <p class="lede">Share your link. When someone new unlocks FALQBIT through the quantum gate, buys at least <b>1,000,000</b> and holds it for <b>7 days without selling</b>, <b>both of you earn 250,000 FALQBIT each</b> — paid every Friday from the public Rewards account. <b>First 500 referrals only.</b></p>
+
+  <div class="strip">
+    <div class="sbox amber"><p class="k">Spots left</p><b id="s-spots">…</b><span id="s-spots-sub">of 500 total</span></div>
+    <div class="sbox"><p class="k">Invited total</p><b id="s-invited">…</b><span>wallets invited via a link</span></div>
+    <div class="sbox"><p class="k">Qualifying now</p><b id="s-qual">…</b><span>holding 1M · 7-day clock</span></div>
+    <div class="sbox"><p class="k">Paid</p><b id="s-paid">…</b><span id="s-paid-amt">—</span></div>
+    <div class="sbox"><p class="k" id="s-cd-k">Next payout</p><b id="s-cd" class="tick" style="font-size:20px;padding-top:4px">…</b><span id="s-cd-s">every Friday</span></div>
+  </div>
+
+  <div class="steps">
+    <article class="step">
+      <span class="n">HOW IT WORKS</span>
+      <h3>Share your link</h3>
+      <p>Every unlocked holder with <b>1M+ FALQBIT held 7+ days</b> gets a personal invite link. Your friend opens it, unlocks with Falcon-1024 and buys FALQBIT — the referral is recorded <b>on-chain</b>, inside the unlock itself. No sign-ups, no cookies, no trust needed.</p>
+      <p>Make sure your friend opens <b>your link before unlocking</b> — the invite is written into the unlock transaction and can't be added afterwards.</p>
+      <span class="lock">Min. 1,000,000 FALQBIT to refer</span>
+    </article>
+    <article class="step">
+      <span class="n">THE RULES</span>
+      <h3>Real holders only</h3>
+      <div class="tiers">
+        <div><span>Friend is new to FALQBIT</span><b>required</b></div>
+        <div><span>Falcon-1024 unlock</span><b>required</b></div>
+        <div><span>Friend buys &amp; holds</span><b>1,000,000+</b></div>
+        <div><span>Holds without selling</span><b>7 days</b></div>
+        <div><span>Referrer reward</span><b>250,000</b></div>
+        <div><span>Friend reward</span><b>250,000</b></div>
+        <div><span>Max paid referrals</span><b>10 / wallet</b></div>
+      </div>
+      <p>Every condition is verified on-chain before payout. If the balance dips below 1M, the 7-day clock restarts.</p>
+    </article>
+    <article class="step">
+      <span class="n">PAYOUT FRIDAY</span>
+      <h3>Paid weekly, on-chain</h3>
+      <p>Valid referrals are paid <b>every Friday</b> from the public <a href="https://lora.algokit.io/mainnet/account/V4J46SMHHEJHXRKXHA6MJKWFJMZIXQSMBPU5UC7W6BRUEYYB3SF7CPTC2Q" target="_blank" rel="noopener">Rewards account</a>, so every payment can be checked by anyone.</p>
+      <p><b>Limited program:</b> first <b>500 referrals</b> — when they're gone, they're gone. Hard stop on <b id="p-end">Feb 28, 2027</b> either way.</p>
+      <span class="lock amber" id="p-spots-lock">… of 500 spots remaining</span>
+    </article>
+  </div>
+
+  <div class="linkbox">
+    <h3>Get your invite link</h3>
+    <p class="sub">Paste your wallet address. We check your eligibility live on-chain.</p>
+    <div class="lrow">
+      <input id="gen-in" placeholder="Your Algorand address (58 characters)" autocomplete="off" spellcheck="false">
+      <button class="btn" id="gen-btn" type="button">Generate link</button>
+    </div>
+    <div class="linkout" id="gen-out"></div>
+  </div>
+
+  <div class="lb">
+    <h3>Audit any wallet</h3>
+    <p class="sub">Paste any Algorand address to see everything about it in the program — as a referrer, as a friend, or both.</p>
+    <div class="lrow">
+      <input id="audit-in" placeholder="Any Algorand address (58 characters)" autocomplete="off" spellcheck="false">
+      <button class="btn" id="audit-btn" type="button">Check</button>
+    </div>
+    <div id="audit-out" style="margin-top:14px;display:none"></div>
+  </div>
+
+  <div class="lb">
+    <h3>Live activity · 7-day hold clock</h3>
+    <p class="sub">Every invited wallet and its clock, straight from the chain.</p>
+    <div id="loading"><span class="spin"></span>Reading the chain…</div>
+    <ul class="refs" id="act-list"></ul>
+  </div>
+
+  <div class="lb">
+    <h3>Leaderboard</h3>
+    <p class="sub">Top referrers — live from the chain.</p>
+    <div class="tblwrap">
+      <table class="board" id="board">
+        <tr><th>#</th><th>Referrer</th><th>Qualified</th><th>Paid out</th><th>Status</th></tr>
+        <tr id="board-empty"><td colspan="5" class="muted">No referrals yet — be the first.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <p class="note">Every rule is enforced against the blockchain itself: the invite lives in the unlock transaction's note, balances are replayed from transfer history, and each payout carries a note naming the referral and the side it settles (referrer or friend) — so double payments are impossible and anyone can audit the whole program. Self-referrals and project wallets are excluded. No retroactive referrals: the invite must be present at unlock time.</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var IDX = "https://mainnet-idx.4160.nodely.dev";
+  var IDX_FB = "https://mainnet-idx.algonode.cloud";
+  function $(id) { return document.getElementById(id); }
+  function fmt(n, d) { return n.toLocaleString("en-US", { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 }); }
+  function short(a) { return a ? a.slice(0, 5) + "…" + a.slice(-5) : "—"; }
+  function f2(n) { return (n < 10 ? "0" : "") + n; }
+  function fmtCd(ms) {
+    var s = Math.max(0, Math.floor(ms / 1000));
+    var d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+    return d + "d " + f2(h) + ":" + f2(m) + ":" + f2(x);
+  }
+  var _cache = {};
+  function fetchJSON(url) {
+    if (_cache[url] && Date.now() - _cache[url].t < 30000) return Promise.resolve(_cache[url].d);
+    var fb = url.indexOf(IDX) === 0 ? IDX_FB + url.slice(IDX.length) : null;
+    return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (d) { _cache[url] = { t: Date.now(), d: d }; return d; })
+      .catch(function (e) {
+        if (fb) return fetch(fb).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }).then(function (d) { _cache[url] = { t: Date.now(), d: d }; return d; });
+        throw e;
+      });
+  }
+
+  var CFG = null, R = null, NET = null;
+  var EXTRA_EXCLUDED = [
+    "YW5KDBPXOFQUDLAXBLSTMGB7TH77Y6HUNVVG4FLWYSKKCHLLYYCR5UHXZM",
+    "SYRON5PUM6MQVP3IPMPGV2GHHLDNVC45KDMZEKJ7ACFHW4FH3ZLXH7SMP4"
+  ];
+  var EXCLUDED = {};
+  var MICRO = 1e6;
+
+  fetch("./falqbit-config.json").then(function (r) { return r.json(); }).then(function (cfg) {
+    CFG = cfg; NET = cfg.mainnet; R = cfg.referral;
+    [NET.project, NET.team, NET.rewards, NET.pool, NET.app_address].concat(EXTRA_EXCLUDED).forEach(function (a) { EXCLUDED[a] = 1; });
+    $("p-end").textContent = new Date(R.end).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+    startCountdown();
+    load();
+  }).catch(function () { $("loading").innerHTML = "Could not load program config."; });
+
+  /* countdown: before start → counts to start; after → counts to next Friday 00:00 UTC */
+  function startCountdown() {
+    function tick() {
+      var now = Date.now();
+      var start = Date.parse(R.start), end = Date.parse(R.end);
+      if (now < start) {
+        $("s-cd-k").textContent = "Starts in";
+        $("s-cd").textContent = fmtCd(start - now);
+        $("s-cd-s").textContent = new Date(start).toUTCString().slice(0, 16);
+      } else if (now > end) {
+        $("s-cd-k").textContent = "Program";
+        $("s-cd").textContent = "Ended";
+        $("s-cd-s").textContent = "thank you!";
+      } else {
+        var d = new Date();
+        var add = (5 - d.getUTCDay() + 7) % 7; if (!add) add = 7;
+        var fr = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + add);
+        $("s-cd-k").textContent = "Next payout";
+        $("s-cd").textContent = fmtCd(fr - now);
+        $("s-cd-s").textContent = "every Friday";
+      }
+    }
+    tick(); setInterval(tick, 1000);
+  }
+
+  /* ---- chain data ---- */
+  function pageAll(url, cap) {
+    function page(next, acc) {
+      acc = acc || [];
+      return fetchJSON(url + (next ? "&next=" + encodeURIComponent(next) : "")).then(function (j) {
+        j = j || {}; acc = acc.concat(j.transactions || []);
+        if (j["next-token"] && (j.transactions || []).length && acc.length < (cap || 10000)) return page(j["next-token"], acc);
+        return acc;
+      });
+    }
+    return page();
+  }
+
+  function noteB64(s) { return encodeURIComponent(btoa(s)); }
+  function decodeNote(n) { try { return atob(n); } catch (e) { return ""; } }
+
+  var REFS = [];           // {referred, referrer, t}
+  var PAID_REFERRER = {};  // referred -> {amount, t, to} — referrer side paid
+  var PAID_REFERRED = {};  // referred -> {amount, t, to} — friend side paid
+  var STATES = {};         // referred -> {bal, qualStart, status}
+
+  // note prefixes (back-compat if config still has the old single key)
+  var NOTE_R = R.payout_note_referrer_prefix || R.payout_note_prefix || "falqbit-refpay-r:";
+  var NOTE_F = R.payout_note_referred_prefix || "falqbit-refpay-f:";
+  var REWARD_R = R.reward_referrer || R.reward || 250000;
+  var REWARD_F = R.reward_referred || R.reward || 250000;
+
+  function load() {
+    var startT = Date.parse(R.start) / 1000, endT = Date.parse(R.end) / 1000;
+    var pRefs = pageAll(IDX + "/v2/transactions?tx-type=pay&note-prefix=" + noteB64(R.note_prefix) + "&address=" + NET.app_address + "&address-role=receiver&limit=1000", 20000);
+    // one query, all axfer out of rewards — we filter by note below (covers both prefixes)
+    var pPaid = pageAll(IDX + "/v2/accounts/" + NET.rewards + "/transactions?tx-type=axfer&limit=1000", 20000);
+    Promise.all([pRefs, pPaid]).then(function (res) {
+      var seen = {};
+      (res[0] || []).forEach(function (t) {
+        var p = t["payment-transaction"];
+        if (!p || p.receiver !== NET.app_address) return;
+        var note = decodeNote(t.note || "");
+        if (note.indexOf(R.note_prefix) !== 0) return;
+        var ref = note.slice(R.note_prefix.length).trim();
+        var referred = t.sender, tt = t["round-time"];
+        if (!/^[A-Z2-7]{58}$/.test(ref)) return;
+        if (ref === referred) return;
+        if (EXCLUDED[ref] || EXCLUDED[referred]) return;
+        if (tt < startT || tt > endT) return;
+        if (seen[referred]) return; // first invite wins
+        seen[referred] = 1;
+        REFS.push({ referred: referred, referrer: ref, t: tt });
+      });
+      (res[1] || []).forEach(function (t) {
+        var a = t["asset-transfer-transaction"];
+        if (!a || a["asset-id"] !== NET.asset_id || t.sender !== NET.rewards) return;
+        var note = decodeNote(t.note || "");
+        if (note.indexOf(NOTE_R) === 0) {
+          var referred = note.slice(NOTE_R.length).trim();
+          PAID_REFERRER[referred] = { amount: a.amount / MICRO, t: t["round-time"], to: a.receiver };
+        } else if (note.indexOf(NOTE_F) === 0) {
+          var referredF = note.slice(NOTE_F.length).trim();
+          PAID_REFERRED[referredF] = { amount: a.amount / MICRO, t: t["round-time"], to: a.receiver };
+        }
+      });
+      renderStats(); // first pass (invited, paid, spots — may show qualifying=0 until states load)
+      return loadStates();
+    }).then(function () {
+      renderStats(); // second pass — now qualifying is accurate
+      renderActivity();
+      renderBoard();
+    }).catch(function () {
+      $("loading").innerHTML = "Could not read the chain right now. Try again in a minute.";
+    });
+  }
+
+  /* replay FALQBIT transfers to find, for each referred account, the moment its balance
+     last rose to >= min and stayed there — that moment + 7 days is the payout time */
+  function accountState(addr) {
+    var min = R.min_referred * MICRO;
+    return Promise.all([
+      fetchJSON(IDX + "/v2/accounts/" + addr + "/assets/" + NET.asset_id).catch(function () { return null; }),
+      pageAll(IDX + "/v2/accounts/" + addr + "/transactions?tx-type=axfer&asset-id=" + NET.asset_id + "&limit=1000", 3000)
+    ]).then(function (res) {
+      var cur = res[0] && res[0]["asset-holding"] ? Number(res[0]["asset-holding"].amount) : 0;
+      var txs = (res[1] || []).slice();
+      txs.sort(function (a, b) { return b["round-time"] - a["round-time"]; }); // newest first
+      var bal = cur, qualStart = null;
+      if (bal >= min) qualStart = 0; // provisional: refined below
+      var tNow = Math.floor(Date.now() / 1000);
+      var lastOk = bal >= min ? tNow : null;
+      // walk backwards; find earliest time from which balance stayed >= min until now
+      for (var i = 0; i < txs.length; i++) {
+        var t = txs[i], a = t["asset-transfer-transaction"];
+        if (!a) continue;
+        var delta = 0;
+        if (a.receiver === addr) delta += a.amount;
+        if (t.sender === addr) delta -= a.amount + (a["close-amount"] || 0);
+        ((t["inner-txns"]) || []).forEach(function (it) {
+          var ia = it["asset-transfer-transaction"]; if (!ia || ia["asset-id"] !== NET.asset_id) return;
+          if (ia.receiver === addr) delta += ia.amount;
+          if (it.sender === addr) delta -= ia.amount + (ia["close-amount"] || 0);
+        });
+        var before = bal - delta;
+        if (bal >= min && before < min) { lastOk = t["round-time"]; bal = before; break; }
+        bal = before;
+        if (bal < min && lastOk !== null) break;
+      }
+      var belowNow = cur < min;
+      return { bal: cur / MICRO, qualStart: belowNow ? null : (lastOk === tNow ? null : lastOk), below: belowNow };
+    }).catch(function () { return { bal: null, qualStart: null, below: true }; });
+  }
+
+  function loadStates() {
+    // skip states for referrals where BOTH sides are already paid — nothing left to check
+    var pending = REFS.filter(function (r) { return !(PAID_REFERRER[r.referred] && PAID_REFERRED[r.referred]); });
+    var chunks = [];
+    for (var i = 0; i < pending.length; i += 8) chunks.push(pending.slice(i, i + 8));
+    var chain = Promise.resolve();
+    chunks.forEach(function (ck) {
+      chain = chain.then(function () {
+        return Promise.all(ck.map(function (r) {
+          return accountState(r.referred).then(function (st) { STATES[r.referred] = st; });
+        }));
+      });
+    });
+    return chain;
+  }
+
+  function renderStats() {
+    // a spot is used the moment EITHER side has been paid for it
+    var spotsUsed = {};
+    Object.keys(PAID_REFERRER).forEach(function (k) { spotsUsed[k] = 1; });
+    Object.keys(PAID_REFERRED).forEach(function (k) { spotsUsed[k] = 1; });
+    var paidN = Object.keys(spotsUsed).length;
+    var left = Math.max(0, R.spots - paidN);
+    var paidAmt = Object.keys(PAID_REFERRER).length * REWARD_R + Object.keys(PAID_REFERRED).length * REWARD_F;
+    // total invited = unique referrals recorded on-chain (via ?ref= in unlocks)
+    var invited = REFS.length;
+    // qualifying now = referrals whose friend is above 1M but hasn't yet completed 7 days
+    var qualifying = 0;
+    REFS.forEach(function (r) {
+      if (PAID_REFERRER[r.referred] || PAID_REFERRED[r.referred]) return;
+      var st = STATES[r.referred];
+      if (!st || st.below || st.qualStart === null) return;
+      qualifying++;
+    });
+    $("s-spots").textContent = fmt(left);
+    $("s-spots-sub").textContent = "of " + fmt(R.spots) + " total";
+    $("s-invited").textContent = fmt(invited);
+    $("s-qual").textContent = fmt(qualifying);
+    $("s-paid").textContent = fmt(paidN);
+    $("s-paid-amt").textContent = fmt(paidAmt) + " FALQBIT distributed";
+    $("p-spots-lock").textContent = fmt(left) + " of " + fmt(R.spots) + " spots remaining";
+  }
+
+  function statusOf(r) {
+    // a referral is fully "paid" only when both sides have been settled
+    if (PAID_REFERRER[r.referred] && PAID_REFERRED[r.referred]) return { k: "paid", label: "paid (both sides)", pct: 100 };
+    if (PAID_REFERRER[r.referred] || PAID_REFERRED[r.referred]) return { k: "half", label: "partially paid", pct: 100 };
+    var st = STATES[r.referred];
+    if (!st) return { k: "wait", label: "checking…", pct: 0 };
+    if (st.bal === null) return { k: "wait", label: "checking…", pct: 0 };
+    if (st.below) return { k: "low", label: "below 1M — clock stopped", pct: 0 };
+    if (st.qualStart === null) return { k: "low", label: "below 1M — clock stopped", pct: 0 };
+    var now = Math.floor(Date.now() / 1000);
+    var held = now - st.qualStart, need = R.hold_days * 86400;
+    if (held >= need) return { k: "wait", label: "qualified — next Friday payout", pct: 100 };
+    var days = Math.floor(held / 86400);
+    return { k: "qual", label: "holding 1M+", pct: Math.round(held / need * 100), days: days, left: need - held, until: (st.qualStart + need) * 1000 };
+  }
+
+  var LIVE = [];
+  function ringHtml(cls, pct, label) {
+    return '<span class="ring ' + cls + '" style="--off:' + (100 - pct) + '"><svg viewBox="0 0 40 40"><circle class="bg" cx="20" cy="20" r="17" pathLength="100"/><circle class="fg" cx="20" cy="20" r="17" pathLength="100"/></svg><b>' + label + '</b></span>';
+  }
+  function renderActivity() {
+    $("loading").style.display = "none";
+    var list = $("act-list");
+    if (!REFS.length) {
+      var now = Date.now(), started = now >= Date.parse(R.start);
+      list.innerHTML = '<li><span class="muted">' + (started ? "No invites recorded yet — share your link!" : "The program hasn't started yet. Get your link ready below.") + "</span></li>";
+      return;
+    }
+    LIVE = [];
+    var rows = REFS.slice().sort(function (a, b) { return b.t - a.t; }).map(function (r, i) {
+      var s = statusOf(r);
+      var ring, sub;
+      if (s.k === "paid") { ring = ringHtml("done", 100, "✓"); sub = '<div class="rsub paid">both sides paid · +' + fmt(REWARD_R + REWARD_F) + "</div>"; }
+      else if (s.k === "half") { ring = ringHtml("done", 50, "½"); sub = '<div class="rsub paid">one side paid — other coming next Friday</div>'; }
+      else if (s.k === "qual") {
+        ring = ringHtml("live", s.pct, s.days + "/" + R.hold_days);
+        sub = '<div class="rsub qual"><span class="livedot"></span>holding 1M+ · <span class="tick" id="live-' + i + '">…</span> to payout</div>';
+        LIVE.push({ id: "live-" + i, until: s.until });
+      }
+      else if (s.k === "low") { ring = ringHtml("low", 8, "!"); sub = '<div class="rsub low">' + s.label + "</div>"; }
+      else { ring = ringHtml("waitp", 100, "✓"); sub = '<div class="rsub wait">' + s.label + "</div>"; }
+      return "<li>" + ring + '<span class="rinfo"><span class="raddr">' + short(r.referred) + '</span> <span class="muted" style="font-size:11px">← invited by ' + short(r.referrer) + "</span>" + sub + "</span></li>";
+    });
+    list.innerHTML = rows.join("");
+    if (LIVE.length && !renderActivity._t) {
+      renderActivity._t = setInterval(function () {
+        LIVE.forEach(function (l) { var el = $(l.id); if (el) el.textContent = fmtCd(l.until - Date.now()); });
+      }, 1000);
+    }
+  }
+
+  function renderBoard() {
+    // leaderboard aggregates REFERRER wins — count paid referrals (referrer side) and qualified ones
+    var agg = {};
+    REFS.forEach(function (r) {
+      if (!agg[r.referrer]) agg[r.referrer] = { q: 0, paid: 0 };
+      if (PAID_REFERRER[r.referred]) { agg[r.referrer].paid++; agg[r.referrer].q++; return; }
+      var s = statusOf(r);
+      if (s.k === "wait" && s.pct === 100) agg[r.referrer].q++;
+    });
+    var rows = Object.keys(agg).map(function (a) { return { a: a, q: agg[a].q, paid: agg[a].paid }; })
+      .sort(function (x, y) { return y.paid - x.paid || y.q - x.q; }).slice(0, 20);
+    if (!rows.length) return;
+    var tbl = $("board");
+    $("board-empty").remove();
+    rows.forEach(function (r, i) {
+      var tr = document.createElement("tr");
+      var status = r.paid >= R.max_per_referrer ? '<span class="badge low">cap reached</span>'
+        : r.q > r.paid ? '<span class="badge wait">waiting payout</span>' : '<span class="badge paid">paid</span>';
+      tr.innerHTML = '<td class="pos">' + (i + 1) + "</td><td>" + short(r.a) + "</td><td>" + r.q + '</td><td class="amt">' + fmt(Math.min(r.paid, R.max_per_referrer) * REWARD_R) + "</td><td>" + status + "</td>";
+      tbl.appendChild(tr);
+    });
+  }
+
+  /* ---- link generator ---- */
+  $("gen-btn").addEventListener("click", generate);
+  $("gen-in").addEventListener("keydown", function (e) { if (e.key === "Enter") generate(); });
+  function generate() {
+    var out = $("gen-out");
+    var a = ($("gen-in").value || "").trim().toUpperCase();
+    if (!/^[A-Z2-7]{58}$/.test(a)) { out.style.display = "block"; out.innerHTML = '<span class="st bad">That doesn\'t look like a valid Algorand address (58 characters).</span>'; return; }
+    if (EXCLUDED[a]) { out.style.display = "block"; out.innerHTML = '<span class="st bad">Project wallets can\'t join the referral program.</span>'; return; }
+    var link = "https://falqbit.github.io/unlock.html?ref=" + a;
+    out.style.display = "block";
+    out.innerHTML = link + ' <button class="btn ghost" style="padding:6px 12px;font-size:12px;margin-left:6px" id="copy-btn" type="button">Copy</button><span class="st" id="gen-st"><span class="spin"></span>checking eligibility on-chain…</span>';
+    $("copy-btn").onclick = function () {
+      try { navigator.clipboard.writeText(link).then(function () { $("copy-btn").textContent = "Copied!"; setTimeout(function () { $("copy-btn").textContent = "Copy"; }, 1600); }); } catch (e) {}
+    };
+    var min = R.min_referrer * MICRO;
+    accountState(a).then(function (st) {
+      var el = $("gen-st"); if (!el) return;
+      if (st.bal === null) { el.className = "st warn"; el.textContent = "Couldn't check your balance right now — the link still works."; return; }
+      if (st.bal * MICRO < min) { el.className = "st warn"; el.textContent = "You hold " + fmt(st.bal) + " FALQBIT — you need 1,000,000+ held for 7 days for your referrals to pay out."; return; }
+      var now = Math.floor(Date.now() / 1000);
+      var heldDays = st.qualStart ? Math.floor((now - st.qualStart) / 86400) : 0;
+      if (heldDays >= R.hold_days) { el.className = "st ok"; el.textContent = "Eligible ✓ — 1M+ held for " + heldDays + " days. Share away!"; }
+      else { el.className = "st warn"; el.textContent = "You hold 1M+ but for " + heldDays + " day" + (heldDays === 1 ? "" : "s") + " so far — " + (R.hold_days - heldDays) + " more to go. The link already works; payouts need the 7 days."; }
+    });
+  }
+
+  /* ---- auditor: paste any address, show everything ---- */
+  $("audit-btn").addEventListener("click", audit);
+  $("audit-in").addEventListener("keydown", function (e) { if (e.key === "Enter") audit(); });
+  function audit() {
+    var out = $("audit-out");
+    var a = ($("audit-in").value || "").trim().toUpperCase();
+    out.style.display = "block";
+    if (!/^[A-Z2-7]{58}$/.test(a)) { out.innerHTML = '<div class="aud"><span style="color:var(--red);font-size:13px">That doesn\'t look like a valid Algorand address (58 characters).</span></div>'; return; }
+    out.innerHTML = '<div class="aud"><span style="color:var(--muted);font-size:13px"><span class="spin"></span>Reading the chain for ' + short(a) + '…</span></div>';
+
+    // wait for load() to have populated REFS / PAID_REFERRER / PAID_REFERRED before rendering
+    function run() {
+      if (!REFS) return setTimeout(run, 300);
+      // 1. role detection
+      var asReferrer = REFS.filter(function (r) { return r.referrer === a; });
+      var asReferred = REFS.filter(function (r) { return r.referred === a; });
+      var isProject = !!EXCLUDED[a];
+      var roles = [];
+      if (isProject) roles.push('<span class="pill cap">project wallet</span>');
+      if (asReferrer.length) roles.push('<span class="pill r">referrer (' + asReferrer.length + ')</span>');
+      if (asReferred.length) roles.push('<span class="pill f">friend (1)</span>');
+      if (!roles.length) roles.push('<span class="pill no">no activity yet</span>');
+
+      // 2. aggregate counts and prepare live countdowns for each friend still in the 7-day hold
+      var pR = 0, pF = 0, qR = 0;  // paid-as-referrer, paid-as-friend, qualifying-not-yet-paid
+      var rows = [];
+      var liveTimers = []; // ids + deadlines to tick every second
+      asReferrer.forEach(function (r, idx) {
+        var paidR = !!PAID_REFERRER[r.referred];
+        var paidF = !!PAID_REFERRED[r.referred];
+        if (paidR) pR++;
+        if (paidF) pF++;
+        var st = STATES[r.referred];
+        var status;
+        if (paidR && paidF) status = '<span class="pill r">both sides paid</span>';
+        else if (paidR || paidF) status = '<span class="pill f">partially paid · other side next Friday</span>';
+        else if (!st) status = '<span class="pill">checking…</span>';
+        else if (st.below || st.qualStart === null) status = '<span class="pill no">friend below 1M — clock stopped</span>';
+        else {
+          var held = Math.floor(Date.now() / 1000) - st.qualStart;
+          var need = R.hold_days * 86400;
+          if (held >= need) { status = '<span class="pill r">qualified ✓ — next Friday payout</span>'; qR++; }
+          else {
+            var liveId = "aud-live-" + idx;
+            var untilMs = (st.qualStart + need) * 1000;
+            liveTimers.push({ id: liveId, until: untilMs });
+            status = '<span class="pill cap"><span class="rdot" style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px var(--amber);margin-right:5px;vertical-align:1px"></span>holding · <span class="tick" id="' + liveId + '">…</span> to payout</span>';
+          }
+        }
+        rows.push('<tr><td>' + short(r.referred) + '</td><td>' + new Date(r.t * 1000).toLocaleDateString("en-GB") + '</td><td>' + status + '</td></tr>');
+      });
+
+      // 3. eligibility as referrer
+      var min = R.min_referrer * MICRO;
+      accountState(a).then(function (st) {
+        var eligLine;
+        if (st.bal === null) eligLine = '<dd class="warn">couldn\'t check balance right now</dd>';
+        else if (st.bal * MICRO < min) eligLine = '<dd class="bad">' + fmt(st.bal) + ' FALQBIT — below the 1,000,000 minimum</dd>';
+        else {
+          var days = st.qualStart ? Math.floor((Date.now() / 1000 - st.qualStart) / 86400) : 0;
+          if (days >= R.hold_days) eligLine = '<dd class="up">' + fmt(st.bal) + ' FALQBIT held ' + days + ' days — eligible ✓</dd>';
+          else eligLine = '<dd class="warn">' + fmt(st.bal) + ' FALQBIT held ' + days + 'd — needs ' + (R.hold_days - days) + 'd more</dd>';
+        }
+
+        // 4. invited-by (if this wallet is a friend)
+        var invitedByLine = asReferred.length
+          ? '<dd>' + short(asReferred[0].referrer) + ' on ' + new Date(asReferred[0].t * 1000).toLocaleDateString("en-GB") + '</dd>'
+          : '<dd class="muted">not invited (never used a ?ref link)</dd>';
+
+        // 5. friend-side status (if this wallet IS a friend) — with live countdown
+        var friendStatusLine = '<dd class="muted">—</dd>';
+        if (asReferred.length) {
+          if (PAID_REFERRED[a]) friendStatusLine = '<dd class="up">paid +' + fmt(REWARD_F) + ' FALQBIT</dd>';
+          else {
+            var frState = STATES[a];
+            if (!frState) friendStatusLine = '<dd class="muted">checking…</dd>';
+            else if (frState.below || frState.qualStart === null) friendStatusLine = '<dd class="bad">below 1M — clock stopped. Buy back to 1M+ to restart the 7-day clock.</dd>';
+            else {
+              var fHeld = Math.floor(Date.now() / 1000) - frState.qualStart;
+              var fNeed = R.hold_days * 86400;
+              if (fHeld >= fNeed) friendStatusLine = '<dd class="up">qualified ✓ — next Friday payout</dd>';
+              else {
+                var fUntil = (frState.qualStart + fNeed) * 1000;
+                liveTimers.push({ id: "aud-friend-live", until: fUntil });
+                friendStatusLine = '<dd class="warn">holding 1M+ · <span class="tick" id="aud-friend-live">…</span> left to payout</dd>';
+              }
+            }
+          }
+        }
+
+        var capLine = pR >= R.max_per_referrer
+          ? '<dd class="bad">' + pR + ' / ' + R.max_per_referrer + ' — cap reached, no more referrer payouts</dd>'
+          : '<dd>' + pR + ' / ' + R.max_per_referrer + ' paid — ' + (R.max_per_referrer - pR) + ' slot' + (R.max_per_referrer - pR === 1 ? '' : 's') + ' still available</dd>';
+
+        var earned = pR * REWARD_R + (PAID_REFERRED[a] ? REWARD_F : 0);
+
+        var html = '<div class="aud">';
+        html += '<div class="section"><h4>Role</h4><div style="font-size:13px">' + short(a) + ' · ' + roles.join(' ') + '</div></div>';
+        html += '<div class="section"><h4>As referrer</h4><dl class="kv">'
+             + '<dt>Eligibility</dt>' + eligLine
+             + '<dt>Cap</dt>' + capLine
+             + '<dt>Invites sent</dt><dd>' + asReferrer.length + '</dd>'
+             + '<dt>Qualifying now</dt><dd class="up">' + qR + '</dd>'
+             + '<dt>Paid (referrer side)</dt><dd class="up">' + pR + '</dd>'
+             + '</dl>';
+        if (asReferrer.length) {
+          html += '<table><tr><th>Friend</th><th>Invited on</th><th>Status</th></tr>' + rows.join('') + '</table>';
+        }
+        html += '</div>';
+        html += '<div class="section"><h4>As friend</h4><dl class="kv">'
+             + '<dt>Invited by</dt>' + invitedByLine
+             + '<dt>Friend-side status</dt>' + friendStatusLine
+             + '</dl></div>';
+        html += '<div class="section"><h4>Total earned from the program</h4>'
+             + '<div style="font-size:18px;font-weight:700;color:var(--cyan);font-family:var(--display)">' + fmt(earned) + ' FALQBIT</div>'
+             + '<div class="muted" style="font-size:12px;margin-top:4px">on-chain, verifiable on the <a href="https://lora.algokit.io/mainnet/account/' + NET.rewards + '" target="_blank" rel="noopener" style="color:var(--cyan)">Rewards wallet</a></div></div>';
+        html += '</div>';
+        out.innerHTML = html;
+
+        // start/replace the live-tick interval for this audit result
+        if (audit._tick) clearInterval(audit._tick);
+        if (liveTimers.length) {
+          var tick = function () {
+            liveTimers.forEach(function (t) {
+              var el = document.getElementById(t.id);
+              if (el) el.textContent = fmtCd(t.until - Date.now());
+            });
+          };
+          tick();
+          audit._tick = setInterval(tick, 1000);
+        }
+      });
+    }
+    run();
+  }
+})();
+</script>
+</body>
+</html>

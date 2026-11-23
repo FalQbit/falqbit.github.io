@@ -1,5 +1,19 @@
 {
   "welcome_tiers": [[200, 1000000], [600, 500000], [800, 250000], [1000, 100000]],
+  "referral": {
+    "start": "2026-11-24T00:00:00Z",
+    "end": "2027-02-28T23:59:59Z",
+    "spots": 500,
+    "reward_referrer": 250000,
+    "reward_referred": 250000,
+    "min_referrer": 1000000,
+    "min_referred": 1000000,
+    "hold_days": 7,
+    "max_per_referrer": 10,
+    "note_prefix": "falqbit-ref:",
+    "payout_note_referrer_prefix": "falqbit-refpay-r:",
+    "payout_note_referred_prefix": "falqbit-refpay-f:"
+  },
   "mainnet": {
     "app_id": 3760919863,
     "app_address": "MJJGX5SJORJGN4ZSVFSI6MLKWWZ2FJM7IAWX7ZM4UPISZNXCRVKIQ4Q24M",
