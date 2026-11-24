@@ -422,7 +422,12 @@ ul.refs li:last-child{border-bottom:0}
         if (bal < min && lastOk !== null) break;
       }
       var belowNow = cur < min;
-      return { bal: cur / MICRO, qualStart: belowNow ? null : (lastOk === tNow ? null : lastOk), below: belowNow };
+      // if balance never dipped below min in recorded history, use the oldest known tx
+      // as the start of the hold — it means the wallet has been holding 1M+ the whole time
+      if (!belowNow && lastOk === tNow && txs.length > 0) {
+        lastOk = txs[txs.length - 1]["round-time"]; // txs is newest-first → last is oldest
+      }
+      return { bal: cur / MICRO, qualStart: belowNow ? null : lastOk, below: belowNow };
     }).catch(function () { return { bal: null, qualStart: null, below: true }; });
   }
 
