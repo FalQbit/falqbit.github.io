@@ -1200,8 +1200,13 @@ async function rfPage(url, cap = 10000) {
   }
 }
 async function rfHoldStart(addr, minMicro) {
-  const h = await c.getJSON(`${RF_IDX}/v2/accounts/${addr}/assets/${cfg.asset_id}`).catch(() => null);
-  const curBal = Number(h?.["asset-holding"]?.amount || 0);
+  // use the indexer's /v2/accounts/{addr} endpoint and find our asset (the /assets/{id}
+  // sub-endpoint isn't universally supported on all indexers and may return nothing)
+  const h = await c.getJSON(`${RF_IDX}/v2/accounts/${addr}`).catch(() => null);
+  const assets = h?.account?.assets || [];
+  let holding = null;
+  for (const a of assets) { if (a["asset-id"] === cfg.asset_id) { holding = a; break; } }
+  const curBal = holding ? Number(holding.amount) : 0;
   if (curBal < minMicro) return { bal: curBal, since: null };
   const txs = await rfPage(`${RF_IDX}/v2/accounts/${addr}/transactions?tx-type=axfer&asset-id=${cfg.asset_id}&limit=1000`, 3000);
   txs.sort((a, b) => b["round-time"] - a["round-time"]);

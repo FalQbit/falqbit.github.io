@@ -517,8 +517,15 @@ async function lowestSinceFirst(current, addrs) {
 // Replay FALQBIT balance history backwards for `addr`; return {bal, since} where `since` is the
 // unix timestamp when balance last reached (and stayed above) min. Null if below.
 async function refHoldStart(addr, minAmount) {
+  // algod's /v2/accounts/{addr}/assets/{id} returns {asset-holding}; keep this one on algod since it's reliable there
   const h = await c.algodGet(`/v2/accounts/${addr}/assets/${cfg.asset_id}`).catch(() => null);
-  const cur = BigInt(h?.["asset-holding"]?.amount || 0);
+  let cur = BigInt(h?.["asset-holding"]?.amount || 0);
+  // fallback: if algod returned nothing (some proxies 404 it), try the generic account endpoint
+  if (cur === 0n) {
+    const a = await c.algodGet(`/v2/accounts/${addr}`).catch(() => null);
+    const assets = a?.assets || [];
+    for (const x of assets) { if (x["asset-id"] === cfg.asset_id) { cur = BigInt(x.amount || 0); break; } }
+  }
   if (cur < minAmount) return { bal: cur, since: null };
   const txs = await indexerAll(`/v2/accounts/${addr}/transactions?tx-type=axfer&asset-id=${cfg.asset_id}`, "transactions");
   txs.sort((a, b) => b["round-time"] - a["round-time"]);

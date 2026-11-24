@@ -386,10 +386,18 @@ ul.refs li:last-child{border-bottom:0}
   function accountState(addr) {
     var min = R.min_referred * MICRO;
     return Promise.all([
-      fetchJSON(IDX + "/v2/accounts/" + addr + "/assets/" + NET.asset_id).catch(function () { return null; }),
+      // use the indexer's /v2/accounts/{addr} endpoint and find our asset in the assets array
+      // (the /assets/{id} sub-endpoint isn't universally supported on indexer)
+      fetchJSON(IDX + "/v2/accounts/" + addr).catch(function () { return null; }),
       pageAll(IDX + "/v2/accounts/" + addr + "/transactions?tx-type=axfer&asset-id=" + NET.asset_id + "&limit=1000", 3000)
     ]).then(function (res) {
-      var cur = res[0] && res[0]["asset-holding"] ? Number(res[0]["asset-holding"].amount) : 0;
+      var acct = res[0] && res[0].account ? res[0].account : null;
+      var assets = acct && acct.assets ? acct.assets : [];
+      var holding = null;
+      for (var i = 0; i < assets.length; i++) {
+        if (assets[i]["asset-id"] === NET.asset_id) { holding = assets[i]; break; }
+      }
+      var cur = holding ? Number(holding.amount) : 0;
       var txs = (res[1] || []).slice();
       txs.sort(function (a, b) { return b["round-time"] - a["round-time"]; }); // newest first
       var bal = cur, qualStart = null;
