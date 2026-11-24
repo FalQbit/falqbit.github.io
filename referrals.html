@@ -130,6 +130,9 @@ ul.refs li:last-child{border-bottom:0}
 #loading{color:var(--muted);font:500 13px/1.5 var(--mono);padding:16px 0}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--cyan);border-radius:50%;animation:spin .9s linear infinite;vertical-align:-2px;margin-right:8px}
+.btn.ghost{background:transparent;color:var(--cyan);border:1px solid rgba(63,224,208,.4);cursor:pointer;font:600 13px/1 var(--body);border-radius:10px;transition:background .2s}
+.btn.ghost:hover{background:rgba(63,224,208,.08)}
+.btn.ghost.connected{background:rgba(63,224,208,.15);border-color:var(--cyan)}
 </style>
 </head>
 <body>
@@ -176,6 +179,7 @@ ul.refs li:last-child{border-bottom:0}
         <div><span>Referrer reward</span><b>250,000</b></div>
         <div><span>Friend reward</span><b>250,000</b></div>
         <div><span>Max paid referrals</span><b>10 / wallet</b></div>
+        <div><span>Invites per friend</span><b>1 only</b></div>
       </div>
       <p>Every condition is verified on-chain before payout. If the balance dips below 1M, the 7-day clock restarts.</p>
     </article>
@@ -189,8 +193,13 @@ ul.refs li:last-child{border-bottom:0}
   </div>
 
   <div class="linkbox">
-    <h3>Get your invite link</h3>
-    <p class="sub">Paste your wallet address. We check your eligibility live on-chain.</p>
+    <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px">
+      <div>
+        <h3 style="margin:0 0 2px">Get your invite link</h3>
+        <p class="sub" style="margin:0">Connect Pera or paste your wallet address.</p>
+      </div>
+      <button class="btn ghost" id="ref-connect" type="button" style="padding:10px 16px">🔗 Connect Pera</button>
+    </div>
     <div class="lrow">
       <input id="gen-in" placeholder="Your Algorand address (58 characters)" autocomplete="off" spellcheck="false">
       <button class="btn" id="gen-btn" type="button">Generate link</button>
@@ -525,6 +534,56 @@ ul.refs li:last-child{border-bottom:0}
       tbl.appendChild(tr);
     });
   }
+
+  /* ---- Connect Pera (auto-fill both inputs) ---- */
+  // uses falqbit.js module API via a dynamic import, keeps this IIFE free of ESM
+  var CONNECTED = null;
+  function setConnected(addr) {
+    CONNECTED = addr;
+    var btn = $("ref-connect");
+    if (addr) {
+      btn.textContent = "✓ " + short(addr);
+      btn.classList.add("connected");
+      // auto-fill the inputs if empty
+      if (!$("gen-in").value) { $("gen-in").value = addr; generate(); }
+      if (!$("audit-in").value) { $("audit-in").value = addr; }
+    } else {
+      btn.textContent = "🔗 Connect Pera";
+      btn.classList.remove("connected");
+    }
+  }
+  $("ref-connect").addEventListener("click", function () {
+    if (CONNECTED) {
+      // click when connected = disconnect
+      try { window.__FQ_PERA && window.__FQ_PERA.disconnect(); } catch (e) {}
+      setConnected(null);
+      return;
+    }
+    // import the module lazily and connect
+    import("./falqbit.js").then(function (m) {
+      var c = m.client("mainnet");
+      window.__FQ_PERA = c.pera;
+      return c.connect().then(function (accounts) {
+        if (accounts && accounts.length) {
+          setConnected(accounts[0]);
+          try { c.pera.connector && c.pera.connector.on("disconnect", function () { setConnected(null); }); } catch (e) {}
+        }
+      });
+    }).catch(function (e) {
+      if (e && e.data && e.data.type === "CONNECT_MODAL_CLOSED") return;
+      console.error("Pera connect:", e);
+    });
+  });
+  // try silent reconnect on page load
+  setTimeout(function () {
+    import("./falqbit.js").then(function (m) {
+      var c = m.client("mainnet");
+      window.__FQ_PERA = c.pera;
+      return c.reconnect().then(function (accounts) {
+        if (accounts && accounts.length) setConnected(accounts[0]);
+      });
+    }).catch(function () {});
+  }, 400);
 
   /* ---- link generator ---- */
   $("gen-btn").addEventListener("click", generate);
