@@ -317,13 +317,17 @@ ul.refs li:last-child{border-bottom:0}
   var PAID_REFERRED = {};  // referred -> {amount, t, to} — friend side paid
   var STATES = {};         // referred -> {bal, qualStart, status}
 
-  // note prefixes (back-compat if config still has the old single key)
-  var NOTE_R = R.payout_note_referrer_prefix || R.payout_note_prefix || "falqbit-refpay-r:";
-  var NOTE_F = R.payout_note_referred_prefix || "falqbit-refpay-f:";
-  var REWARD_R = R.reward_referrer || R.reward || 250000;
-  var REWARD_F = R.reward_referred || R.reward || 250000;
+  // note prefixes + rewards (populated after config loads, since `R` is fetched async)
+  var NOTE_R, NOTE_F, REWARD_R, REWARD_F;
+  function initConstants() {
+    NOTE_R = R.payout_note_referrer_prefix || R.payout_note_prefix || "falqbit-refpay-r:";
+    NOTE_F = R.payout_note_referred_prefix || "falqbit-refpay-f:";
+    REWARD_R = R.reward_referrer || R.reward || 250000;
+    REWARD_F = R.reward_referred || R.reward || 250000;
+  }
 
   function load() {
+    initConstants();
     var startT = Date.parse(R.start) / 1000, endT = Date.parse(R.end) / 1000;
     var pRefs = pageAll(IDX + "/v2/transactions?tx-type=pay&note-prefix=" + noteB64(R.note_prefix) + "&address=" + NET.app_address + "&address-role=receiver&limit=1000", 20000);
     // one query, all axfer out of rewards — we filter by note below (covers both prefixes)
