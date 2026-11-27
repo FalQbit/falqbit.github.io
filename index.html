@@ -2583,7 +2583,8 @@ document.documentElement.classList.add("js");
           else { if (k) k.transfers++; }
         } else if (t["tx-type"] === "afrz" && f && f["asset-id"] === ASSET && f["new-freeze-status"] === false) {
           if (k) k.unlocks++;
-          if (f["freeze-account"]) unlockedAccs[f["freeze-account"]] = 1;
+          var acc = f["address"] || f["freeze-account"];
+          if (acc) unlockedAccs[acc] = 1;
         }
         (t["inner-txns"] || []).forEach(function (it) { walk(it, time); });
       }
