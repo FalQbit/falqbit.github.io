@@ -1941,10 +1941,10 @@ body { background-image: none; }
         <details class="act-table"><summary>Show as table</summary><div class="htable-wrap"><table class="htable"><thead><tr><th scope="col">Period</th><th scope="col">Buys</th><th scope="col">Sells</th><th scope="col">Unlocks</th><th scope="col">Transfers</th></tr></thead><tbody id="act-rows"></tbody></table></div></details>
       </div>
       <div class="act-stats">
-        <div><span class="k">Transactions</span><span class="v" id="act-tx">…</span><span class="s">FALQBIT actions since launch</span></div>
+        <div><span class="k">Transactions</span><span class="v" id="act-tx">…</span><span class="s" id="act-tx-s">FALQBIT actions</span></div>
         <div><span class="k">Trades</span><span class="v" id="act-trades">…</span><span class="s" id="act-trades-s">buys and sells on Tinyman</span></div>
-        <div><span class="k">FALQBIT traded</span><span class="v" id="act-vol">…</span><span class="s">bought and sold since launch</span></div>
-        <div><span class="k">Unlocks</span><span class="v" id="act-unl">…</span><span class="s">unique accounts unlocked by the gate</span></div>
+        <div><span class="k">FALQBIT traded</span><span class="v" id="act-vol">…</span><span class="s" id="act-vol-s">bought and sold</span></div>
+        <div><span class="k">Unlocks</span><span class="v" id="act-unl">…</span><span class="s" id="act-unl-s">unique accounts unlocked by the gate</span></div>
       </div>
     </div>
     <p class="muted" id="act-recent" style="margin-top:14px;font-size:13px;text-align:center">&nbsp;</p>
@@ -2525,18 +2525,23 @@ document.documentElement.classList.add("js");
       .then(function (j) { acc = acc.concat(j.transactions || []); return j["next-token"] && (j.transactions || []).length && acc.length < 30000 ? allTx(after, j["next-token"], acc) : acc; });
   }
   function dayKey(t) { return new Date(t * 1000).toISOString().slice(0, 10); }
+  function mergeDay(cur, d) {
+    cur.buys += d.buys; cur.sells += d.sells; cur.unlocks += d.unlocks; cur.transfers += d.transfers;
+    cur.vol += d.vol || 0;
+    if (d.unlockedAccs) for (var a in d.unlockedAccs) cur.unlockedAccs[a] = 1;
+  }
   function aggregateBuckets(days, period) {
     if (period === "daily") return days.slice();
     var buckets = [], cur = null;
     if (period === "weekly") {
       for (var i = 0; i < days.length; i++) {
         if (i % 7 === 0) {
-          cur = { date: days[i].date, key: days[i].key, buys: 0, sells: 0, unlocks: 0, transfers: 0 };
+          cur = { date: days[i].date, key: days[i].key, buys: 0, sells: 0, unlocks: 0, transfers: 0, vol: 0, unlockedAccs: {} };
           cur.label = days[i].date.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
           cur.tipLabel = "Week of " + cur.label;
           buckets.push(cur);
         }
-        cur.buys += days[i].buys; cur.sells += days[i].sells; cur.unlocks += days[i].unlocks; cur.transfers += days[i].transfers;
+        mergeDay(cur, days[i]);
       }
       return buckets;
     }
@@ -2546,17 +2551,34 @@ document.documentElement.classList.add("js");
         var dd = days[j].date;
         var m = dd.getUTCFullYear() + "-" + dd.getUTCMonth();
         if (m !== lastMonth) {
-          cur = { date: new Date(Date.UTC(dd.getUTCFullYear(), dd.getUTCMonth(), 1)), key: m, buys: 0, sells: 0, unlocks: 0, transfers: 0 };
+          cur = { date: new Date(Date.UTC(dd.getUTCFullYear(), dd.getUTCMonth(), 1)), key: m, buys: 0, sells: 0, unlocks: 0, transfers: 0, vol: 0, unlockedAccs: {} };
           cur.label = cur.date.toLocaleDateString("en-GB", { month: "short", year: "numeric", timeZone: "UTC" });
           cur.tipLabel = cur.label;
           buckets.push(cur);
           lastMonth = m;
         }
-        cur.buys += days[j].buys; cur.sells += days[j].sells; cur.unlocks += days[j].unlocks; cur.transfers += days[j].transfers;
+        mergeDay(cur, days[j]);
       }
       return buckets;
     }
     return days;
+  }
+  function formatVol(v) { return v >= 1e9 ? fmt(v / 1e9, 2) + "B" : v >= 1e6 ? fmt(v / 1e6, 1) + "M" : fmt(v, 0); }
+  function updateStats(buckets) {
+    if (!buckets || !buckets.length) return;
+    var current = buckets[buckets.length - 1];
+    var periodLabel = ACT_VIEW === "daily" ? "today (" + current.label + ")" : ACT_VIEW === "weekly" ? "this week (from " + current.label + ")" : "this month (" + current.label + ")";
+    var tot = current.buys + current.sells + current.unlocks + current.transfers;
+    var b = current.buys, s = current.sells;
+    var unlCount = Object.keys(current.unlockedAccs || {}).length;
+    $("act-tx").textContent = fmt(tot, 0);
+    $("act-trades").textContent = fmt(b + s, 0);
+    $("act-trades-s").textContent = fmt(b, 0) + " buys · " + fmt(s, 0) + " sells on Tinyman";
+    $("act-vol").textContent = formatVol(current.vol || 0);
+    $("act-unl").textContent = fmt(unlCount, 0);
+    $("act-tx-s").textContent = "FALQBIT actions " + periodLabel;
+    $("act-vol-s").textContent = "bought and sold " + periodLabel;
+    $("act-unl-s").textContent = "unique accounts unlocked " + periodLabel;
   }
   function loadActivity() {
     var now = new Date();
@@ -2566,48 +2588,42 @@ document.documentElement.classList.add("js");
     var days = [];
     for (var di = 0; di < nDays; di++) {
       var x = new Date(startMs + di * 86400000);
-      var d = { key: x.toISOString().slice(0, 10), date: x, buys: 0, sells: 0, unlocks: 0, transfers: 0 };
+      var d = { key: x.toISOString().slice(0, 10), date: x, buys: 0, sells: 0, unlocks: 0, transfers: 0, vol: 0, unlockedAccs: {} };
       d.label = x.toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
       d.tipLabel = x.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
       days.push(d);
     }
     var byKey = {}; days.forEach(function (d) { byKey[d.key] = d; });
     allTx(LAUNCH_ISO).then(function (roots) {
-      var vol = 0, seen = {}, unlockedAccs = {};
+      var seen = {}, cumUnlockedAccs = {};
       function walk(t, time) {
         var k = byKey[dayKey(time)];
         var a = t["asset-transfer-transaction"], f = t["asset-freeze-transaction"];
         if (t["tx-type"] === "axfer" && a && a["asset-id"] === ASSET && a.amount > 0) {
-          if (t.sender === POOL_ADDR) { if (k) k.buys++; vol += a.amount / 1e6; }
-          else if (a.receiver === POOL_ADDR) { if (k) k.sells++; vol += a.amount / 1e6; }
+          if (t.sender === POOL_ADDR) { if (k) { k.buys++; k.vol += a.amount / 1e6; } }
+          else if (a.receiver === POOL_ADDR) { if (k) { k.sells++; k.vol += a.amount / 1e6; } }
           else { if (k) k.transfers++; }
         } else if (t["tx-type"] === "afrz" && f && f["asset-id"] === ASSET && f["new-freeze-status"] === false) {
           if (k) k.unlocks++;
           var acc = f["address"] || f["freeze-account"];
-          if (acc) unlockedAccs[acc] = 1;
+          if (acc) {
+            cumUnlockedAccs[acc] = 1;
+            if (k) k.unlockedAccs[acc] = 1;
+          }
         }
         (t["inner-txns"] || []).forEach(function (it) { walk(it, time); });
       }
       roots.forEach(function (t) { if (seen[t.id]) return; seen[t.id] = 1; walk(t, t["round-time"]); });
       ACT_DAYS = days;
       drawActivity(aggregateBuckets(days, ACT_VIEW));
-      // cumulative headline stats (since launch)
-      var cumTot = days.reduce(function (s, d) { return s + d.buys + d.sells + d.unlocks + d.transfers; }, 0);
-      var cumB = days.reduce(function (s, d) { return s + d.buys; }, 0);
-      var cumS = days.reduce(function (s, d) { return s + d.sells; }, 0);
-      $("act-tx").textContent = fmt(cumTot, 0);
-      $("act-trades").textContent = fmt(cumB + cumS, 0);
-      $("act-trades-s").textContent = fmt(cumB, 0) + " buys · " + fmt(cumS, 0) + " sells on Tinyman";
-      $("act-vol").textContent = vol >= 1e9 ? fmt(vol / 1e9, 2) + "B" : vol >= 1e6 ? fmt(vol / 1e6, 1) + "M" : fmt(vol, 0);
-      $("act-unl").textContent = fmt(Object.keys(unlockedAccs).length, 0);
-      // small recent indicator (last 14 days) below
+      // cumulative line (always, below stats)
       var rEl = $("act-recent");
       if (rEl) {
-        var recent14 = days.slice(-14);
-        var rTx = recent14.reduce(function (s, d) { return s + d.buys + d.sells + d.unlocks + d.transfers; }, 0);
-        var rTr = recent14.reduce(function (s, d) { return s + d.buys + d.sells; }, 0);
-        var rUn = recent14.reduce(function (s, d) { return s + d.unlocks; }, 0);
-        rEl.innerHTML = "Last 14 days: <b>" + fmt(rTx, 0) + "</b> actions · <b>" + fmt(rTr, 0) + "</b> trades · <b>" + fmt(rUn, 0) + "</b> unlocks";
+        var cumTot = days.reduce(function (s, d) { return s + d.buys + d.sells + d.unlocks + d.transfers; }, 0);
+        var cumB = days.reduce(function (s, d) { return s + d.buys; }, 0);
+        var cumS = days.reduce(function (s, d) { return s + d.sells; }, 0);
+        var cumVol = days.reduce(function (s, d) { return s + (d.vol || 0); }, 0);
+        rEl.innerHTML = "Since launch: <b>" + fmt(cumTot, 0) + "</b> actions · <b>" + fmt(cumB + cumS, 0) + "</b> trades · <b>" + fmt(Object.keys(cumUnlockedAccs).length, 0) + "</b> unique unlocks · <b>" + formatVol(cumVol) + "</b> FALQBIT traded";
       }
     }).catch(function () { $("act-plot").innerHTML = "<p class=\"muted\">Could not read the chain right now. Try again in a minute.</p>"; });
   }
@@ -2616,6 +2632,7 @@ document.documentElement.classList.add("js");
   window.addEventListener("resize", function () { clearTimeout(rz); rz = setTimeout(function () { if (lastBuckets) drawActivity(lastBuckets); }, 200); });
   function drawActivity(buckets) {
     lastBuckets = buckets;
+    updateStats(buckets);
     var W = Math.max(300, Math.round($("act-plot").clientWidth || 640)), H = W < 500 ? 220 : 260, L = 34, R = 8, T = 10, B = 26, pw = W - L - R, ph = H - T - B;
     var max = niceMax(Math.max.apply(null, buckets.map(function (d) { return d.buys + d.sells + d.unlocks + d.transfers; }).concat([1])));
     var bw = pw / buckets.length, barW = Math.max(6, bw * 0.62), svg = "";
