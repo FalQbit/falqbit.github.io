@@ -427,6 +427,15 @@ ul.refs li:last-child{border-bottom:0}
       if (!belowNow && lastOk === tNow && txs.length > 0) {
         lastOk = txs[txs.length - 1]["round-time"]; // txs is newest-first → last is oldest
       }
+      // fallback: no axfer txs found for this asset — use account's very first transaction
+      if (!belowNow && lastOk === tNow) {
+        return fetchJSON(IDX + "/v2/accounts/" + addr + "/transactions?limit=1&order=asc").then(function (j) {
+          var first = (j && j.transactions && j.transactions[0]) ? j.transactions[0]["round-time"] : null;
+          return { bal: cur / MICRO, qualStart: first, below: false };
+        }).catch(function () {
+          return { bal: cur / MICRO, qualStart: null, below: false };
+        });
+      }
       return { bal: cur / MICRO, qualStart: belowNow ? null : lastOk, below: belowNow };
     }).catch(function () { return { bal: null, qualStart: null, below: true }; });
   }
