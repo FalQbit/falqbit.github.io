@@ -2643,13 +2643,18 @@ document.documentElement.classList.add("js");
     updateStats(buckets);
     var W = Math.max(300, Math.round($("act-plot").clientWidth || 640)), H = W < 500 ? 220 : 260, L = 48, R = 8, T = 10, B = 26, pw = W - L - R, ph = H - T - B;
     var max = niceMax(Math.max.apply(null, buckets.map(function (d) { return d.buys + d.sells + d.unlocks + d.transfers; }).concat([1])));
-    var bw = pw / buckets.length, barW = Math.max(6, bw * 0.62), svg = "";
+    // cap bar width so 1-2 bars don't fill the whole canvas, and center the chart when there's extra space
+    var MAX_BAR_W = 70, MIN_SLOTS = 4;
+    var bw = Math.min(pw / Math.max(buckets.length, MIN_SLOTS), MAX_BAR_W / 0.62);
+    var barW = Math.max(6, Math.min(bw * 0.62, MAX_BAR_W));
+    var offset = Math.max(0, (pw - buckets.length * bw) / 2);
+    var svg = "";
     for (var g = 0; g <= 4; g++) { var gy = T + ph - ph * g / 4; svg += "<line class=\"grid\" x1=\"" + L + "\" x2=\"" + (W - R) + "\" y1=\"" + gy + "\" y2=\"" + gy + "\"/><text class=\"ax\" x=\"" + (L - 8) + "\" y=\"" + (gy + 4) + "\" text-anchor=\"end\">" + fmt(max * g / 4, 0) + "</text>"; }
-    // adaptive x-axis label frequency: more buckets → fewer labels
+    // adaptive x-axis label frequency: more buckets → fewer labels, no forced last label (avoids overlap)
     var labelStep = buckets.length <= 8 ? 1 : buckets.length <= 16 ? 2 : buckets.length <= 32 ? 4 : Math.ceil(buckets.length / 8);
     if (W < 500) labelStep = Math.max(labelStep, 2);
     buckets.forEach(function (d, i) {
-      var x = L + i * bw + (bw - barW) / 2, y = T + ph, parts = SERIES.filter(function (s) { return d[s[0]] > 0; });
+      var x = L + offset + i * bw + (bw - barW) / 2, y = T + ph, parts = SERIES.filter(function (s) { return d[s[0]] > 0; });
       parts.forEach(function (s, j) {
         var h = ph * d[s[0]] / max, top = j === parts.length - 1, gap = j > 0 ? 2 : 0;
         var yy = y - h, hh = Math.max(0, h - gap);
@@ -2657,8 +2662,9 @@ document.documentElement.classList.add("js");
         else svg += "<rect fill=\"" + s[2] + "\" x=\"" + x + "\" y=\"" + yy + "\" width=\"" + barW + "\" height=\"" + hh + "\"/>";
         y = yy;
       });
-      if (i % labelStep === 0 || i === buckets.length - 1) svg += "<text class=\"ax\" x=\"" + (L + i * bw + bw / 2) + "\" y=\"" + (H - 8) + "\" text-anchor=\"middle\">" + (d.label || "") + "</text>";
-      svg += "<rect class=\"hit\" data-i=\"" + i + "\" x=\"" + (L + i * bw) + "\" y=\"" + T + "\" width=\"" + bw + "\" height=\"" + ph + "\"/>";
+      // only step-based labels; no forced last (prevents overlap at the right edge)
+      if (i % labelStep === 0) svg += "<text class=\"ax\" x=\"" + (L + offset + i * bw + bw / 2) + "\" y=\"" + (H - 8) + "\" text-anchor=\"middle\">" + (d.label || "") + "</text>";
+      svg += "<rect class=\"hit\" data-i=\"" + i + "\" x=\"" + (L + offset + i * bw) + "\" y=\"" + T + "\" width=\"" + bw + "\" height=\"" + ph + "\"/>";
     });
     var ariaLabel = "FALQBIT actions per " + (ACT_VIEW === "monthly" ? "month" : ACT_VIEW === "weekly" ? "week" : "day") + ", since launch";
     $("act-plot").innerHTML = "<svg viewBox=\"0 0 " + W + " " + H + "\" role=\"img\" aria-label=\"" + ariaLabel + "\">" + svg + "</svg>";
